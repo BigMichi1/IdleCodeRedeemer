@@ -47,16 +47,13 @@ function getCodesList() : string[] {
     const regex = /(?:[A-Z0-9*!@#$%^&*]-?){12}(?:(?:[A-Z0-9*!@#$%^&*]-?){4})?/g
     const codes: string[] = []
 
-    const messageElements = document.querySelectorAll("div[class^='message']")
-    messageElements.forEach(messageElement => {
-        const markupElement = messageElement.querySelector("div[class^='markup']") as HTMLElement
-        if(markupElement){
-            const codeMatch = markupElement.innerText.toUpperCase().match(regex)
-            if(codeMatch?.[0]){
-                const code = codeMatch[0].replaceAll("-", "")
-                console.debug(`Idle Code found: ${code}`)
-                codes.push(code)
-            }
+    const markupElements = document.querySelectorAll("div[class*='message'] div[class*='markup']") as NodeListOf<HTMLElement>
+    markupElements.forEach(markupElement => {
+        const codeMatch = markupElement.innerText.toUpperCase().match(regex)
+        if(codeMatch?.[0]){
+            const code = codeMatch[0].replaceAll("-", "")
+            console.debug(`Idle Code found: ${code}`)
+            codes.push(code)
         }
     })
 
