@@ -1,7 +1,8 @@
 {
     "compilerOptions": {
         "module": "None",
-        "lib": ["DOM", "ES5", "ESNEXT"],
+        "target": "ES2023",
+        "lib": ["DOM", "ES2023"],
         "outFile": "./../../extension/dst/chestManagement.js",
         "noFallthroughCasesInSwitch": true,
         "removeComments": true,

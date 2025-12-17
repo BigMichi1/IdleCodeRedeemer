@@ -1,20 +1,17 @@
 "use strict";
-var Globals = (function () {
-    function Globals() {
-    }
-    Globals.debugMode = !chrome.runtime.getManifest().update_url;
-    Globals.discordChannelUrl = "https://discord.com/channels/357247482247380994/358044869685673985";
-    Globals.SETTING_CODES = "redeemedCodes";
-    Globals.SETTING_PENDING = "pendingCodes";
-    Globals.SETTING_INSTANCE_ID = "instanceId";
-    Globals.SETTING_USER_HASH = "userHash";
-    Globals.SETTING_USER_ID = "userId";
-    return Globals;
-}());
-document.addEventListener("DOMContentLoaded", function () {
+class Globals {
+    static debugMode = !chrome.runtime.getManifest().update_url;
+    static discordChannelUrl = "https://discord.com/channels/357247482247380994/358044869685673985";
+    static SETTING_CODES = "redeemedCodes";
+    static SETTING_PENDING = "pendingCodes";
+    static SETTING_INSTANCE_ID = "instanceId";
+    static SETTING_USER_HASH = "userHash";
+    static SETTING_USER_ID = "userId";
+}
+document.addEventListener("DOMContentLoaded", () => {
     loaded();
 });
-var _servicePort = chrome.runtime.connect({ name: "options" });
+const _servicePort = chrome.runtime.connect({ name: "options" });
 _servicePort.onMessage.addListener(onMessage);
 _servicePort.postMessage({ messageType: "pageReady" });
 function onMessage(message, port) {
@@ -26,8 +23,8 @@ function onMessage(message, port) {
             handleMessage(message);
             break;
         case "activateTab":
-            chrome.tabs.getCurrent(function (tab) {
-                if (tab === null || tab === void 0 ? void 0 : tab.id) {
+            chrome.tabs.getCurrent((tab) => {
+                if (tab?.id) {
                     chrome.tabs.update(tab.id, { "active": true });
                 }
             });
@@ -35,39 +32,37 @@ function onMessage(message, port) {
     }
 }
 function loaded() {
-    chrome.storage.sync.get([Globals.SETTING_USER_ID, Globals.SETTING_USER_HASH], function (_a) {
-        var userId = _a.userId, userHash = _a.userHash;
-        var userIdElement = document.getElementById("userId");
-        userIdElement.value = userId !== null && userId !== void 0 ? userId : "";
+    chrome.storage.sync.get([Globals.SETTING_USER_ID, Globals.SETTING_USER_HASH], ({ userId, userHash }) => {
+        const userIdElement = document.getElementById("userId");
+        userIdElement.value = userId ?? "";
         userIdElement.addEventListener("blur", settingsUpdated);
-        var userHashElement = document.getElementById("userHash");
-        userHashElement.value = userHash !== null && userHash !== void 0 ? userHash : "";
+        const userHashElement = document.getElementById("userHash");
+        userHashElement.value = userHash ?? "";
         userHashElement.addEventListener("blur", settingsUpdated);
     });
-    var userHashElement = document.getElementById("supportUrl");
+    const userHashElement = document.getElementById("supportUrl");
     userHashElement.addEventListener("blur", parseSupportUrl);
 }
 function settingsUpdated(ev) {
     saveUpdatedSettings();
 }
 function saveUpdatedSettings() {
-    var _a;
-    chrome.storage.sync.set((_a = {},
-        _a[Globals.SETTING_USER_ID] = document.getElementById("userId").value,
-        _a[Globals.SETTING_USER_HASH] = document.getElementById("userHash").value,
-        _a), function () { return console.log("User settings saved"); });
+    chrome.storage.sync.set({
+        [Globals.SETTING_USER_ID]: document.getElementById("userId").value,
+        [Globals.SETTING_USER_HASH]: document.getElementById("userHash").value
+    }, () => console.log("User settings saved"));
     document.getElementById("settingsInfo").classList.add("show");
     document.querySelector("#settingsInfo span").innerHTML = "After updating credentials, click browser extension button to launch new request.";
 }
 function parseSupportUrl(ev) {
-    var userIdElement = document.getElementById("userId");
-    var userHashElement = document.getElementById("userHash");
-    var supportUrlElement = document.getElementById("supportUrl");
+    const userIdElement = document.getElementById("userId");
+    const userHashElement = document.getElementById("userHash");
+    const supportUrlElement = document.getElementById("supportUrl");
     if (supportUrlElement.value == "") {
         return;
     }
     try {
-        var url = new URL(supportUrlElement.value);
+        const url = new URL(supportUrlElement.value);
         var userId = url.searchParams.get("user_id");
         var hash = url.searchParams.get("device_hash");
         if (!userId || !hash) {
@@ -80,7 +75,7 @@ function parseSupportUrl(ev) {
         supportUrlElement.value = "";
         saveUpdatedSettings();
     }
-    catch (_a) {
+    catch {
         document.getElementById("settingsInfo").classList.add("show");
         document.querySelector("#settingsInfo span").innerHTML = "Failed to parse URL. Make sure you are copying from the URL bar of the browser.";
     }
@@ -93,16 +88,15 @@ function hideMessages() {
     document.querySelector("#chests tbody").innerHTML = "";
 }
 function handleMessage(message) {
-    var _a, _b, _c;
     hideMessages();
     switch (message.messageType) {
         case "error":
             document.getElementById("error").classList.add("show");
-            document.querySelector("#error span").innerHTML = (_a = message.messageText) !== null && _a !== void 0 ? _a : "";
+            document.querySelector("#error span").innerHTML = message.messageText ?? "";
             break;
         case "info":
             document.getElementById("info").classList.add("show");
-            document.querySelector("#info span").innerHTML = (_b = message.messageText) !== null && _b !== void 0 ? _b : "";
+            document.querySelector("#info span").innerHTML = message.messageText ?? "";
             break;
         case "missingCredentials":
             document.getElementById("errorSettings").classList.add("show");
@@ -111,19 +105,18 @@ function handleMessage(message) {
             break;
         case "success":
             document.getElementById("success").classList.add("show");
-            document.querySelector("#success span").innerHTML = (_c = message.messageText) !== null && _c !== void 0 ? _c : "";
-            var chestsTableBody_1 = document.querySelector("#chests tbody");
-            chestsTableBody_1.innerHTML = "";
-            var unknownCount_1 = 0;
+            document.querySelector("#success span").innerHTML = message.messageText ?? "";
+            const chestsTableBody = document.querySelector("#chests tbody");
+            chestsTableBody.innerHTML = "";
+            let unknownCount = 0;
             if (message.heroUnlocks) {
-                chestsTableBody_1.appendChild(buildTableRow("Hero Unlocks", message.heroUnlocks));
+                chestsTableBody.appendChild(buildTableRow("Hero Unlocks", message.heroUnlocks));
             }
             if (message.skinUnlocks) {
-                chestsTableBody_1.appendChild(buildTableRow("Skin Unlocks", message.skinUnlocks));
+                chestsTableBody.appendChild(buildTableRow("Skin Unlocks", message.skinUnlocks));
             }
-            Object.entries(message.chests || []).forEach(function (_a) {
-                var chestType = _a[0], amount = _a[1];
-                var label = "";
+            Object.entries(message.chests || []).forEach(([chestType, amount]) => {
+                let label = "";
                 switch (chestType) {
                     case 282..toString():
                         label = "Electrum Chests";
@@ -135,23 +128,23 @@ function handleMessage(message) {
                         label = "Modron Chests";
                         break;
                     default:
-                        unknownCount_1 += amount;
+                        unknownCount += amount;
                         return;
                 }
-                chestsTableBody_1.appendChild(buildTableRow(label, amount));
+                chestsTableBody.appendChild(buildTableRow(label, amount));
             });
-            if (unknownCount_1 > 0) {
-                chestsTableBody_1.appendChild(buildTableRow("Other Chests", unknownCount_1));
+            if (unknownCount > 0) {
+                chestsTableBody.appendChild(buildTableRow("Other Chests", unknownCount));
             }
             break;
     }
 }
 function buildTableRow(label, amount) {
-    var labelColumn = document.createElement("td");
+    const labelColumn = document.createElement("td");
     labelColumn.innerText = label;
-    var amountColumn = document.createElement("td");
+    const amountColumn = document.createElement("td");
     amountColumn.innerText = amount.toString();
-    var row = document.createElement("tr");
+    const row = document.createElement("tr");
     row.classList.add("table-primary");
     row.appendChild(labelColumn);
     row.appendChild(amountColumn);
