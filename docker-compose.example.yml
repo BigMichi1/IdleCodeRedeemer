@@ -1,0 +1,57 @@
+# Docker Compose example for running pre-built Idle Champions Code Redeemer Bot
+# This uses the pre-built image published to GitHub Container Registry (ghcr.io)
+#
+# Usage:
+# 1. Copy this file: cp docker-compose.example.yml docker-compose.yml
+# 2. Update your environment variables (DISCORD_TOKEN, etc.)
+# 3. Run: docker-compose up -d
+
+version: '3.8'
+
+services:
+  idle-code-redeemer:
+    # Use the pre-built image from GitHub Container Registry
+    # Available tags:
+    #   - latest         (latest main branch build)
+    #   - main           (main branch builds)
+    #   - v1.0.0         (specific version/release)
+    #   - main-<sha>     (specific commit)
+    image: ghcr.io/bigmichi1/IdleCodeRedeemer:latest
+    
+    container_name: idle-code-redeemer
+    restart: unless-stopped
+    
+    environment:
+      # Required: Your Discord bot token
+      # Get it from: https://discord.com/developers/applications
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      
+      # Optional: Discord server (guild) ID
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+      
+      # Optional: Discord channel ID for logging
+      # Defaults to 357247482247380994 if not specified
+      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-357247482247380994}
+      
+      # Database location (inside container)
+      DB_PATH: /app/data/idle.db
+      
+      # Environment mode
+      NODE_ENV: production
+    
+    volumes:
+      # Persist database across container restarts
+      - ./data:/app/data
+    
+    networks:
+      - idle-network
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  idle-network:
+    driver: bridge

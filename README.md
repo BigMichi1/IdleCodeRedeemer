@@ -11,6 +11,8 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ## 🚀 Quick Start (5 minutes)
 
+### Development (Local)
+
 ```bash
 # 1. Install dependencies
 mise run install
@@ -32,6 +34,28 @@ curl https://mise.jdx.dev/install.sh | sh
 # Or with Homebrew
 brew install mise
 ```
+
+### 🐳 Docker Deployment
+
+Deploy the bot using the pre-built Docker image:
+
+```bash
+# 1. Copy the example compose file
+cp docker-compose.example.yml docker-compose.yml
+
+# 2. Set your Discord token
+export DISCORD_TOKEN=your_bot_token_here
+
+# 3. Start the bot
+docker-compose up -d
+```
+
+See [docker-compose.example.yml](docker-compose.example.yml) for all available configuration options.
+
+**Pull specific versions:**
+- `ghcr.io/bigmichi1/IdleCodeRedeemer:latest` - Latest main branch build
+- `ghcr.io/bigmichi1/IdleCodeRedeemer:v1.0.0` - Specific release
+- `ghcr.io/bigmichi1/IdleCodeRedeemer:main-<sha>` - Specific commit
 
 ## ✨ Features
 
