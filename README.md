@@ -54,9 +54,9 @@ See [docker-compose.example.yml](docker-compose.example.yml) for all available c
 
 **Pull specific versions:**
 
-- `ghcr.io/bigmichi1/IdleCodeRedeemer:latest` - Latest main branch build
-- `ghcr.io/bigmichi1/IdleCodeRedeemer:v1.0.0` - Specific release
-- `ghcr.io/bigmichi1/IdleCodeRedeemer:main-<sha>` - Specific commit
+- `ghcr.io/bigmichi1/idlecoderedeemer:latest` - Latest main branch build
+- `ghcr.io/bigmichi1/idlecoderedeemer:v1.0.0` - Specific release
+- `ghcr.io/bigmichi1/idlecoderedeemer:main-<sha>` - Specific commit
 
 ## ✨ Features
 

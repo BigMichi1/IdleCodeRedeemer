@@ -16,7 +16,7 @@ services:
     #   - main           (main branch builds)
     #   - v1.0.0         (specific version/release)
     #   - main-<sha>     (specific commit)
-    image: ghcr.io/bigmichi1/IdleCodeRedeemer:latest
+    image: ghcr.io/bigmichi1/idlecoderedeemer:latest
     
     container_name: idle-code-redeemer
     restart: unless-stopped
