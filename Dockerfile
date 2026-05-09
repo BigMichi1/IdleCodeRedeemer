@@ -32,6 +32,9 @@ RUN mise trust
 # Install tools and dependencies via Mise
 RUN mise install
 
+# Install npm/bun dependencies (includes TypeScript and other devDependencies)
+RUN bun install
+
 # Copy TypeScript source files
 COPY tsconfig.bot.json ./
 COPY src/bot ./src/bot
