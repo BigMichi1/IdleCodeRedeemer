@@ -50,7 +50,7 @@
   "lint-staged": {
     "*.ts": ["eslint --fix", "prettier --write"],
     "*.{md,yml,yaml}": ["prettier --write"],
-    "package.json": ["syncpack fix --source 'package.json'", "prettier --write"],
+    "package.json": ["syncpack fix --source", "prettier --write"],
     "Dockerfile*": ["prettier --write"],
     "*.json": ["prettier --write"]
   }
