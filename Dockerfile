@@ -41,7 +41,7 @@ COPY src/bot ./src/bot
 COPY src/lib ./src/lib
 
 # Build the bot
-RUN mise run build
+RUN mise run build && test -d dist || (echo "Build failed - dist/ directory not created" && exit 1)
 
 # Create data directory
 RUN mkdir -p /app/data api-logs
