@@ -42,13 +42,12 @@ COPY src/lib ./src/lib
 
 # Build the bot
 RUN echo "Building TypeScript..." && \
-    mise run build && \
-    echo "Build completed successfully" && \
-    test -d dist && echo "dist/ directory verified" || \
-    (echo "ERROR: Build failed - dist/ directory not found" && \
-     echo "Current directory contents:" && ls -la && \
-     echo "Source files:" && find src -type f -name "*.ts" | head -20 && \
-     exit 1)
+    echo "TypeScript version:" && ./node_modules/.bin/tsc --version && \
+    echo "Running tsc compiler..." && \
+    ./node_modules/.bin/tsc -p tsconfig.bot.json 2>&1 || (echo "TSC FAILED WITH ERROR:" && exit 1) && \
+    echo "Build completed - checking dist directory..." && \
+    (test -d dist && echo "✓ dist/ directory created" && find dist -type f -name "*.js" | head -5) || \
+    (echo "✗ ERROR: dist/ directory not found even though tsc succeeded" && ls -laR . && exit 1)
 
 # Create data directory
 RUN mkdir -p /app/data api-logs
