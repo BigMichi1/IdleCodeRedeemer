@@ -1,0 +1,10 @@
+{
+  "semverGroups": [
+    {
+      "label": "All dependencies must be pinned to exact versions",
+      "range": "",
+      "dependencies": ["**"],
+      "packages": ["**"]
+    }
+  ]
+}

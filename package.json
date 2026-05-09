@@ -11,8 +11,8 @@
     "migrate": "bun run --bun src/bot/database/migrate.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
-    "format:check": "prettier --check \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
+    "format": "syncpack fix --source 'package.json' && prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
+    "format:check": "syncpack list-mismatches --source 'package.json' && prettier --check \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
     "prepare": "husky install",
     "pre-commit": "lint-staged"
   },
@@ -43,12 +43,15 @@
     "@types/node": "^25.6.2",
     "@types/node-fetch": "^2.6.13",
     "prettier": "^3.2.5",
+    "syncpack": "^15.0.0",
     "typescript": "^6.0.3",
     "ts-node": "^10.9.2"
   },
   "lint-staged": {
     "*.ts": ["eslint --fix", "prettier --write"],
-    "*.{md,json,yml,yaml}": ["prettier --write"],
-    "Dockerfile*": ["prettier --write"]
+    "*.{md,yml,yaml}": ["prettier --write"],
+    "package.json": ["syncpack fix --source 'package.json'", "prettier --write"],
+    "Dockerfile*": ["prettier --write"],
+    "*.json": ["prettier --write"]
   }
 }
