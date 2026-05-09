@@ -33,7 +33,7 @@ RUN mise trust
 RUN mise install
 
 # Install npm/bun dependencies (includes TypeScript and other devDependencies)
-RUN bun install
+RUN mise run install
 
 # Copy TypeScript source files
 COPY tsconfig.bot.json ./
@@ -41,13 +41,7 @@ COPY src/bot ./src/bot
 COPY src/lib ./src/lib
 
 # Build the bot
-RUN echo "Building TypeScript..." && \
-    echo "TypeScript version:" && ./node_modules/.bin/tsc --version && \
-    echo "Running tsc compiler..." && \
-    ./node_modules/.bin/tsc -p tsconfig.bot.json 2>&1 || (echo "TSC FAILED WITH ERROR:" && exit 1) && \
-    echo "Build completed - checking dist directory..." && \
-    (test -d dist && echo "✓ dist/ directory created" && find dist -type f -name "*.js" | head -5) || \
-    (echo "✗ ERROR: dist/ directory not found even though tsc succeeded" && ls -laR . && exit 1)
+RUN mise run build
 
 # Create data directory
 RUN mkdir -p /app/data api-logs
