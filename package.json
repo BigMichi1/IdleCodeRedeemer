@@ -11,8 +11,8 @@
     "migrate": "bun run --bun src/bot/database/migrate.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\"",
-    "format:check": "prettier --check \"src/**/*.{ts,md}\" \"docs/**/*.md\"",
+    "format": "prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\"",
+    "format:check": "prettier --check \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\"",
     "prepare": "husky install",
     "pre-commit": "lint-staged"
   },
@@ -43,11 +43,8 @@
     "ts-node": "^10.9.2"
   },
   "lint-staged": {
-    "src/**/*.ts": [
+    "*.ts": [
       "eslint --fix",
-      "prettier --write"
-    ],
-    "docs/**/*.md": [
       "prettier --write"
     ],
     "*.md": [
