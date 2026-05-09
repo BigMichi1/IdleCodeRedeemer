@@ -25,12 +25,14 @@ updates:
       semver-minor-days: 7
       semver-major-days: 14
     groups:
-      - dependency-type: development
+      dev-dependencies:
+        dependency-type: development
         patterns:
           - "@typescript-eslint/*"
           - "eslint*"
           - "typescript"
-      - dependency-type: runtime
+      runtime-dependencies:
+        dependency-type: runtime
 
   # GitHub Actions
   - package-ecosystem: github-actions
