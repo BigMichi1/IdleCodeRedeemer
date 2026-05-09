@@ -26,6 +26,9 @@ COPY .mise.toml ./
 COPY package.json ./
 COPY .env.example .env
 
+# Trust the .mise.toml configuration file
+RUN mise trust
+
 # Install tools and dependencies via Mise
 RUN mise install
 
