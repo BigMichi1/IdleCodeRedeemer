@@ -34,7 +34,7 @@ const logger = winston.createLogger({
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.errors({ stack: true }),
     winston.format.splat(),
-    winston.format.json(),
+    winston.format.json()
   ),
   defaultMeta: { service: 'idle-bot' },
   transports: [
@@ -50,7 +50,7 @@ const logger = winston.createLogger({
         winston.format.printf(({ timestamp, level, message, ...meta }) => {
           const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
           return `${timestamp} [${level.toUpperCase()}]: ${message} ${metaStr}`;
-        }),
+        })
       ),
     }),
 
@@ -64,7 +64,7 @@ const logger = winston.createLogger({
         winston.format.printf(({ timestamp, level, message, ...meta }) => {
           const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
           return `${timestamp} [${level.toUpperCase()}]: ${message} ${metaStr}`;
-        }),
+        })
       ),
     }),
 
@@ -75,7 +75,7 @@ const logger = winston.createLogger({
         winston.format.timestamp({ format: 'HH:mm:ss' }),
         winston.format.printf(({ timestamp, level, message }) => {
           return `${timestamp} [${level}]: ${message}`;
-        }),
+        })
       ),
     }),
   ],

@@ -13,10 +13,7 @@ export const data = new SlashCommandBuilder()
   .setName('redeem')
   .setDescription('Redeem an Idle Champions code')
   .addStringOption((option) =>
-    option
-      .setName('code')
-      .setDescription('The code to redeem')
-      .setRequired(true),
+    option.setName('code').setDescription('The code to redeem').setRequired(true)
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -90,7 +87,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     // Handle server switch
-    if (userResult instanceof Object && 'status' in userResult && (userResult as any).status === 4) {
+    if (
+      userResult instanceof Object &&
+      'status' in userResult &&
+      (userResult as any).status === 4
+    ) {
       server = (userResult as any).newServer;
       if (!server) {
         const embed = new EmbedBuilder()
@@ -156,13 +157,15 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Save to database (private code)
     const codeResponse = response as any;
     const statusName = getCodeStatusName(codeResponse.codeStatus);
-    logger.info(`[REDEEM] Code ${code} redeemed with status: ${statusName} for user ${interaction.user.tag}`);
+    logger.info(
+      `[REDEEM] Code ${code} redeemed with status: ${statusName} for user ${interaction.user.tag}`
+    );
     await codeManager.addRedeemedCode(
       code,
       interaction.user.id,
       statusName,
       codeResponse.lootDetail,
-      false, // Private code
+      false // Private code
     );
 
     // Build response embed
@@ -173,7 +176,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       .addFields({ name: 'Code', value: `\`${code}\``, inline: false });
 
     // Format loot nicely
-    if (codeResponse.lootDetail && Array.isArray(codeResponse.lootDetail) && codeResponse.lootDetail.length > 0) {
+    if (
+      codeResponse.lootDetail &&
+      Array.isArray(codeResponse.lootDetail) &&
+      codeResponse.lootDetail.length > 0
+    ) {
       const lootLines = codeResponse.lootDetail
         .map((loot: any) => {
           if (loot.chest_type_id !== undefined) {
@@ -186,7 +193,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         })
         .join('\n');
 
-      embed.addFields({ name: '📦 Loot Received', value: lootLines || 'Unknown loot', inline: false });
+      embed.addFields({
+        name: '📦 Loot Received',
+        value: lootLines || 'Unknown loot',
+        inline: false,
+      });
     }
 
     await interaction.editReply({ embeds: [embed] });

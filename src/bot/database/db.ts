@@ -92,12 +92,12 @@ class Database {
 
   private async runMigrations(): Promise<void> {
     // Add is_public column if it doesn't exist
-    await this.run('ALTER TABLE redeemed_codes ADD COLUMN is_public INTEGER DEFAULT 0')
-      .catch(() => {} ); // Ignore if column already exists
+    await this.run('ALTER TABLE redeemed_codes ADD COLUMN is_public INTEGER DEFAULT 0').catch(
+      () => {}
+    ); // Ignore if column already exists
 
     // Add expires_at column if it doesn't exist
-    await this.run('ALTER TABLE redeemed_codes ADD COLUMN expires_at DATETIME')
-      .catch(() => {} ); // Ignore if column already exists
+    await this.run('ALTER TABLE redeemed_codes ADD COLUMN expires_at DATETIME').catch(() => {}); // Ignore if column already exists
   }
 
   run(sql: string, params: any[] = []): Promise<void> {

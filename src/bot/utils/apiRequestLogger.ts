@@ -41,7 +41,7 @@ class ApiRequestLogger {
     userId: string | undefined,
     action: string,
     request: { url: string; method: string; body?: Record<string, any> },
-    response: { status: number; ok: boolean; body?: any; error?: string },
+    response: { status: number; ok: boolean; body?: any; error?: string }
   ): void {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');

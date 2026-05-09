@@ -40,7 +40,9 @@ const client = new Client({
 
 // Load commands
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.js') || file.endsWith('.ts'));
+const commandFiles = fs
+  .readdirSync(commandsPath)
+  .filter((file) => file.endsWith('.js') || file.endsWith('.ts'));
 
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
@@ -97,7 +99,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!command) return;
 
   try {
-    const options = interaction.options.data.map((opt: any) => `${opt.name}=${opt.value}`).join(' ');
+    const options = interaction.options.data
+      .map((opt: any) => `${opt.name}=${opt.value}`)
+      .join(' ');
     const cmdMsg = `[COMMAND] ${interaction.commandName} ${options || '(no args)'} from ${interaction.user.tag}`;
 
     logger.info(cmdMsg);
@@ -172,7 +176,7 @@ client.on(Events.MessageCreate, async (message) => {
                   code,
                   author.id,
                   codeResponse.codeStatus.toString(),
-                  codeResponse.lootDetail,
+                  codeResponse.lootDetail
                 );
 
                 logger.info(`Auto-redeemed code ${code} for ${author.tag}`);

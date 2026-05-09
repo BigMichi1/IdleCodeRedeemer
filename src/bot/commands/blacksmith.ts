@@ -26,14 +26,11 @@ export const data = new SlashCommandBuilder()
         { name: 'Tiny', value: '31' },
         { name: 'Small', value: '32' },
         { name: 'Medium', value: '33' },
-        { name: 'Large', value: '34' },
-      ),
+        { name: 'Large', value: '34' }
+      )
   )
   .addStringOption((option) =>
-    option
-      .setName('hero_id')
-      .setDescription('Hero ID to upgrade')
-      .setRequired(true),
+    option.setName('hero_id').setDescription('Hero ID to upgrade').setRequired(true)
   )
   .addIntegerOption((option) =>
     option
@@ -41,7 +38,7 @@ export const data = new SlashCommandBuilder()
       .setDescription('Number of contracts to use (1-1000)')
       .setRequired(true)
       .setMinValue(1)
-      .setMaxValue(1000),
+      .setMaxValue(1000)
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -88,7 +85,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     // Handle server switch
-    if (userResult instanceof Object && 'status' in userResult && (userResult as any).status === 4) {
+    if (
+      userResult instanceof Object &&
+      'status' in userResult &&
+      (userResult as any).status === 4
+    ) {
       server = (userResult as any).newServer;
       if (!server) {
         const embed = new EmbedBuilder()
@@ -175,7 +176,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Type guard: check if response has actions (UseBlacksmithResponse)
     if (response instanceof Object && 'actions' in response) {
       const blacksmithResponse = response as any;
-      if (blacksmithResponse.actions && Array.isArray(blacksmithResponse.actions) && blacksmithResponse.actions.length > 0) {
+      if (
+        blacksmithResponse.actions &&
+        Array.isArray(blacksmithResponse.actions) &&
+        blacksmithResponse.actions.length > 0
+      ) {
         const actionSummary = blacksmithResponse.actions
           .map((action: any) => `• ${action.description || JSON.stringify(action)}`)
           .join('\n')

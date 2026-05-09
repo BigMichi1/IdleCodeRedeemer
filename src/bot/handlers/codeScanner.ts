@@ -38,5 +38,5 @@ export async function scanMessageForCodes(message: Message): Promise<string[]> {
 
 export function extractCodesFromText(text: string): string[] {
   const codeMatches = text.toUpperCase().match(CODE_REGEX) || [];
-  return codeMatches.map(code => code.replaceAll('-', ''));
+  return codeMatches.map((code) => code.replaceAll('-', ''));
 }

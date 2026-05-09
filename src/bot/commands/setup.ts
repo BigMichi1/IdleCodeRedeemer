@@ -12,16 +12,10 @@ export const data = new SlashCommandBuilder()
   .setName('setup')
   .setDescription('Save your Idle Champions credentials securely')
   .addStringOption((option) =>
-    option
-      .setName('user_id')
-      .setDescription('Your Idle Champions User ID')
-      .setRequired(true),
+    option.setName('user_id').setDescription('Your Idle Champions User ID').setRequired(true)
   )
   .addStringOption((option) =>
-    option
-      .setName('user_hash')
-      .setDescription('Your Idle Champions User Hash')
-      .setRequired(true),
+    option.setName('user_hash').setDescription('Your Idle Champions User Hash').setRequired(true)
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -57,7 +51,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           name: 'Hash',
           value: userHash.substring(0, 4) + '***' + userHash.substring(userHash.length - 4),
           inline: true,
-        },
+        }
       )
       .setFooter({ text: 'Your credentials are stored securely in our database.' });
 
@@ -115,18 +109,24 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                     interaction.user.id,
                     'success',
                     lootDetails,
-                    false, // Mark as private for this user
+                    false // Mark as private for this user
                   );
                   successCount++;
                   console.log(`[SETUP] Successfully redeemed public code: ${publicCode.code}`);
                 } else {
                   // Failed
-                  const statusMsg = redeemResult?.message || (redeemResult?.codeStatus !== undefined ? `Status ${redeemResult.codeStatus}` : 'Unknown error');
+                  const statusMsg =
+                    redeemResult?.message ||
+                    (redeemResult?.codeStatus !== undefined
+                      ? `Status ${redeemResult.codeStatus}`
+                      : 'Unknown error');
                   if (statusMsg.toLowerCase().includes('expired')) {
                     await codeManager.markCodeAsExpired(publicCode.code);
                   }
                   failedCodes.push(publicCode.code);
-                  console.log(`[SETUP] Failed to redeem public code ${publicCode.code}: ${statusMsg}`);
+                  console.log(
+                    `[SETUP] Failed to redeem public code ${publicCode.code}: ${statusMsg}`
+                  );
                 }
               } catch (err) {
                 console.error(`[SETUP] Error redeeming public code ${publicCode.code}:`, err);

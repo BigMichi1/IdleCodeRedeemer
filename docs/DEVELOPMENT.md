@@ -66,13 +66,17 @@ lib/
 ## Important Notes
 
 ### SSL Certificate Issue
+
 The Idle Champions API server has an expired SSL certificate. Always start the bot with:
+
 ```bash
 NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
 ### Instance ID Problem
+
 When calling game APIs (redeem, open chests, blacksmith), you must:
+
 1. Fetch fresh user details via `getUserDetails()`
 2. Extract `instance_id` from `details.instance_id`
 3. Pass it to the API call
@@ -80,7 +84,9 @@ When calling game APIs (redeem, open chests, blacksmith), you must:
 This prevents "Outdated instance id" errors from the server.
 
 ### API Pattern
+
 All game API calls use URL query parameters, not JSON body:
+
 ```
 POST /~idledragons/post.php?call=redeemcoupon&user_id=X&hash=Y&instance_id=Z&code=ABC
 ```
@@ -117,6 +123,7 @@ mise run clean         # Clean build artifacts
 SQLite database (`./data/idle.db`) contains:
 
 **users**
+
 - discord_id (PK)
 - user_id (Idle Champions user ID)
 - user_hash (Idle Champions auth token)
@@ -125,6 +132,7 @@ SQLite database (`./data/idle.db`) contains:
 - created_at, updated_at
 
 **redeemed_codes**
+
 - id (PK)
 - code
 - discord_id
@@ -133,12 +141,14 @@ SQLite database (`./data/idle.db`) contains:
 - timestamp
 
 **pending_codes**
+
 - id (PK)
 - code
 - discord_id
 - added_at
 
 **audit_log**
+
 - id (PK)
 - discord_id
 - action
@@ -164,6 +174,7 @@ SQLite database (`./data/idle.db`) contains:
 ## Debugging
 
 The bot saves API responses to `debug/` folder automatically:
+
 - Files older than 1 hour are deleted
 - Useful for troubleshooting API issues
 - Format: `endpoint_YYYY-MM-DDTHH-mm-ss-SSSZ.json`

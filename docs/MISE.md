@@ -5,6 +5,7 @@ Mise is a polyglot version manager and task runner that makes development setup 
 ## What is Mise?
 
 Mise:
+
 - 🔧 Manages multiple language runtimes (Bun, Node.js, Python, etc.)
 - 📋 Defines development tasks in `.mise.toml`
 - 📦 Ensures everyone has the same tool versions
@@ -43,6 +44,7 @@ mise install
 ```
 
 This will:
+
 - ✅ Install Bun 1.0
 - ✅ Install Node.js 20 (as fallback)
 - ✅ Set up the environment
@@ -152,18 +154,21 @@ node = "20"      # Latest 20.x version
 ## Troubleshooting
 
 **Mise command not found?**
+
 ```bash
 # Add to ~/.zshrc or ~/.bashrc and reload shell
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
 **Tools not installed?**
+
 ```bash
 mise install
 mise cache clean  # Clear cache if issues persist
 ```
 
 **Environment not loading?**
+
 ```bash
 eval "$(mise activate)"
 ```

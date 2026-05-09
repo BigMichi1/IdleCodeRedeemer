@@ -16,7 +16,7 @@ export const data = new SlashCommandBuilder()
     option
       .setName('code')
       .setDescription('The public code to redeem (leave empty to see available codes)')
-      .setRequired(false),
+      .setRequired(false)
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -38,7 +38,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const code = interaction.options.getString('code', false)?.toUpperCase().replaceAll('-', '');
-    logger.info(`[REDEEMPUBLIC] User ${interaction.user.tag} requested code: ${code || '(list public codes)'}`);
+    logger.info(
+      `[REDEEMPUBLIC] User ${interaction.user.tag} requested code: ${code || '(list public codes)'}`
+    );
 
     if (!code) {
       // Show available public codes
@@ -57,7 +59,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const embed = new EmbedBuilder()
         .setColor(0x00aa00)
         .setTitle('🌐 Available Public Codes')
-        .setDescription('Here are the public codes you can redeem:\n\nUse `/redeempublic code:<code>` to redeem one');
+        .setDescription(
+          'Here are the public codes you can redeem:\n\nUse `/redeempublic code:<code>` to redeem one'
+        );
 
       let codeList = '';
       publicCodes.slice(0, 20).forEach((codeRow, idx) => {
@@ -108,10 +112,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const publicCodes = await codeManager.getPublicUnexpiredCodes();
     logger.info(`[REDEEMPUBLIC] Found ${publicCodes.length} public codes in database`);
 
-    const codeExists = publicCodes.some(c => c.code === code);
+    const codeExists = publicCodes.some((c) => c.code === code);
 
     if (!codeExists) {
-      logger.warn(`[REDEEMPUBLIC] Code ${code} not found in public codes by ${interaction.user.tag}`);
+      logger.warn(
+        `[REDEEMPUBLIC] Code ${code} not found in public codes by ${interaction.user.tag}`
+      );
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Code Not Found')
@@ -145,7 +151,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     // Handle server switch
-    if (userResult instanceof Object && 'status' in userResult && (userResult as any).status === 4) {
+    if (
+      userResult instanceof Object &&
+      'status' in userResult &&
+      (userResult as any).status === 4
+    ) {
       server = (userResult as any).newServer;
       if (!server) {
         const embed = new EmbedBuilder()
@@ -203,7 +213,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const errorMsg = redeemResult.message || 'Unknown error';
 
       // Check if it's an expiration error
-      if (errorMsg.toLowerCase().includes('expired') || errorMsg.toLowerCase().includes('no longer')) {
+      if (
+        errorMsg.toLowerCase().includes('expired') ||
+        errorMsg.toLowerCase().includes('no longer')
+      ) {
         await codeManager.markCodeAsExpired(code);
       }
 
@@ -254,7 +267,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             embed.addFields({ name: '💎 Rubies', value: parsed.rubies.toString(), inline: true });
           }
           if (parsed.equipment) {
-            embed.addFields({ name: '⚔️ Equipment', value: parsed.equipment.toString(), inline: true });
+            embed.addFields({
+              name: '⚔️ Equipment',
+              value: parsed.equipment.toString(),
+              inline: true,
+            });
           }
         } catch {
           // Ignore parse errors
@@ -264,10 +281,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           embed.addFields({ name: '🪙 Gold', value: lootDetails.gold.toString(), inline: true });
         }
         if (lootDetails.rubies) {
-          embed.addFields({ name: '💎 Rubies', value: lootDetails.rubies.toString(), inline: true });
+          embed.addFields({
+            name: '💎 Rubies',
+            value: lootDetails.rubies.toString(),
+            inline: true,
+          });
         }
         if (lootDetails.equipment) {
-          embed.addFields({ name: '⚔️ Equipment', value: lootDetails.equipment.toString(), inline: true });
+          embed.addFields({
+            name: '⚔️ Equipment',
+            value: lootDetails.equipment.toString(),
+            inline: true,
+          });
         }
       }
     }

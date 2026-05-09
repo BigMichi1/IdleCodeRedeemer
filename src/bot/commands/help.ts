@@ -20,7 +20,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       .addFields(
         {
           name: '⚙️ Setup',
-          value: '`/setup user_id:<id> user_hash:<hash>`\nSave your Idle Champions credentials securely.',
+          value:
+            '`/setup user_id:<id> user_hash:<hash>`\nSave your Idle Champions credentials securely.',
           inline: false,
         },
         {
@@ -40,26 +41,30 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         },
         {
           name: '⚒️ Blacksmith',
-          value: '`/blacksmith contract_type:<type> hero_id:<id> count:<count>`\nUpgrade your heroes using contracts.',
+          value:
+            '`/blacksmith contract_type:<type> hero_id:<id> count:<count>`\nUpgrade your heroes using contracts.',
           inline: false,
-        },
+        }
       )
       .addFields(
         {
           name: '🤖 Automatic Code Detection',
-          value: 'The bot automatically scans the #combinations channel for new codes and redeems them for you (if you have set up credentials).',
+          value:
+            'The bot automatically scans the #combinations channel for new codes and redeems them for you (if you have set up credentials).',
           inline: false,
         },
         {
           name: '🔐 Privacy & Security',
-          value: 'Your credentials are stored securely in a local database and are never shared or transmitted except to the official Idle Champions API.',
+          value:
+            'Your credentials are stored securely in a local database and are never shared or transmitted except to the official Idle Champions API.',
           inline: false,
         },
         {
           name: '📚 Getting Started',
-          value: '1. Use `/setup` to save your credentials\n2. The bot will automatically redeem codes found in the channel\n3. Use other commands to manage your inventory',
+          value:
+            '1. Use `/setup` to save your credentials\n2. The bot will automatically redeem codes found in the channel\n3. Use other commands to manage your inventory',
           inline: false,
-        },
+        }
       )
       .setFooter({
         text: 'For more help, visit https://discord.gg/idlechampions',

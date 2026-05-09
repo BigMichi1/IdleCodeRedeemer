@@ -81,14 +81,19 @@ class IdleChampionsApi {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
       const body = await IdleChampionsApi.tryToJson(response.clone());
 
-      apiRequestLogger.log(undefined, 'getPlayServerForDefinitions', {
-        url: request.toString(),
-        method: 'GET',
-      }, {
-        status: response.status,
-        ok: response.ok,
-        body,
-      });
+      apiRequestLogger.log(
+        undefined,
+        'getPlayServerForDefinitions',
+        {
+          url: request.toString(),
+          method: 'GET',
+        },
+        {
+          status: response.status,
+          ok: response.ok,
+          body,
+        }
+      );
 
       if (response.ok) {
         const serverDefs: ServerDefinitions = body;
@@ -105,19 +110,26 @@ class IdleChampionsApi {
       }
     } catch (error) {
       logger.error('Error getting server:', error);
-      apiRequestLogger.log(undefined, 'getPlayServerForDefinitions', {
-        url: request.toString(),
-        method: 'GET',
-      }, {
-        status: 0,
-        ok: false,
-        error: String(error),
-      });
+      apiRequestLogger.log(
+        undefined,
+        'getPlayServerForDefinitions',
+        {
+          url: request.toString(),
+          method: 'GET',
+        },
+        {
+          status: 0,
+          ok: false,
+          error: String(error),
+        }
+      );
     }
     return undefined;
   }
 
-  static async submitCode(options: CodeSubmitOptions): Promise<GenericResponse | CodeSubmitResponse> {
+  static async submitCode(
+    options: CodeSubmitOptions
+  ): Promise<GenericResponse | CodeSubmitResponse> {
     const request = new URL(options.server);
 
     request.searchParams.append('call', 'redeemcoupon');
@@ -138,25 +150,35 @@ class IdleChampionsApi {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
       const redeemResponse: RedeemCodeResponse = await IdleChampionsApi.tryToJson(response.clone());
 
-      apiRequestLogger.log(options.user_id, 'redeemcoupon', {
-        url: request.toString(),
-        method: 'POST',
-        body: { code: options.code },
-      }, {
-        status: response.status,
-        ok: response.ok,
-        body: redeemResponse,
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'redeemcoupon',
+        {
+          url: request.toString(),
+          method: 'POST',
+          body: { code: options.code },
+        },
+        {
+          status: response.status,
+          ok: response.ok,
+          body: redeemResponse,
+        }
+      );
 
       if (response.ok) {
         if (!redeemResponse) {
           return new GenericResponse(ResponseStatus.Failed);
         }
         if (redeemResponse.switch_play_server) {
-          return new GenericResponse(ResponseStatus.SwitchServer, redeemResponse.switch_play_server);
+          return new GenericResponse(
+            ResponseStatus.SwitchServer,
+            redeemResponse.switch_play_server
+          );
         }
 
-        const failureReason = redeemResponse.failure_reason ? String(redeemResponse.failure_reason) : '';
+        const failureReason = redeemResponse.failure_reason
+          ? String(redeemResponse.failure_reason)
+          : '';
         const reason = failureReason.toLowerCase();
 
         if (reason.includes('already') || reason.includes('someone')) {
@@ -165,7 +187,11 @@ class IdleChampionsApi {
         if (reason.includes('expired')) {
           return new CodeSubmitResponse(CodeSubmitStatus.Expired);
         }
-        if (reason.includes('combo') || reason.includes('invalid') || reason.includes('valid_combination')) {
+        if (
+          reason.includes('combo') ||
+          reason.includes('invalid') ||
+          reason.includes('valid_combination')
+        ) {
           logger.warn(`[REDEEM API] Invalid code combination: ${failureReason}`);
           return new CodeSubmitResponse(CodeSubmitStatus.NotValidCombo);
         }
@@ -187,20 +213,27 @@ class IdleChampionsApi {
       }
     } catch (error) {
       logger.error('Error submitting code:', error);
-      apiRequestLogger.log(options.user_id, 'redeemcoupon', {
-        url: request.toString(),
-        method: 'POST',
-        body: { code: options.code },
-      }, {
-        status: 0,
-        ok: false,
-        error: String(error),
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'redeemcoupon',
+        {
+          url: request.toString(),
+          method: 'POST',
+          body: { code: options.code },
+        },
+        {
+          status: 0,
+          ok: false,
+          error: String(error),
+        }
+      );
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
 
-  static async getUserDetails(options: GetUserDetailsOptions): Promise<GenericResponse | PlayerData> {
+  static async getUserDetails(
+    options: GetUserDetailsOptions
+  ): Promise<GenericResponse | PlayerData> {
     const request = new URL(options.server);
 
     request.searchParams.append('call', 'getuserdetails');
@@ -218,7 +251,7 @@ class IdleChampionsApi {
     try {
       const fetchPromise = fetch(request.toString(), { agent: this.httpsAgent } as any);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('API request timeout after 5s')), 5000),
+        setTimeout(() => reject(new Error('API request timeout after 5s')), 5000)
       );
 
       const response = (await Promise.race([fetchPromise, timeoutPromise])) as any;
@@ -226,14 +259,19 @@ class IdleChampionsApi {
       if (response.ok) {
         const playerData: PlayerData = await IdleChampionsApi.tryToJson(response.clone());
 
-        apiRequestLogger.log(options.user_id, 'getuserdetails', {
-          url: request.toString(),
-          method: 'POST',
-        }, {
-          status: response.status,
-          ok: response.ok,
-          body: playerData,
-        });
+        apiRequestLogger.log(
+          options.user_id,
+          'getuserdetails',
+          {
+            url: request.toString(),
+            method: 'POST',
+          },
+          {
+            status: response.status,
+            ok: response.ok,
+            body: playerData,
+          }
+        );
 
         if (playerData.switch_play_server) {
           return new GenericResponse(ResponseStatus.SwitchServer, playerData.switch_play_server);
@@ -246,30 +284,42 @@ class IdleChampionsApi {
         logger.error(`Bad response status: ${response.status}`);
         logger.error(`Response body (first 500 chars): ${text.substring(0, 500)}`);
 
-        apiRequestLogger.log(options.user_id, 'getuserdetails', {
-          url: request.toString(),
-          method: 'POST',
-        }, {
-          status: response.status,
-          ok: response.ok,
-          body: text.substring(0, 500),
-        });
+        apiRequestLogger.log(
+          options.user_id,
+          'getuserdetails',
+          {
+            url: request.toString(),
+            method: 'POST',
+          },
+          {
+            status: response.status,
+            ok: response.ok,
+            body: text.substring(0, 500),
+          }
+        );
       }
     } catch (error) {
       logger.error('Error getting user details:', error);
-      apiRequestLogger.log(options.user_id, 'getuserdetails', {
-        url: request.toString(),
-        method: 'POST',
-      }, {
-        status: 0,
-        ok: false,
-        error: String(error),
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'getuserdetails',
+        {
+          url: request.toString(),
+          method: 'POST',
+        },
+        {
+          status: 0,
+          ok: false,
+          error: String(error),
+        }
+      );
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
 
-  static async openChests(options: OpenChestsOptions): Promise<GenericResponse | OpenChestResponse> {
+  static async openChests(
+    options: OpenChestsOptions
+  ): Promise<GenericResponse | OpenChestResponse> {
     const request = new URL(options.server);
 
     if (options.count > IdleChampionsApi.MAX_OPEN_CHESTS) {
@@ -295,26 +345,39 @@ class IdleChampionsApi {
 
     try {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
-      const openGenericChestResponse: OpenGenericChestResponse = await IdleChampionsApi.tryToJson(response.clone());
+      const openGenericChestResponse: OpenGenericChestResponse = await IdleChampionsApi.tryToJson(
+        response.clone()
+      );
 
-      apiRequestLogger.log(options.user_id, 'opengenericchest', {
-        url: request.toString(),
-        method: 'POST',
-        body: { chestTypeId: options.chestTypeId, count: options.count },
-      }, {
-        status: response.status,
-        ok: response.ok,
-        body: openGenericChestResponse,
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'opengenericchest',
+        {
+          url: request.toString(),
+          method: 'POST',
+          body: { chestTypeId: options.chestTypeId, count: options.count },
+        },
+        {
+          status: response.status,
+          ok: response.ok,
+          body: openGenericChestResponse,
+        }
+      );
 
       if (response.ok) {
         if (!openGenericChestResponse) {
           return new GenericResponse(ResponseStatus.Failed);
         }
         if (openGenericChestResponse.switch_play_server) {
-          return new GenericResponse(ResponseStatus.SwitchServer, openGenericChestResponse.switch_play_server);
+          return new GenericResponse(
+            ResponseStatus.SwitchServer,
+            openGenericChestResponse.switch_play_server
+          );
         }
-        if (openGenericChestResponse.failure_reason && openGenericChestResponse.failure_reason.toLowerCase().includes('outdated')) {
+        if (
+          openGenericChestResponse.failure_reason &&
+          openGenericChestResponse.failure_reason.toLowerCase().includes('outdated')
+        ) {
           return new GenericResponse(ResponseStatus.OutdatedInstanceId);
         }
         if (openGenericChestResponse.success && openGenericChestResponse.loot_details) {
@@ -323,15 +386,20 @@ class IdleChampionsApi {
       }
     } catch (error) {
       logger.error('Error opening chests:', error);
-      apiRequestLogger.log(options.user_id, 'opengenericchest', {
-        url: request.toString(),
-        method: 'POST',
-        body: { chestTypeId: options.chestTypeId, count: options.count },
-      }, {
-        status: 0,
-        ok: false,
-        error: String(error),
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'opengenericchest',
+        {
+          url: request.toString(),
+          method: 'POST',
+          body: { chestTypeId: options.chestTypeId, count: options.count },
+        },
+        {
+          status: 0,
+          ok: false,
+          error: String(error),
+        }
+      );
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
@@ -359,24 +427,34 @@ class IdleChampionsApi {
 
     try {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
-      const purchaseResponse: PurchaseChestResponse = await IdleChampionsApi.tryToJson(response.clone());
+      const purchaseResponse: PurchaseChestResponse = await IdleChampionsApi.tryToJson(
+        response.clone()
+      );
 
-      apiRequestLogger.log(options.user_id, 'buysoftcurrencychest', {
-        url: request.toString(),
-        method: 'POST',
-        body: { chestTypeId: options.chestTypeId, count: options.count },
-      }, {
-        status: response.status,
-        ok: response.ok,
-        body: purchaseResponse,
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'buysoftcurrencychest',
+        {
+          url: request.toString(),
+          method: 'POST',
+          body: { chestTypeId: options.chestTypeId, count: options.count },
+        },
+        {
+          status: response.status,
+          ok: response.ok,
+          body: purchaseResponse,
+        }
+      );
 
       if (response.ok) {
         if (!purchaseResponse) {
           return new GenericResponse(ResponseStatus.Failed);
         }
         if (purchaseResponse.switch_play_server) {
-          return new GenericResponse(ResponseStatus.SwitchServer, purchaseResponse.switch_play_server);
+          return new GenericResponse(
+            ResponseStatus.SwitchServer,
+            purchaseResponse.switch_play_server
+          );
         }
         if (purchaseResponse.failure_reason === FailureReason.NotEnoughCurrency) {
           return new GenericResponse(ResponseStatus.InsuficcientCurrency);
@@ -387,20 +465,27 @@ class IdleChampionsApi {
       }
     } catch (error) {
       logger.error('Error purchasing chests:', error);
-      apiRequestLogger.log(options.user_id, 'buysoftcurrencychest', {
-        url: request.toString(),
-        method: 'POST',
-        body: { chestTypeId: options.chestTypeId, count: options.count },
-      }, {
-        status: 0,
-        ok: false,
-        error: String(error),
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'buysoftcurrencychest',
+        {
+          url: request.toString(),
+          method: 'POST',
+          body: { chestTypeId: options.chestTypeId, count: options.count },
+        },
+        {
+          status: 0,
+          ok: false,
+          error: String(error),
+        }
+      );
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
 
-  static async useBlacksmith(options: UseBlacksmithOptions): Promise<GenericResponse | UseBlacksmithResponse> {
+  static async useBlacksmith(
+    options: UseBlacksmithOptions
+  ): Promise<GenericResponse | UseBlacksmithResponse> {
     const request = new URL(options.server);
 
     if (options.count > IdleChampionsApi.MAX_BLACKSMITH) {
@@ -425,26 +510,43 @@ class IdleChampionsApi {
 
     try {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
-      const useServerBuffResponse: UseServerBuffResponse = await IdleChampionsApi.tryToJson(response.clone());
+      const useServerBuffResponse: UseServerBuffResponse = await IdleChampionsApi.tryToJson(
+        response.clone()
+      );
 
-      apiRequestLogger.log(options.user_id, 'useServerBuff', {
-        url: request.toString(),
-        method: 'POST',
-        body: { contractType: options.contractType, heroId: options.heroId, count: options.count },
-      }, {
-        status: response.status,
-        ok: response.ok,
-        body: useServerBuffResponse,
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'useServerBuff',
+        {
+          url: request.toString(),
+          method: 'POST',
+          body: {
+            contractType: options.contractType,
+            heroId: options.heroId,
+            count: options.count,
+          },
+        },
+        {
+          status: response.status,
+          ok: response.ok,
+          body: useServerBuffResponse,
+        }
+      );
 
       if (response.ok) {
         if (!useServerBuffResponse) {
           return new GenericResponse(ResponseStatus.Failed);
         }
         if (useServerBuffResponse.switch_play_server) {
-          return new GenericResponse(ResponseStatus.SwitchServer, useServerBuffResponse.switch_play_server);
+          return new GenericResponse(
+            ResponseStatus.SwitchServer,
+            useServerBuffResponse.switch_play_server
+          );
         }
-        if (useServerBuffResponse.failure_reason && useServerBuffResponse.failure_reason.toLowerCase().includes('outdated')) {
+        if (
+          useServerBuffResponse.failure_reason &&
+          useServerBuffResponse.failure_reason.toLowerCase().includes('outdated')
+        ) {
           return new GenericResponse(ResponseStatus.OutdatedInstanceId);
         }
         if (useServerBuffResponse.success && useServerBuffResponse.okay) {
@@ -453,15 +555,24 @@ class IdleChampionsApi {
       }
     } catch (error) {
       logger.error('Error using blacksmith:', error);
-      apiRequestLogger.log(options.user_id, 'useServerBuff', {
-        url: request.toString(),
-        method: 'POST',
-        body: { contractType: options.contractType, heroId: options.heroId, count: options.count },
-      }, {
-        status: 0,
-        ok: false,
-        error: String(error),
-      });
+      apiRequestLogger.log(
+        options.user_id,
+        'useServerBuff',
+        {
+          url: request.toString(),
+          method: 'POST',
+          body: {
+            contractType: options.contractType,
+            heroId: options.heroId,
+            count: options.count,
+          },
+        },
+        {
+          status: 0,
+          ok: false,
+          error: String(error),
+        }
+      );
     }
     return new GenericResponse(ResponseStatus.Failed);
   }

@@ -36,8 +36,8 @@ export const data = new SlashCommandBuilder()
         { name: 'Emerald', value: '6' },
         { name: 'Ruby', value: '7' },
         { name: 'Diamond', value: '8' },
-        { name: 'Platinum', value: '9' },
-      ),
+        { name: 'Platinum', value: '9' }
+      )
   )
   .addIntegerOption((option) =>
     option
@@ -45,7 +45,7 @@ export const data = new SlashCommandBuilder()
       .setDescription('Number of chests to open (1-1000)')
       .setRequired(true)
       .setMinValue(1)
-      .setMaxValue(1000),
+      .setMaxValue(1000)
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -91,7 +91,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     // Handle server switch
-    if (userResult instanceof Object && 'status' in userResult && (userResult as any).status === 4) {
+    if (
+      userResult instanceof Object &&
+      'status' in userResult &&
+      (userResult as any).status === 4
+    ) {
       server = (userResult as any).newServer;
       if (!server) {
         const embed = new EmbedBuilder()
@@ -183,7 +187,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     if (response instanceof Object && 'lootDetail' in response) {
       const openResponse = response as any;
-      if (openResponse.lootDetail && Array.isArray(openResponse.lootDetail) && openResponse.lootDetail.length > 0) {
+      if (
+        openResponse.lootDetail &&
+        Array.isArray(openResponse.lootDetail) &&
+        openResponse.lootDetail.length > 0
+      ) {
         // Group loot by type for summary
         const lootSummary: { [key: string]: number } = {};
         for (const loot of openResponse.lootDetail) {

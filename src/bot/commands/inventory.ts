@@ -48,7 +48,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     // Handle server switch
-    if (result instanceof Object && 'status' in result && (result as any).status === 4) { // ResponseStatus.SwitchServer
+    if (result instanceof Object && 'status' in result && (result as any).status === 4) {
+      // ResponseStatus.SwitchServer
       await userManager.updateServer(interaction.user.id, (result as any).newServer);
 
       // Retry with new server
@@ -115,23 +116,29 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     // Add gold per instance if available
-    if (details.game_instances && Array.isArray(details.game_instances) && details.game_instances.length > 0) {
-      const goldPerInstance = details.game_instances.map((instance: any, idx: number) => {
-        const goldNum = parseFloat(instance.gold);
-        let goldDisplay: string;
+    if (
+      details.game_instances &&
+      Array.isArray(details.game_instances) &&
+      details.game_instances.length > 0
+    ) {
+      const goldPerInstance = details.game_instances
+        .map((instance: any, idx: number) => {
+          const goldNum = parseFloat(instance.gold);
+          let goldDisplay: string;
 
-        if (goldNum >= 1e10) {
-          goldDisplay = goldNum.toExponential(2);
-        } else if (goldNum >= 1e6) {
-          goldDisplay = (goldNum / 1e6).toFixed(1) + 'M';
-        } else if (goldNum >= 1e3) {
-          goldDisplay = (goldNum / 1e3).toFixed(1) + 'K';
-        } else {
-          goldDisplay = Math.floor(goldNum).toLocaleString();
-        }
+          if (goldNum >= 1e10) {
+            goldDisplay = goldNum.toExponential(2);
+          } else if (goldNum >= 1e6) {
+            goldDisplay = (goldNum / 1e6).toFixed(1) + 'M';
+          } else if (goldNum >= 1e3) {
+            goldDisplay = (goldNum / 1e3).toFixed(1) + 'K';
+          } else {
+            goldDisplay = Math.floor(goldNum).toLocaleString();
+          }
 
-        return `• Instance ${idx + 1}: ${goldDisplay}`;
-      }).join('\n');
+          return `• Instance ${idx + 1}: ${goldDisplay}`;
+        })
+        .join('\n');
 
       if (goldPerInstance) {
         embed.addFields({
@@ -162,8 +169,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     // Add area progress for each game instance
     if (details.game_instances && Array.isArray(details.game_instances)) {
-      const areaLines = details.game_instances.map((instance: any, idx: number) =>
-        `• Instance ${idx + 1} (Adventure ${instance.current_adventure_id}): Area ${instance.current_area}/${instance.highest_area}`,
+      const areaLines = details.game_instances.map(
+        (instance: any, idx: number) =>
+          `• Instance ${idx + 1} (Adventure ${instance.current_adventure_id}): Area ${instance.current_area}/${instance.highest_area}`
       );
 
       if (areaLines.length > 0) {

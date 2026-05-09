@@ -15,7 +15,7 @@ export const data = new SlashCommandBuilder()
       .setDescription('Number of codes to show (1-20)')
       .setMinValue(1)
       .setMaxValue(20)
-      .setRequired(false),
+      .setRequired(false)
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -30,7 +30,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const embed = new EmbedBuilder()
         .setColor(0xffaa00)
         .setTitle('📝 Redeemed Codes History')
-        .setDescription('You haven\'t redeemed any codes yet.');
+        .setDescription("You haven't redeemed any codes yet.");
 
       await interaction.editReply({ embeds: [embed] });
       return;
@@ -44,11 +44,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     redeemedCodes.forEach((codeRow, index) => {
       const statusLower = (codeRow.status || 'unknown').toLowerCase();
-      const statusEmoji = {
-        'success': '✅',
-        'expired': '❌',
-        'error': '⚠️',
-      }[statusLower] || '❓';
+      const statusEmoji =
+        {
+          success: '✅',
+          expired: '❌',
+          error: '⚠️',
+        }[statusLower] || '❓';
 
       const dateStr = new Date(codeRow.redeemed_at).toLocaleDateString('en-US', {
         month: 'short',
