@@ -8,6 +8,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 - **[Development Guide](docs/DEVELOPMENT.md)** - Setup, architecture & tech stack
 - **[Project Structure](docs/STRUCTURE.md)** - Directory layout & key files
 - **[Mise Setup Guide](docs/MISE.md)** - Tool management reference
+- **[Podman Guide](PODMAN.md)** - Using Podman instead of Docker
 
 ## 🚀 Quick Start (5 minutes)
 
@@ -50,6 +51,8 @@ export DISCORD_TOKEN=your_bot_token_here
 docker-compose up -d
 ```
 
+**Don't have Docker?** Use [Podman instead](PODMAN.md) - it's a drop-in replacement with identical syntax.
+
 See [docker-compose.example.yml](docker-compose.example.yml) for all available configuration options.
 
 **Pull specific versions:**
@@ -61,14 +64,6 @@ See [docker-compose.example.yml](docker-compose.example.yml) for all available c
 ## ✨ Features
 
 - 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/redeempublic`, `/help`
-- 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
-- 🎁 **Code Redemption** - Submit codes and get rewards
-- 📦 **Chest Management** - Open chests and view loot
-- ⚒️ **Blacksmith** - Upgrade heroes with contracts
-- 📊 **Inventory** - View gold, rubies, equipment, and progress
-- 💾 **Secure Storage** - SQLite database keeps credentials safe and local
-- 👥 **Multi-User** - Each user manages their own account
-- ⚡ **Fast** - Built on Bun for 3-4x performance vs Node.js
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
