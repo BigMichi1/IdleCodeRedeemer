@@ -1,8 +1,9 @@
-FROM debian:13-slim
+# Builder stage
+FROM debian:13.4-slim AS builder
 
 WORKDIR /app
 
-# Install dependencies
+# Install build dependencies
 RUN apt-get update \
   && apt-get -y --no-install-recommends install \
     curl git ca-certificates build-essential \
@@ -43,12 +44,33 @@ COPY src/lib ./src/lib
 # Build the bot
 RUN mise run build
 
-# Create data directory
+# Production stage
+FROM debian:13.4-slim AS production
+
+WORKDIR /app
+
+# Install only runtime dependencies
+RUN apt-get update \
+  && apt-get -y --no-install-recommends install \
+    ca-certificates curl \
+  && rm -rf /var/lib/apt/lists/*
+
+# Disable SSL cert validation for Idle Champions API (expired certificate)
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+
+# Copy built artifacts and necessary files from builder
+COPY --from=builder /app/.mise ./.mise
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/.env .env
+
+# Create data and logs directories
 RUN mkdir -p /app/data api-logs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD mise exec node -- -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) process.exit(1)})" || exit 1
+  CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the bot with Mise
-CMD ["mise", "run", "start"]
+# Start the bot
+CMD ["node", "dist/bot/index.js"]
