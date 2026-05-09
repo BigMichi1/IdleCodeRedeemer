@@ -10,29 +10,13 @@ updates:
     open-pull-requests-limit: 5
     reviewers:
       - bigmichi1
-    allow:
-      - dependency-type: all
     commit-message:
       prefix: "chore(deps):"
-      prefix-development: "chore(deps-dev):"
       include: "scope"
     pull-request-branch-name:
       separator: "/"
     rebase-strategy: auto
     versioning-strategy: lockfile-only
-    cooldown:
-      semver-patch-days: 3
-      semver-minor-days: 7
-      semver-major-days: 14
-    groups:
-      dev-dependencies:
-        dependency-type: development
-        patterns:
-          - "@typescript-eslint/*"
-          - "eslint*"
-          - "typescript"
-      runtime-dependencies:
-        dependency-type: runtime
 
   # GitHub Actions
   - package-ecosystem: github-actions
