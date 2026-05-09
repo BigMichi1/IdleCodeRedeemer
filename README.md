@@ -3,9 +3,10 @@
 A Discord bot that automatically scans for and redeems Idle Champions promo codes.
 
 **📖 Quick Links to Documentation:**
+
 - **[Full README](docs/README.md)** - Main documentation & all features
 - **[Development Guide](docs/DEVELOPMENT.md)** - Setup, architecture & tech stack
-- **[Project Structure](docs/STRUCTURE.md)** - Directory layout & key files  
+- **[Project Structure](docs/STRUCTURE.md)** - Directory layout & key files
 - **[Mise Setup Guide](docs/MISE.md)** - Tool management reference
 
 ## 🚀 Quick Start (5 minutes)
@@ -34,8 +35,8 @@ brew install mise
 
 ## ✨ Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`
-- 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically  
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/redeempublic`, `/help`
+- 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
 - ⚒️ **Blacksmith** - Upgrade heroes with contracts
@@ -43,11 +44,7 @@ brew install mise
 - 💾 **Secure Storage** - SQLite database keeps credentials safe and local
 - 👥 **Multi-User** - Each user manages their own account
 - ⚡ **Fast** - Built on Bun for 3-4x performance vs Node.js
-
-## ✨ Features
-
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`
-- 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically  
+- 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
 - ⚒️ **Blacksmith** - Upgrade heroes with contracts
@@ -59,6 +56,7 @@ brew install mise
 ## 📚 Full Documentation
 
 For detailed information, please see:
+
 - **[Full README](docs/README.md)** - All features, commands, architecture & troubleshooting
 - **[Development Guide](docs/DEVELOPMENT.md)** - Development setup, structure & debugging
 - **[Project Structure](docs/STRUCTURE.md)** - Complete directory layout & key files

@@ -4,7 +4,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ## Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/redeempublic`, `/help`
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
@@ -60,7 +60,105 @@ brew install mise
 | `/inventory`                                                  | View your account (gold, rubies, equipment, progress) |
 | `/open chest_type:<type> count:<count>`                       | Open chests (Gold, Sapphire, etc.)                    |
 | `/blacksmith contract_type:<type> hero_id:<id> count:<count>` | Upgrade heroes                                        |
+| `/codes [count:<count>]`                                      | Show your redeemed codes history (last 10)            |
+| `/makepublic code:<code>`                                     | Share one of your redeemed codes with other users     |
+| `/redeempublic [code:<code>]`                                 | Redeem public codes shared by other users             |
 | `/help`                                                       | Show all commands                                     |
+
+### Setup & Authentication
+
+#### `/setup user_id:<id> user_hash:<hash>`
+
+Initialize your account with the bot. You need your Idle Champions user ID and user hash to authenticate.
+
+- **Required parameters:**
+  - `user_id` - Your Idle Champions user ID (found in game settings)
+  - `user_hash` - Your user hash token (also in game settings)
+- **Security:** Credentials are encrypted and stored locally in SQLite
+- **Example:** `/setup user_id:12345 user_hash:abc123def456`
+
+### Code Redemption
+
+#### `/redeem code:<code>`
+
+Manually redeem a single code and immediately receive rewards.
+
+- **Required parameters:**
+  - `code` - The promo code to redeem (e.g., `IDLE2024`)
+- **Response:** Shows rewards obtained (gold, rubies, chests, etc.)
+- **Example:** `/redeem code:IDLE2024`
+
+#### `/redeempublic [code:<code>]`
+
+Redeem public codes that other users have shared. Leave the code empty to see all available shared codes, or specify a code to redeem it directly.
+
+- **Optional parameters:**
+  - `code` - Specific code to redeem (if empty, shows available codes)
+- **Benefits:** Access codes from community members who used `/makepublic`
+- **Example:** `/redeempublic` or `/redeempublic code:SHARED123`
+
+### Inventory & Progress
+
+#### `/inventory`
+
+View your complete account status including:
+
+- **Gold** - Current gold balance
+- **Rubies** - Gem currency for special items
+- **Equipment** - Gear inventory with rarity levels
+- **Progress** - Objectives completed, champions, areas unlocked
+- **Example:** `/inventory`
+
+#### `/open chest_type:<type> count:<count>`
+
+Open chests to receive random loot. Different chest types contain different rewards.
+
+- **Required parameters:**
+  - `chest_type` - Type of chest (e.g., `Gold`, `Sapphire`, `Legendary`)
+  - `count` - Number of chests to open (1+)
+- **Common chest types:** Gold, Sapphire, Ruby, Epic, Legendary
+- **Response:** Lists all items obtained from opened chests
+- **Example:** `/open chest_type:Sapphire count:5`
+
+#### `/blacksmith contract_type:<type> hero_id:<id> count:<count>`
+
+Upgrade heroes using blacksmith contracts. Different contract types upgrade different hero abilities.
+
+- **Required parameters:**
+  - `contract_type` - Type of contract (e.g., `Damage`, `HP`, `Ability`)
+  - `hero_id` - ID of the hero to upgrade
+  - `count` - Number of contracts to use (1+)
+- **Effect:** Permanently increases hero stats
+- **Example:** `/blacksmith contract_type:Damage hero_id:42 count:10`
+
+### Code Management
+
+#### `/codes [count:<count>]`
+
+View your personal code redemption history.
+
+- **Optional parameters:**
+  - `count` - Number of codes to show (1-20, default: 10)
+- **Shows:** Code, redemption date, rewards received
+- **Example:** `/codes` or `/codes count:20`
+
+#### `/makepublic code:<code>`
+
+Share one of your previously redeemed codes with other users. They can then use it with `/redeempublic`.
+
+- **Required parameters:**
+  - `code` - One of your redeemed codes (must be in your history)
+- **Requirement:** You must have already redeemed this code
+- **Example:** `/makepublic code:SHARED123`
+
+### Help
+
+#### `/help`
+
+Display all available commands with brief descriptions.
+
+- **Use when:** You need a quick reference of all bot commands
+- **Example:** `/help`
 
 ## Architecture
 

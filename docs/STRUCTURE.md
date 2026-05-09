@@ -17,7 +17,7 @@ idle-code-redeemer/
 │   ├── bot/               ← Discord bot (ACTIVE)
 │   │   ├── bot.ts         ← Main Discord client & event handlers
 │   │   ├── api/           ← Game server API client
-│   │   ├── commands/      ← Slash command handlers (6 commands)
+│   │   ├── commands/      ← Slash command handlers (9 commands)
 │   │   ├── database/      ← SQLite managers (users, codes, audit)
 │   │   ├── handlers/      ← Message scanning for codes
 │   │   └── utils/         ← Utilities (debug logging)
@@ -56,13 +56,16 @@ idle-code-redeemer/
 - **[src/bot/bot.ts](../src/bot/bot.ts)** - Discord client initialization, event handlers, command routing
 - **[src/bot/api/idleChampionsApi.ts](../src/bot/api/idleChampionsApi.ts)** - Game server API client with query-parameter format
 
-### Commands (6 slash commands)
+### Commands (9 slash commands)
 
 - **[src/bot/commands/setup.ts](../src/bot/commands/setup.ts)** - `/setup user_id:<id> user_hash:<hash>`
 - **[src/bot/commands/redeem.ts](../src/bot/commands/redeem.ts)** - `/redeem code:<code>`
 - **[src/bot/commands/inventory.ts](../src/bot/commands/inventory.ts)** - `/inventory` (gold, rubies, equipment, progress)
 - **[src/bot/commands/open.ts](../src/bot/commands/open.ts)** - `/open chest_type:<type> count:<count>`
 - **[src/bot/commands/blacksmith.ts](../src/bot/commands/blacksmith.ts)** - `/blacksmith contract_type:<type> hero_id:<id> count:<count>`
+- **[src/bot/commands/codes.ts](../src/bot/commands/codes.ts)** - `/codes [count:<count>]` (view redeemed codes history)
+- **[src/bot/commands/makepublic.ts](../src/bot/commands/makepublic.ts)** - `/makepublic code:<code>` (share codes with other users)
+- **[src/bot/commands/redeempublic.ts](../src/bot/commands/redeempublic.ts)** - `/redeempublic [code:<code>]` (redeem shared codes)
 - **[src/bot/commands/help.ts](../src/bot/commands/help.ts)** - `/help`
 
 ### Database
