@@ -11,8 +11,8 @@
     "migrate": "bun run --bun src/bot/database/migrate.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\"",
-    "format:check": "prettier --check \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\"",
+    "format": "prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\"",
+    "format:check": "prettier --check \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\"",
     "prepare": "husky install",
     "pre-commit": "lint-staged"
   },
@@ -51,6 +51,9 @@
       "prettier --write"
     ],
     "*.{yml,yaml}": [
+      "prettier --write"
+    ],
+    "Dockerfile*": [
       "prettier --write"
     ]
   }
