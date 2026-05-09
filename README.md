@@ -53,6 +53,7 @@ docker-compose up -d
 See [docker-compose.example.yml](docker-compose.example.yml) for all available configuration options.
 
 **Pull specific versions:**
+
 - `ghcr.io/bigmichi1/IdleCodeRedeemer:latest` - Latest main branch build
 - `ghcr.io/bigmichi1/IdleCodeRedeemer:v1.0.0` - Specific release
 - `ghcr.io/bigmichi1/IdleCodeRedeemer:main-<sha>` - Specific commit
