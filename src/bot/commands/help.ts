@@ -42,7 +42,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           name: '⚒️ Blacksmith',
           value: '`/blacksmith contract_type:<type> hero_id:<id> count:<count>`\nUpgrade your heroes using contracts.',
           inline: false,
-        }
+        },
       )
       .addFields(
         {
@@ -59,7 +59,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           name: '📚 Getting Started',
           value: '1. Use `/setup` to save your credentials\n2. The bot will automatically redeem codes found in the channel\n3. Use other commands to manage your inventory',
           inline: false,
-        }
+        },
       )
       .setFooter({
         text: 'For more help, visit https://discord.gg/idlechampions',

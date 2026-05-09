@@ -5,50 +5,108 @@ interface RedeemedCode {
   discordId?: string;
   status?: string;
   lootDetail?: string;
+  isPublic?: boolean;
+  expiresAt?: string;
+}
+
+interface RedeemedCodeRow {
+  id: number;
+  code: string;
+  discord_id: string;
+  redeemed_at: string;
+  status: string;
+  loot_detail: string;
+  is_public: number;
+  expires_at: string | null;
 }
 
 class CodeManager {
-  async addRedeemedCode(code: string, discordId: string, status: string, lootDetail?: string): Promise<void> {
+  async addRedeemedCode(
+    code: string,
+    discordId: string,
+    status: string,
+    lootDetail?: string,
+    isPublic: boolean = false,
+  ): Promise<void> {
     await db.run(
-      `INSERT OR REPLACE INTO redeemed_codes (code, discord_id, status, loot_detail)
-       VALUES (?, ?, ?, ?)`,
-      [code, discordId, status, lootDetail ? JSON.stringify(lootDetail) : null]
+      `INSERT OR REPLACE INTO redeemed_codes (code, discord_id, status, loot_detail, is_public)
+       VALUES (?, ?, ?, ?, ?)`,
+      [code, discordId, status, lootDetail ? JSON.stringify(lootDetail) : null, isPublic ? 1 : 0],
     );
   }
 
   async isCodeRedeemed(code: string): Promise<boolean> {
     const result = await db.get(
-      `SELECT code FROM redeemed_codes WHERE code = ?`,
-      [code]
+      'SELECT code FROM redeemed_codes WHERE code = ?',
+      [code],
     );
     return result !== undefined;
   }
 
   async getRedeemedCodes(discordId: string): Promise<string[]> {
     const results = await db.all<{ code: string }>(
-      `SELECT code FROM redeemed_codes WHERE discord_id = ? ORDER BY redeemed_at DESC LIMIT 100`,
-      [discordId]
+      'SELECT code FROM redeemed_codes WHERE discord_id = ? ORDER BY redeemed_at DESC LIMIT 100',
+      [discordId],
     );
     return results.map(r => r.code);
   }
 
+  async getRedeemedCodeDetails(discordId: string, limit: number = 10): Promise<RedeemedCodeRow[]> {
+    const results = await db.all<RedeemedCodeRow>(
+      `SELECT id, code, discord_id, redeemed_at, status, loot_detail, is_public, expires_at
+       FROM redeemed_codes 
+       WHERE discord_id = ? 
+       ORDER BY redeemed_at DESC 
+       LIMIT ?`,
+      [discordId, limit],
+    );
+    return results;
+  }
+
+  async getPublicUnexpiredCodes(): Promise<RedeemedCodeRow[]> {
+    const results = await db.all<RedeemedCodeRow>(
+      `SELECT id, code, discord_id, redeemed_at, status, loot_detail, is_public, expires_at
+       FROM redeemed_codes 
+       WHERE is_public = 1 
+       AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+       AND status = 'success'
+       ORDER BY redeemed_at DESC`,
+      [],
+    );
+    return results;
+  }
+
+  async markCodeAsExpired(code: string): Promise<void> {
+    await db.run(
+      'UPDATE redeemed_codes SET status = \'expired\', expires_at = CURRENT_TIMESTAMP WHERE code = ?',
+      [code],
+    );
+  }
+
+  async markCodeAsPublic(code: string): Promise<void> {
+    await db.run(
+      'UPDATE redeemed_codes SET is_public = 1 WHERE code = ?',
+      [code],
+    );
+  }
+
   async addPendingCode(code: string, discordId?: string): Promise<void> {
     await db.run(
-      `INSERT INTO pending_codes (code, discord_id) VALUES (?, ?)`,
-      [code, discordId || null]
+      'INSERT INTO pending_codes (code, discord_id) VALUES (?, ?)',
+      [code, discordId || null],
     );
   }
 
   async getPendingCodes(discordId?: string): Promise<string[]> {
-    let sql = `SELECT code FROM pending_codes`;
+    let sql = 'SELECT code FROM pending_codes';
     let params: any[] = [];
 
     if (discordId) {
-      sql += ` WHERE discord_id = ?`;
+      sql += ' WHERE discord_id = ?';
       params = [discordId];
     }
 
-    sql += ` ORDER BY found_at ASC`;
+    sql += ' ORDER BY found_at ASC';
 
     const results = await db.all<{ code: string }>(sql, params);
     return results.map(r => r.code);
@@ -56,19 +114,19 @@ class CodeManager {
 
   async removePendingCode(code: string): Promise<void> {
     await db.run(
-      `DELETE FROM pending_codes WHERE code = ?`,
-      [code]
+      'DELETE FROM pending_codes WHERE code = ?',
+      [code],
     );
   }
 
   async clearPendingCodes(discordId?: string): Promise<void> {
     if (discordId) {
       await db.run(
-        `DELETE FROM pending_codes WHERE discord_id = ?`,
-        [discordId]
+        'DELETE FROM pending_codes WHERE discord_id = ?',
+        [discordId],
       );
     } else {
-      await db.run(`DELETE FROM pending_codes`);
+      await db.run('DELETE FROM pending_codes');
     }
   }
 }

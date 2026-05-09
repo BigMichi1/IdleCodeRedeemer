@@ -12,17 +12,17 @@ export async function scanMessageForCodes(message: Message): Promise<string[]> {
 
     // Extract text content (skip embeds for now, focus on message content)
     const messageText = message.content.toUpperCase();
-    
+
     const codeMatches = messageText.match(CODE_REGEX) || [];
     const codes: string[] = [];
 
     for (const match of codeMatches) {
       // Remove dashes from the code
       const cleanCode = match.replaceAll('-', '');
-      
+
       // Verify it hasn't already been redeemed
       const isRedeemed = await codeManager.isCodeRedeemed(cleanCode);
-      
+
       if (!isRedeemed) {
         codes.push(cleanCode);
         console.log(`[CODE SCANNER] Found new code: ${cleanCode}`);

@@ -27,15 +27,15 @@ interface ApcStats {
 }
 
 declare const enum FailureReason {
-    OutdatedInstanceId = "Outdated instance id",
-    AlreadyRedeemed = "you_already_redeemed_combination",
+    OutdatedInstanceId = 'Outdated instance id',
+    AlreadyRedeemed = 'you_already_redeemed_combination',
     /** InvalidParameters is likely due to credential issues */
-    InvalidParameters = "Invalid or incomplete parameters",
-    NotValidCombo = "not_valid_combination",
-    Expired = "offer_has_expired",
-    NotEnoughCurrency = "Not enough currency",
-    CannotRedeem = "can_not_redeem_combination",
-    SomeoneAlreadyRedeemed = "someone_already_redeemed_combination",
+    InvalidParameters = 'Invalid or incomplete parameters',
+    NotValidCombo = 'not_valid_combination',
+    Expired = 'offer_has_expired',
+    NotEnoughCurrency = 'Not enough currency',
+    CannotRedeem = 'can_not_redeem_combination',
+    SomeoneAlreadyRedeemed = 'someone_already_redeemed_combination',
 }
 
 interface LootDetail {
@@ -57,9 +57,9 @@ declare const enum ChestType{
 }
 
 declare const enum LootType{
-    HeroUnlock = "unlock_hero",
-    Chest = "generic_chest",
-    Claim = "claim",
+    HeroUnlock = 'unlock_hero',
+    Chest = 'generic_chest',
+    Claim = 'claim',
 }
 
 interface PurchaseChestResponse {
@@ -115,4 +115,3 @@ interface ActionsEntity {
     value?: number | null;
     game_instance_id?: number | null;
 }
-  

@@ -5,6 +5,8 @@
 
 import fetch from 'node-fetch';
 import * as https from 'https';
+import logger from '../utils/logger';
+import { apiRequestLogger } from '../utils/apiRequestLogger';
 
 interface CodeSubmitOptions {
   server: string;
@@ -77,22 +79,40 @@ class IdleChampionsApi {
 
     try {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
-      
+      const body = await IdleChampionsApi.tryToJson(response.clone());
+
+      apiRequestLogger.log(undefined, 'getPlayServerForDefinitions', {
+        url: request.toString(),
+        method: 'GET',
+      }, {
+        status: response.status,
+        ok: response.ok,
+        body,
+      });
+
       if (response.ok) {
-        const serverDefs: ServerDefinitions = await IdleChampionsApi.tryToJson(response);
-        
+        const serverDefs: ServerDefinitions = body;
+
         if (serverDefs && serverDefs.play_server) {
           const result = serverDefs.play_server + 'post.php';
-          console.log(`[API] Server: ${result}`);
+          logger.debug(`Server: ${result}`);
           return result;
         } else {
-          console.error(`[API] No play_server in response`);
+          logger.error('No play_server in response');
         }
       } else {
-        console.error(`[API] Failed to get server: HTTP ${response.status}`);
+        logger.error(`Failed to get server: HTTP ${response.status}`);
       }
     } catch (error) {
-      console.error(`[API] Error getting server:`, error);
+      logger.error('Error getting server:', error);
+      apiRequestLogger.log(undefined, 'getPlayServerForDefinitions', {
+        url: request.toString(),
+        method: 'GET',
+      }, {
+        status: 0,
+        ok: false,
+        error: String(error),
+      });
     }
     return undefined;
   }
@@ -112,21 +132,32 @@ class IdleChampionsApi {
     request.searchParams.append('mobile_client_version', IdleChampionsApi.CLIENT_VERSION);
     request.searchParams.append('localization_aware', 'true');
 
-    console.log(`[API] Submitting code to: ${request.toString().split('hash=')[0]}hash=***`);
+    logger.debug(`Submitting code to: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const redeemResponse: RedeemCodeResponse = await IdleChampionsApi.tryToJson(response.clone());
+
+      apiRequestLogger.log(options.user_id, 'redeemcoupon', {
+        url: request.toString(),
+        method: 'POST',
+        body: { code: options.code },
+      }, {
+        status: response.status,
+        ok: response.ok,
+        body: redeemResponse,
+      });
+
       if (response.ok) {
-        const redeemResponse: RedeemCodeResponse = await IdleChampionsApi.tryToJson(response);
         if (!redeemResponse) {
           return new GenericResponse(ResponseStatus.Failed);
         }
         if (redeemResponse.switch_play_server) {
           return new GenericResponse(ResponseStatus.SwitchServer, redeemResponse.switch_play_server);
         }
-        
+
         const reason = redeemResponse.failure_reason?.toLowerCase() || '';
-        
+
         if (reason.includes('already') || reason.includes('someone')) {
           return new CodeSubmitResponse(CodeSubmitStatus.AlreadyRedeemed);
         }
@@ -148,11 +179,20 @@ class IdleChampionsApi {
         if (redeemResponse.success && redeemResponse.okay) {
           return new CodeSubmitResponse(CodeSubmitStatus.Success, redeemResponse?.loot_details);
         }
-        console.error('[API] Unknown failure reason:', redeemResponse.failure_reason);
+        logger.error('Unknown failure reason:', redeemResponse.failure_reason);
         return new GenericResponse(ResponseStatus.Failed);
       }
     } catch (error) {
-      console.error('[API] Error submitting code:', error);
+      logger.error('Error submitting code:', error);
+      apiRequestLogger.log(options.user_id, 'redeemcoupon', {
+        url: request.toString(),
+        method: 'POST',
+        body: { code: options.code },
+      }, {
+        status: 0,
+        ok: false,
+        error: String(error),
+      });
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
@@ -175,13 +215,23 @@ class IdleChampionsApi {
     try {
       const fetchPromise = fetch(request.toString(), { agent: this.httpsAgent } as any);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('API request timeout after 5s')), 5000)
+        setTimeout(() => reject(new Error('API request timeout after 5s')), 5000),
       );
-      
+
       const response = (await Promise.race([fetchPromise, timeoutPromise])) as any;
-      
+
       if (response.ok) {
-        const playerData: PlayerData = await IdleChampionsApi.tryToJson(response);
+        const playerData: PlayerData = await IdleChampionsApi.tryToJson(response.clone());
+
+        apiRequestLogger.log(options.user_id, 'getuserdetails', {
+          url: request.toString(),
+          method: 'POST',
+        }, {
+          status: response.status,
+          ok: response.ok,
+          body: playerData,
+        });
+
         if (playerData.switch_play_server) {
           return new GenericResponse(ResponseStatus.SwitchServer, playerData.switch_play_server);
         }
@@ -190,11 +240,28 @@ class IdleChampionsApi {
         }
       } else {
         const text = await response.text();
-        console.error(`[API] Bad response status: ${response.status}`);
-        console.error(`[API] Response body (first 500 chars): ${text.substring(0, 500)}`);
+        logger.error(`Bad response status: ${response.status}`);
+        logger.error(`Response body (first 500 chars): ${text.substring(0, 500)}`);
+
+        apiRequestLogger.log(options.user_id, 'getuserdetails', {
+          url: request.toString(),
+          method: 'POST',
+        }, {
+          status: response.status,
+          ok: response.ok,
+          body: text.substring(0, 500),
+        });
       }
     } catch (error) {
-      console.error('[API] Error getting user details:', error);
+      logger.error('Error getting user details:', error);
+      apiRequestLogger.log(options.user_id, 'getuserdetails', {
+        url: request.toString(),
+        method: 'POST',
+      }, {
+        status: 0,
+        ok: false,
+        error: String(error),
+      });
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
@@ -221,12 +288,23 @@ class IdleChampionsApi {
     request.searchParams.append('network_id', IdleChampionsApi.NETWORK_ID);
     request.searchParams.append('localization_aware', 'true');
 
-    console.log(`[API] Opening chests from: ${request.toString().split('hash=')[0]}hash=***`);
+    logger.debug(`Opening chests from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const openGenericChestResponse: OpenGenericChestResponse = await IdleChampionsApi.tryToJson(response.clone());
+
+      apiRequestLogger.log(options.user_id, 'opengenericchest', {
+        url: request.toString(),
+        method: 'POST',
+        body: { chestTypeId: options.chestTypeId, count: options.count },
+      }, {
+        status: response.status,
+        ok: response.ok,
+        body: openGenericChestResponse,
+      });
+
       if (response.ok) {
-        const openGenericChestResponse: OpenGenericChestResponse = await IdleChampionsApi.tryToJson(response);
         if (!openGenericChestResponse) {
           return new GenericResponse(ResponseStatus.Failed);
         }
@@ -241,7 +319,16 @@ class IdleChampionsApi {
         }
       }
     } catch (error) {
-      console.error('[API] Error opening chests:', error);
+      logger.error('Error opening chests:', error);
+      apiRequestLogger.log(options.user_id, 'opengenericchest', {
+        url: request.toString(),
+        method: 'POST',
+        body: { chestTypeId: options.chestTypeId, count: options.count },
+      }, {
+        status: 0,
+        ok: false,
+        error: String(error),
+      });
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
@@ -265,19 +352,30 @@ class IdleChampionsApi {
     request.searchParams.append('mobile_client_version', '999');
     request.searchParams.append('language_id', IdleChampionsApi.LANGUAGE_ID);
 
-    console.log(`[API] Purchasing chests from: ${request.toString().split('hash=')[0]}hash=***`);
+    logger.debug(`Purchasing chests from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const purchaseResponse: PurchaseChestResponse = await IdleChampionsApi.tryToJson(response.clone());
+
+      apiRequestLogger.log(options.user_id, 'buysoftcurrencychest', {
+        url: request.toString(),
+        method: 'POST',
+        body: { chestTypeId: options.chestTypeId, count: options.count },
+      }, {
+        status: response.status,
+        ok: response.ok,
+        body: purchaseResponse,
+      });
+
       if (response.ok) {
-        const purchaseResponse: PurchaseChestResponse = await IdleChampionsApi.tryToJson(response);
         if (!purchaseResponse) {
           return new GenericResponse(ResponseStatus.Failed);
         }
         if (purchaseResponse.switch_play_server) {
           return new GenericResponse(ResponseStatus.SwitchServer, purchaseResponse.switch_play_server);
         }
-        if (purchaseResponse.failure_reason == FailureReason.NotEnoughCurrency) {
+        if (purchaseResponse.failure_reason === FailureReason.NotEnoughCurrency) {
           return new GenericResponse(ResponseStatus.InsuficcientCurrency);
         }
         if (purchaseResponse.success && purchaseResponse.okay) {
@@ -285,7 +383,16 @@ class IdleChampionsApi {
         }
       }
     } catch (error) {
-      console.error('[API] Error purchasing chests:', error);
+      logger.error('Error purchasing chests:', error);
+      apiRequestLogger.log(options.user_id, 'buysoftcurrencychest', {
+        url: request.toString(),
+        method: 'POST',
+        body: { chestTypeId: options.chestTypeId, count: options.count },
+      }, {
+        status: 0,
+        ok: false,
+        error: String(error),
+      });
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
@@ -311,12 +418,23 @@ class IdleChampionsApi {
     request.searchParams.append('network_id', IdleChampionsApi.NETWORK_ID);
     request.searchParams.append('localization_aware', 'true');
 
-    console.log(`[API] Using blacksmith from: ${request.toString().split('hash=')[0]}hash=***`);
+    logger.debug(`Using blacksmith from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
       const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const useServerBuffResponse: UseServerBuffResponse = await IdleChampionsApi.tryToJson(response.clone());
+
+      apiRequestLogger.log(options.user_id, 'useServerBuff', {
+        url: request.toString(),
+        method: 'POST',
+        body: { contractType: options.contractType, heroId: options.heroId, count: options.count },
+      }, {
+        status: response.status,
+        ok: response.ok,
+        body: useServerBuffResponse,
+      });
+
       if (response.ok) {
-        const useServerBuffResponse: UseServerBuffResponse = await IdleChampionsApi.tryToJson(response);
         if (!useServerBuffResponse) {
           return new GenericResponse(ResponseStatus.Failed);
         }
@@ -331,7 +449,16 @@ class IdleChampionsApi {
         }
       }
     } catch (error) {
-      console.error('[API] Error using blacksmith:', error);
+      logger.error('Error using blacksmith:', error);
+      apiRequestLogger.log(options.user_id, 'useServerBuff', {
+        url: request.toString(),
+        method: 'POST',
+        body: { contractType: options.contractType, heroId: options.heroId, count: options.count },
+      }, {
+        status: 0,
+        ok: false,
+        error: String(error),
+      });
     }
     return new GenericResponse(ResponseStatus.Failed);
   }
@@ -340,7 +467,7 @@ class IdleChampionsApi {
     try {
       return await response.json();
     } catch (e) {
-      console.error('[API] Failed to parse JSON:', e);
+      logger.error('Failed to parse JSON:', e);
       return null;
     }
   }

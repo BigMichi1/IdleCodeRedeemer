@@ -94,9 +94,9 @@ interface Standard {
 }
 
 declare enum SpawnerElement {
-    ORBSpawner = "OrbSpawner",
-    PortalSpawner = "PortalSpawner",
-    WardSpawner = "WardSpawner",
+    ORBSpawner = 'OrbSpawner',
+    PortalSpawner = 'PortalSpawner',
+    WardSpawner = 'WardSpawner',
 }
 
 interface MonsterSpawners {
@@ -112,7 +112,7 @@ interface ORBSpawner {
 }
 
 declare enum ORBSpawnerType {
-    Magic = "magic",
+    Magic = 'magic',
 }
 
 interface Spawner {
@@ -121,8 +121,8 @@ interface Spawner {
 }
 
 declare enum Doodad {
-    Portal = "Portal",
-    Ward = "Ward",
+    Portal = 'Portal',
+    Ward = 'Ward',
 }
 
 interface StaticMonsters {
@@ -166,7 +166,7 @@ interface CostElement {
 }
 
 declare enum CostEnum {
-    EventTokens = "event_tokens",
+    EventTokens = 'event_tokens',
 }
 
 interface AdventureDefineGameChange {
@@ -336,11 +336,11 @@ interface Objective {
 }
 
 declare enum ObjectiveCondition {
-    CompleteArea = "complete_area",
+    CompleteArea = 'complete_area',
 }
 
 interface PatronObjectiveValue {
-    "1": The1[];
+    '1': The1[];
 }
 
 interface The1 {
@@ -354,7 +354,7 @@ interface The1 {
 }
 
 declare enum The1_Reward {
-    PatronCurrency = "patron_currency",
+    PatronCurrency = 'patron_currency',
 }
 
 interface RepeatReward {
@@ -366,9 +366,9 @@ interface RepeatReward {
 }
 
 declare enum RepeatRewardReward {
-    Chest = "chest",
-    ClaimCrusader = "claim_crusader",
-    RedRubies = "red_rubies",
+    Chest = 'chest',
+    ClaimCrusader = 'claim_crusader',
+    RedRubies = 'red_rubies',
 }
 
 interface PurpleRequirement {
@@ -381,10 +381,10 @@ interface PurpleRequirement {
 }
 
 declare enum PurpleCondition {
-    AdventureComplete = "adventure_complete",
-    Date = "date",
-    EventYearUnlocked = "event_year_unlocked",
-    HeroAvailable = "hero_available",
+    AdventureComplete = 'adventure_complete',
+    Date = 'date',
+    EventYearUnlocked = 'event_year_unlocked',
+    HeroAvailable = 'hero_available',
 }
 
 interface PurpleReward {
@@ -441,7 +441,7 @@ interface CampaignDefineGameChange {
 }
 
 interface HealthGrowthRateCurve {
-    "1": number;
+    '1': number;
 }
 
 interface CampaignDefineProperties {
@@ -523,7 +523,7 @@ interface ChallengeRequirement {
 }
 
 declare enum FluffyCondition {
-    HaveHero = "have_hero",
+    HaveHero = 'have_hero',
 }
 
 interface ResetTrigger {
@@ -534,7 +534,7 @@ interface ResetTrigger {
 }
 
 declare enum ResetTriggerType {
-    HighestDamage = "highest_damage",
+    HighestDamage = 'highest_damage',
 }
 
 interface ServerTrigger {
@@ -554,7 +554,7 @@ interface StartTrigger {
 }
 
 declare enum ChallengeType {
-    Stat = "stat",
+    Stat = 'stat',
 }
 
 declare enum VoteDescriptionPretext {
@@ -585,11 +585,11 @@ interface RewardEffect {
 }
 
 declare enum EffectType {
-    AwardBuff = "award_buff",
-    GenericChest = "generic_chest",
-    Loot = "loot",
-    Skin = "skin",
-    UnlockChampion = "unlock_champion",
+    AwardBuff = 'award_buff',
+    GenericChest = 'generic_chest',
+    Loot = 'loot',
+    Skin = 'skin',
+    UnlockChampion = 'unlock_champion',
 }
 
 interface Stream {
@@ -604,11 +604,11 @@ interface Stream {
 }
 
 declare enum ButtonActive {
-    WatchNow = "Watch Now!",
+    WatchNow = 'Watch Now!',
 }
 
 declare enum ButtonInactive {
-    ViewArchives = "View Archives",
+    ViewArchives = 'View Archives',
 }
 
 interface Vote {
@@ -651,14 +651,14 @@ interface Sequence {
 }
 
 declare enum SequenceType {
-    Hero = "hero",
-    Npc = "npc",
-    ShowQuest = "show_quest",
+    Hero = 'hero',
+    Npc = 'npc',
+    ShowQuest = 'show_quest',
 }
 
 declare enum DetailType {
-    End = "end",
-    Start = "start",
+    End = 'end',
+    Start = 'start',
 }
 
 interface DistractionDefine {
@@ -783,7 +783,7 @@ interface ResetTierDefineRequirement {
 }
 
 declare enum RequirementType {
-    ResetUpgradesPurchased = "reset_upgrades_purchased",
+    ResetUpgradesPurchased = 'reset_upgrades_purchased',
 }
 
 interface ResetUpgradeDefine {
@@ -1079,7 +1079,7 @@ interface Stats {
 }
 
 interface VotesClass {
-    "-1": number;
+    '-1': number;
 }
 
 interface ChestPack {
@@ -1441,8 +1441,8 @@ interface PackageDeal {
 }
 
 declare enum Discount {
-    Empty = "",
-    NewDLC = "New DLC!",
+    Empty = '',
+    NewDLC = 'New DLC!',
 }
 
 interface PackageDealLoot {
@@ -1466,7 +1466,7 @@ interface PackageDealLoot {
 }
 
 declare enum ValueKey {
-    StartPackValueMessage = "start_pack_value_message",
+    StartPackValueMessage = 'start_pack_value_message',
 }
 
 interface PatronPerk {
@@ -1520,9 +1520,9 @@ interface ShopItem {
 }
 
 declare enum Reason {
-    AlreadyPurchasedMaxAllowedAmount = "already_purchased_max_allowed_amount",
-    AlreadyPurchasedMaxAllowedAmountThisWeek = "already_purchased_max_allowed_amount_this_week",
-    NotEarnedEnoughTotalInfluence = "not_earned_enough_total_influence",
+    AlreadyPurchasedMaxAllowedAmount = 'already_purchased_max_allowed_amount',
+    AlreadyPurchasedMaxAllowedAmountThisWeek = 'already_purchased_max_allowed_amount_this_week',
+    NotEarnedEnoughTotalInfluence = 'not_earned_enough_total_influence',
 }
 
 interface PatronStatClass {
@@ -1573,7 +1573,7 @@ interface Shop {
 }
 
 declare enum ShopType {
-    BonusLoot = "bonus_loot",
+    BonusLoot = 'bonus_loot',
 }
 
 interface PurchaseRequirement {
@@ -1584,13 +1584,13 @@ interface PurchaseRequirement {
 }
 
 declare enum PurchaseRequirementType {
-    PremiumItems = "premium_items",
-    PurchaseType = "purchase_type",
+    PremiumItems = 'premium_items',
+    PurchaseType = 'purchase_type',
 }
 
 declare enum ValueEnum {
-    EventChests = "event_chests",
-    RareChests = "rare_chests",
+    EventChests = 'event_chests',
+    RareChests = 'rare_chests',
 }
 
 interface ResetCurrency {
@@ -1692,13 +1692,13 @@ interface DifficultyRewardLookup {
 }
 
 declare enum DifficultyRewardLookupReward {
-    Chest = "chest",
-    IncrementUserStat = "increment_user_stat",
-    TiamatScaleMult = "tiamat_scale_mult",
+    Chest = 'chest',
+    IncrementUserStat = 'increment_user_stat',
+    TiamatScaleMult = 'tiamat_scale_mult',
 }
 
 declare enum StatEnum {
-    MultiplayerPoints = "multiplayer_points",
+    MultiplayerPoints = 'multiplayer_points',
 }
 
 interface DifficultyTokenInventory {

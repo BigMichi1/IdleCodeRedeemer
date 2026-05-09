@@ -1,28 +1,48 @@
-FROM oven/bun:1-alpine
+FROM debian:13-slim
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lockb* ./
+# Install dependencies
+RUN apt-get update \
+    && apt-get -y --no-install-recommends install \
+        curl git ca-certificates build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies with bun
-RUN bun install --production
+# Configure Mise environment
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ENV MISE_DATA_DIR="/app/.mise"
+ENV MISE_CONFIG_DIR="/app/.mise/config"
+ENV MISE_CACHE_DIR="/app/.mise/cache"
+ENV MISE_INSTALL_PATH="/usr/local/bin/mise"
+ENV PATH="/app/.mise/shims:$PATH"
+# Disable SSL cert validation for Idle Champions API (expired certificate)
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 
-# Copy TypeScript source
+# Install Mise
+RUN curl https://mise.run | sh
+
+# Copy configuration files for Mise and project
+COPY .mise.toml ./
+COPY package.json ./
+COPY .env.example .env
+
+# Install tools and dependencies via Mise
+RUN mise install
+
+# Copy TypeScript source files
 COPY tsconfig.bot.json ./
 COPY src/bot ./src/bot
 COPY src/lib ./src/lib
-COPY src/shared ./src/shared
 
-# Build TypeScript with bun
-RUN bun run build
+# Build the bot
+RUN mise run build
 
 # Create data directory
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data api-logs
 
-# Expose health check (optional, for monitoring)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD bun run --eval "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) process.exit(1)})" || exit 1
+  CMD mise exec node -- -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) process.exit(1)})" || exit 1
 
-# Start the bot
-CMD ["bun", "run", "start"]
+# Start the bot with Mise
+CMD ["mise", "run", "start"]

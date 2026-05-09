@@ -6,6 +6,8 @@ import { codeManager } from './database/codeManager';
 import { userManager } from './database/userManager';
 import IdleChampionsApi from './api/idleChampionsApi';
 import { initDebugLogger } from './utils/debugLogger';
+import logger from './utils/logger';
+import { apiRequestLogger } from './utils/apiRequestLogger';
 import fs from 'fs';
 import path from 'path';
 
@@ -20,7 +22,7 @@ const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
 
 if (!TOKEN) {
-  console.error('DISCORD_TOKEN environment variable is not set');
+  logger.error('DISCORD_TOKEN environment variable is not set');
   process.exit(1);
 }
 
@@ -44,43 +46,46 @@ for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
   delete require.cache[require.resolve(filePath)];
   const command = require(filePath);
-  
+
   if (command.data && command.execute) {
     (client as any).commands.set(command.data.name, command);
-    console.log(`[BOT] Loaded command: ${command.data.name}`);
+    logger.debug(`Loaded command: ${command.data.name}`);
   }
 }
 
 // Event: Ready
 client.on(Events.ClientReady, async () => {
-  console.log(`[BOT] Logged in as ${client.user?.tag}`);
-  
+  logger.info(`Logged in as ${client.user?.tag}`);
+
   // Initialize debug logging
   initDebugLogger();
-  
+
+  // Initialize API request logging
+  apiRequestLogger.initialize();
+
   try {
     // Initialize database
-    console.log('[BOT] Initializing database...');
+    logger.info('Initializing database...');
     await db.initialize();
-    console.log('[BOT] Database initialized');
+    logger.info('Database initialized');
 
     // Register slash commands
-    console.log(`[BOT] GUILD_ID from env: ${GUILD_ID}`);
+    logger.debug(`GUILD_ID from env: ${GUILD_ID}`);
     if (GUILD_ID) {
-      console.log(`[BOT] Fetching guild ${GUILD_ID}...`);
+      logger.debug(`Fetching guild ${GUILD_ID}...`);
       const guild = await client.guilds.fetch(GUILD_ID);
       const commands = (client as any).commands.map((cmd: any) => cmd.data);
-      console.log(`[BOT] Setting ${commands.length} commands in guild...`);
+      logger.debug(`Setting ${commands.length} commands in guild...`);
       await guild.commands.set(commands);
-      console.log(`[BOT] Registered ${commands.length} commands in guild ${GUILD_ID}`);
+      logger.info(`Registered ${commands.length} commands in guild ${GUILD_ID}`);
     } else {
-      console.log(`[BOT] Setting global commands...`);
+      logger.debug('Setting global commands...');
       const commands = (client as any).commands.map((cmd: any) => cmd.data);
       await client.application?.commands.set(commands);
-      console.log(`[BOT] Registered ${commands.length} global commands`);
+      logger.info(`Registered ${commands.length} global commands`);
     }
   } catch (error) {
-    console.error('[BOT] Error on ready:', error);
+    logger.error('Error on ready:', error);
   }
 });
 
@@ -92,10 +97,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!command) return;
 
   try {
-    console.log(`[BOT] Executing command: ${interaction.commandName} by ${interaction.user.tag}`);
+    logger.debug(`Executing command: ${interaction.commandName} by ${interaction.user.tag}`);
     await command.execute(interaction);
   } catch (error) {
-    console.error(`[BOT] Error executing command ${interaction.commandName}:`, error);
+    logger.error(`Error executing command ${interaction.commandName}:`, error);
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
         content: '❌ There was an error while executing this command!',
@@ -121,7 +126,7 @@ client.on(Events.MessageCreate, async (message) => {
     const foundCodes = await scanMessageForCodes(message);
 
     if (foundCodes.length > 0) {
-      console.log(`[BOT] Found ${foundCodes.length} codes in message from ${message.author.tag}`);
+      logger.info(`Found ${foundCodes.length} codes in message from ${message.author.tag}`);
 
       for (const code of foundCodes) {
         // Try to redeem automatically if user is known
@@ -136,7 +141,7 @@ client.on(Events.MessageCreate, async (message) => {
               if (!server) {
                 server = await IdleChampionsApi.getServer();
                 if (!server) {
-                  console.error('[BOT] Could not determine game server');
+                  logger.error('Could not determine game server');
                   return;
                 }
                 await userManager.updateServer(author.id, server);
@@ -157,10 +162,10 @@ client.on(Events.MessageCreate, async (message) => {
                   code,
                   author.id,
                   codeResponse.codeStatus.toString(),
-                  codeResponse.lootDetail
+                  codeResponse.lootDetail,
                 );
 
-                console.log(`[BOT] Auto-redeemed code ${code} for ${author.tag}`);
+                logger.info(`Auto-redeemed code ${code} for ${author.tag}`);
 
                 // Send DM notification
                 if (codeResponse.codeStatus === 0) {
@@ -170,18 +175,18 @@ client.on(Events.MessageCreate, async (message) => {
               }
             }
           } catch (error) {
-            console.error(`[BOT] Error auto-redeeming code ${code}:`, error);
+            logger.error(`Error auto-redeeming code ${code}:`, error);
             await codeManager.addPendingCode(code);
           }
         } else {
           // Store as pending code
           await codeManager.addPendingCode(code);
-          console.log(`[BOT] Stored pending code: ${code}`);
+          logger.debug(`Stored pending code: ${code}`);
         }
       }
     }
   } catch (error) {
-    console.error('[BOT] Error processing message:', error);
+    logger.error('Error processing message:', error);
   }
 });
 
@@ -190,7 +195,8 @@ client.login(TOKEN);
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('[BOT] Shutting down...');
+  logger.info('Shutting down...');
+  apiRequestLogger.shutdown();
   await db.close();
   client.destroy();
   process.exit(0);

@@ -1,6 +1,7 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
+import logger from '../utils/logger';
 
 const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'data', 'idle.db');
 
@@ -16,12 +17,12 @@ class Database {
   constructor() {
     this.db = new sqlite3.Database(DB_PATH, (err) => {
       if (err) {
-        console.error('Error opening database:', err);
+        logger.error('Error opening database:', err);
         process.exit(1);
       }
-      console.log('Connected to SQLite database');
+      logger.debug('Connected to SQLite database');
     });
-    
+
     // Enable foreign keys
     this.db.run('PRAGMA foreign_keys = ON');
   }
@@ -47,6 +48,8 @@ class Database {
           redeemed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           status TEXT,
           loot_detail TEXT,
+          is_public INTEGER DEFAULT 0,
+          expires_at DATETIME,
           FOREIGN KEY (discord_id) REFERENCES users(discord_id)
         )`,
         // Pending codes table - codes waiting to be redeemed
@@ -79,11 +82,22 @@ class Database {
           }
           completed++;
           if (completed === total) {
-            resolve();
+            // Run migrations for existing databases
+            this.runMigrations().then(resolve).catch(reject);
           }
         });
       });
     });
+  }
+
+  private async runMigrations(): Promise<void> {
+    // Add is_public column if it doesn't exist
+    await this.run('ALTER TABLE redeemed_codes ADD COLUMN is_public INTEGER DEFAULT 0')
+      .catch(() => {} ); // Ignore if column already exists
+
+    // Add expires_at column if it doesn't exist
+    await this.run('ALTER TABLE redeemed_codes ADD COLUMN expires_at DATETIME')
+      .catch(() => {} ); // Ignore if column already exists
   }
 
   run(sql: string, params: any[] = []): Promise<void> {

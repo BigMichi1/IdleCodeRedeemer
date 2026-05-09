@@ -2,15 +2,29 @@
 
 ## Quick Start
 
+**⚠️ IMPORTANT: Always use Mise. Never use npm or bun run directly.**
+
 ```bash
 # Install dependencies
-npm install
+mise run install
 
 # Start development server with auto-rebuild
-NODE_TLS_REJECT_UNAUTHORIZED=0 npm run dev
-
-# Or with Mise:
 mise run dev
+
+# View all available tasks
+mise tasks
+```
+
+### If You Don't Have Mise Installed
+
+```bash
+# Install Mise (macOS/Linux)
+curl https://mise.jdx.dev/install.sh | sh
+
+# Or with Homebrew
+brew install mise
+
+# Then follow "Quick Start" above
 ```
 
 ## Project Structure
@@ -42,8 +56,9 @@ lib/
 
 ## Key Technologies
 
-- **discord.js 14.14** - Discord bot framework
-- **bun 1.3.9** - JavaScript runtime (3-4x faster than Node.js)
+- **Mise** - Task runner and tool version manager (MANDATORY)
+- **Bun 1.3.9** - JavaScript runtime (3-4x faster than Node.js)
+- **discord.js 14.26** - Discord bot framework
 - **sqlite3** - Local database
 - **node-fetch** - HTTP client (for game API)
 - **TypeScript** - Type-safe development
@@ -72,16 +87,29 @@ POST /~idledragons/post.php?call=redeemcoupon&user_id=X&hash=Y&instance_id=Z&cod
 
 ## Building
 
-```bash
-# Build all TypeScript projects
-npm run build
+Use Mise for all build tasks:
 
-# Build individual modules:
-npm run build:bot
-npm run build:options
-npm run build:inject
-npm run build:chestManagement
-npm run build:serviceWorker
+```bash
+# Build the project
+mise run build
+
+# Watch for changes and rebuild
+mise run watch
+```
+
+## Common Tasks
+
+All tasks are run through Mise. Use `mise tasks` to see all available commands:
+
+```bash
+mise run install       # Install dependencies
+mise run dev           # Start development server
+mise run build         # Build TypeScript
+mise run watch         # Watch & rebuild on changes
+mise run lint          # Check code quality
+mise run lint:fix      # Auto-fix linting issues
+mise run audit         # Check for vulnerabilities
+mise run clean         # Clean build artifacts
 ```
 
 ## Database

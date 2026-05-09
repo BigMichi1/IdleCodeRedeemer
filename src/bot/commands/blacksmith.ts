@@ -26,14 +26,14 @@ export const data = new SlashCommandBuilder()
         { name: 'Tiny', value: '31' },
         { name: 'Small', value: '32' },
         { name: 'Medium', value: '33' },
-        { name: 'Large', value: '34' }
-      )
+        { name: 'Large', value: '34' },
+      ),
   )
   .addStringOption((option) =>
     option
       .setName('hero_id')
       .setDescription('Hero ID to upgrade')
-      .setRequired(true)
+      .setRequired(true),
   )
   .addIntegerOption((option) =>
     option
@@ -41,7 +41,7 @@ export const data = new SlashCommandBuilder()
       .setDescription('Number of contracts to use (1-1000)')
       .setRequired(true)
       .setMinValue(1)
-      .setMaxValue(1000)
+      .setMaxValue(1000),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -100,7 +100,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
       }
       await userManager.updateServer(interaction.user.id, server);
-      
+
       userResult = await IdleChampionsApi.getUserDetails({
         server,
         user_id: credentials.userId,
@@ -120,7 +120,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     // Get instance ID from user details
-    let instanceId = userData.details.instance_id || '0';
+    const instanceId = userData.details.instance_id || '0';
     if (!instanceId || instanceId === '0') {
       const embed = new EmbedBuilder()
         .setColor(0xff0000)

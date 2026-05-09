@@ -91,7 +91,8 @@ mise run docker-restart   # Restart bot
 ### Maintenance
 
 ```bash
-mise run lint         # Check for syntax errors
+mise run lint         # Check code quality with ESLint
+mise run lint:fix     # Auto-fix ESLint issues
 mise run audit        # Check for vulnerabilities
 mise run update       # Update all dependencies
 mise run clean        # Remove build artifacts

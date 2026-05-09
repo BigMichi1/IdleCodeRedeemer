@@ -1,5 +1,7 @@
 [env]
 # Mise environment configuration for Idle Code Redeemer Bot
+# Disable SSL cert validation for Idle Champions API (expired certificate)
+NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 [tools]
 # Bun runtime and package manager
@@ -50,8 +52,12 @@ description = "Restart bot container"
 run = "docker-compose restart idle-code-redeemer"
 
 [tasks.lint]
-description = "Check for syntax errors (runs tsc in check mode)"
-run = "bun run --bun tsc -p tsconfig.bot.json --noEmit"
+description = "Check code quality with ESLint"
+run = "bun run lint"
+
+[tasks."lint:fix"]
+description = "Auto-fix ESLint issues"
+run = "bun run lint:fix"
 
 [tasks.audit]
 description = "Audit dependencies for vulnerabilities"

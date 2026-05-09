@@ -17,8 +17,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 ## Quick Start
 
 ### Prerequisites
-- Bun 1.0+ or Node.js 20+
-- Python 3 (for Mise)
+- Mise 2024+ (or Bun 1.3.9+ if you prefer to manage tools manually)
 - Discord bot token
 
 ### Setup (5 minutes)
@@ -27,8 +26,8 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 # 1. Clone and enter directory
 git clone <repo> && cd idle-code-redeemer
 
-# 2. Install dependencies
-npm install  # or: mise install (if using Mise)
+# 2. Install dependencies (Mise manages Bun automatically)
+mise run install
 
 # 3. Configure environment
 cp .env.example .env
@@ -38,8 +37,17 @@ cp .env.example .env
 # - DISCORD_CHANNEL_ID (where bot scans for codes)
 
 # 4. Start the bot
-NODE_TLS_REJECT_UNAUTHORIZED=0 npm run dev
-# or with Mise: mise run dev
+mise run dev
+```
+
+**Don't have Mise?** [Install it first](https://mise.jdx.dev/getting-started.html)
+
+```bash
+# macOS/Linux
+curl https://mise.jdx.dev/install.sh | sh
+
+# Or with Homebrew
+brew install mise
 ```
 
 ## Commands
@@ -79,26 +87,18 @@ DB_PATH=./data/idle.db
 NODE_ENV=development
 ```
 
-### Required Environment Variable
-The Idle Champions API has an expired SSL certificate. Start the bot with:
-```bash
-NODE_TLS_REJECT_UNAUTHORIZED=0 npm run dev
-```
-
 ## Development
 
-### Using npm
-```bash
-npm run build    # Compile TypeScript
-npm run dev      # Watch mode (rebuilds on changes)
-npm run watch    # Run all TypeScript watches
-```
+Use Mise for all development tasks. The environment is automatically configured:
 
-### Using Mise (recommended)
 ```bash
-mise install     # Setup all tools
-mise run dev     # Start bot with auto-rebuild
-mise run build   # Build all packages
+mise run install     # Setup all tools & dependencies
+mise run dev         # Start bot with auto-rebuild
+mise run build       # Compile TypeScript
+mise run watch       # Watch for changes and rebuild
+mise run lint        # Check code quality
+mise run lint:fix    # Auto-fix linting issues
+mise tasks           # View all available tasks
 ```
 
 ## Database
@@ -112,7 +112,8 @@ SQLite database with 4 tables:
 ## Troubleshooting
 
 **"CERT_HAS_EXPIRED" errors?**
-- Always start with: `NODE_TLS_REJECT_UNAUTHORIZED=0`
+- This is handled automatically by Mise (no manual setup needed)
+- The environment variable `NODE_TLS_REJECT_UNAUTHORIZED=0` is set by `.mise.toml`
 
 **Bot not responding?**
 - Check DISCORD_TOKEN in .env
@@ -121,6 +122,7 @@ SQLite database with 4 tables:
 **Codes not detecting?**
 - Verify DISCORD_CHANNEL_ID points to the right channel
 - Bot must have message read permissions
+- Run `mise run lint` to check for code issues
 
 ## License
 

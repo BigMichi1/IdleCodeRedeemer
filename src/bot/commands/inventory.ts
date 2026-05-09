@@ -39,18 +39,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
     await userManager.updateServer(interaction.user.id, server);
-    
+
     // Get user details
     let result = await IdleChampionsApi.getUserDetails({
       server,
       user_id: credentials.userId,
       hash: credentials.userHash,
     });
-    
+
     // Handle server switch
     if (result instanceof Object && 'status' in result && (result as any).status === 4) { // ResponseStatus.SwitchServer
       await userManager.updateServer(interaction.user.id, (result as any).newServer);
-      
+
       // Retry with new server
       result = await IdleChampionsApi.getUserDetails({
         server: (result as any).newServer,
@@ -58,7 +58,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         hash: credentials.userHash,
       });
     }
-    
+
     // Check if it's a GenericResponse error
     if (result instanceof Object && 'status' in result && !('game_log' in result)) {
       const embed = new EmbedBuilder()
@@ -71,9 +71,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const playerData = result as any;
-    
+
     if (!playerData || !playerData.details) {
-      console.error(`[INVENTORY] Invalid player data structure.`);
+      console.error('[INVENTORY] Invalid player data structure.');
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Error')
@@ -84,7 +84,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const details = playerData.details;
-    
+
     // Build inventory embed
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
@@ -95,7 +95,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     if (details.gold !== undefined) {
       const goldNum = parseFloat(details.gold);
       let goldDisplay: string;
-      
+
       // Display in scientific notation if very large, otherwise format nicely
       if (goldNum >= 1e10) {
         goldDisplay = goldNum.toExponential(2);
@@ -106,7 +106,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       } else {
         goldDisplay = Math.floor(goldNum).toLocaleString();
       }
-      
+
       embed.addFields({
         name: 'Total Gold (All Instances)',
         value: goldDisplay,
@@ -119,7 +119,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const goldPerInstance = details.game_instances.map((instance: any, idx: number) => {
         const goldNum = parseFloat(instance.gold);
         let goldDisplay: string;
-        
+
         if (goldNum >= 1e10) {
           goldDisplay = goldNum.toExponential(2);
         } else if (goldNum >= 1e6) {
@@ -129,7 +129,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         } else {
           goldDisplay = Math.floor(goldNum).toLocaleString();
         }
-        
+
         return `• Instance ${idx + 1}: ${goldDisplay}`;
       }).join('\n');
 
@@ -162,10 +162,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     // Add area progress for each game instance
     if (details.game_instances && Array.isArray(details.game_instances)) {
-      const areaLines = details.game_instances.map((instance: any, idx: number) => 
-        `• Instance ${idx + 1} (Adventure ${instance.current_adventure_id}): Area ${instance.current_area}/${instance.highest_area}`
+      const areaLines = details.game_instances.map((instance: any, idx: number) =>
+        `• Instance ${idx + 1} (Adventure ${instance.current_adventure_id}): Area ${instance.current_area}/${instance.highest_area}`,
       );
-      
+
       if (areaLines.length > 0) {
         embed.addFields({
           name: 'Adventure Progress',

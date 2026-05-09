@@ -15,7 +15,7 @@ export const data = new SlashCommandBuilder()
     option
       .setName('code')
       .setDescription('The code to redeem')
-      .setRequired(true)
+      .setRequired(true),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -84,7 +84,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
       }
       await userManager.updateServer(interaction.user.id, server);
-      
+
       userResult = await IdleChampionsApi.getUserDetails({
         server,
         user_id: credentials.userId,
@@ -104,7 +104,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     // Get instance ID from user details
-    let instanceId = userData.details.instance_id || '0';
+    const instanceId = userData.details.instance_id || '0';
     if (!instanceId || instanceId === '0') {
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
@@ -135,14 +135,15 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    // Save to database
+    // Save to database (private code)
     const codeResponse = response as any;
     const statusName = getCodeStatusName(codeResponse.codeStatus);
     await codeManager.addRedeemedCode(
       code,
       interaction.user.id,
       statusName,
-      codeResponse.lootDetail
+      codeResponse.lootDetail,
+      false, // Private code
     );
 
     // Build response embed
