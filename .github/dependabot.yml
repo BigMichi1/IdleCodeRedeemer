@@ -1,9 +1,7 @@
 version: 2
 updates:
-  # npm dependencies (uses package.json; project uses Bun as package manager)
-  # Note: Dependabot doesn't have native Bun support yet, so we use npm
-  # which reads package.json. Lock file updates may need manual verification.
-  - package-ecosystem: npm
+  # Bun dependencies
+  - package-ecosystem: bun
     directory: "/"
     schedule:
       interval: weekly
