@@ -16,7 +16,11 @@
     "prepare": "husky install",
     "pre-commit": "lint-staged"
   },
-  "keywords": ["discord", "bot", "idle-champions"],
+  "keywords": [
+    "discord",
+    "bot",
+    "idle-champions"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -43,21 +47,8 @@
     "ts-node": "^10.9.2"
   },
   "lint-staged": {
-    "*.ts": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.md": [
-      "prettier --write"
-    ],
-    "*.{yml,yaml}": [
-      "prettier --write"
-    ],
-    "Dockerfile*": [
-      "prettier --write"
-    ],
-    "*.json": [
-      "prettier --write"
-    ]
+    "*.ts": ["eslint --fix", "prettier --write"],
+    "*.{md,json,yml,yaml}": ["prettier --write"],
+    "Dockerfile*": ["prettier --write"]
   }
 }
