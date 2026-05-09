@@ -56,3 +56,18 @@ updates:
     pull-request-branch-name:
       separator: "/"
     rebase-strategy: auto
+
+  # Docker Compose dependencies
+  - package-ecosystem: docker-compose
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:30"
+    reviewers:
+      - bigmichi1
+    commit-message:
+      prefix: "chore(docker-compose):"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: auto
