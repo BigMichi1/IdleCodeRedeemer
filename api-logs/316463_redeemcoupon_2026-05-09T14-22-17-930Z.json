@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-05-09T14:22:17.930Z",
+  "userId": "316463",
+  "action": "redeemcoupon",
+  "request": {
+    "url": "https://ps28.idlechampions.com/~idledragons/post.php?call=redeemcoupon&user_id=3164***&hash=***&code=***&instance_id=&timestamp=0&request_id=0&language_id=1&network_id=21&mobile_client_version=999&localization_aware=true",
+    "method": "POST",
+    "body": {
+      "code": "LORYMNASMING"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ok": true,
+    "body": {
+      "success": true,
+      "switch_play_server": "https://ps27.idlechampions.com/~idledragons/",
+      "memory_usage": "10 mb",
+      "apc_stats": {
+        "gets": 133,
+        "gets_time": "0.00000",
+        "sets": 66,
+        "sets_time": "0.00000"
+      },
+      "db_stats": {
+        "1": false,
+        "30": false,
+        "31": false
+      },
+      "processing_time": "0.40155"
+    }
+  }
+}

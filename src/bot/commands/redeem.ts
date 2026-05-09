@@ -7,6 +7,7 @@ import {
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
+import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
   .setName('redeem')
@@ -20,11 +21,13 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   try {
+    logger.info(`[REDEEM] Command started by ${interaction.user.tag}`);
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // Check if user has credentials
     const credentials = await userManager.getCredentials(interaction.user.id);
     if (!credentials) {
+      logger.warn(`[REDEEM] No credentials found for ${interaction.user.tag}`);
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ No Credentials Found')
@@ -35,14 +38,29 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const code = interaction.options.getString('code', true).toUpperCase().replaceAll('-', '');
+    logger.info(`[REDEEM] Redeeming code: ${code} for user ${interaction.user.tag}`);
 
-    // Check if already redeemed
+    // Check if code is already redeemed
     const isRedeemed = await codeManager.isCodeRedeemed(code);
     if (isRedeemed) {
+      logger.info(`[REDEEM] Code ${code} already redeemed`);
       const embed = new EmbedBuilder()
         .setColor(0xffaa00)
         .setTitle('⚠️ Code Already Redeemed')
         .setDescription(`The code \`${code}\` has already been redeemed.`);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    // Check if code is expired
+    const isExpired = await codeManager.isCodeExpired(code);
+    if (isExpired) {
+      logger.warn(`[REDEEM] Code ${code} is expired - rejecting without API call`);
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setTitle('❌ Code Expired')
+        .setDescription(`The code \`${code}\` has expired and can no longer be redeemed.`);
 
       await interaction.editReply({ embeds: [embed] });
       return;
@@ -138,6 +156,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Save to database (private code)
     const codeResponse = response as any;
     const statusName = getCodeStatusName(codeResponse.codeStatus);
+    logger.info(`[REDEEM] Code ${code} redeemed with status: ${statusName} for user ${interaction.user.tag}`);
     await codeManager.addRedeemedCode(
       code,
       interaction.user.id,

@@ -76,6 +76,14 @@ class CodeManager {
     return results;
   }
 
+  async isCodeExpired(code: string): Promise<boolean> {
+    const result = await db.get(
+      'SELECT code FROM redeemed_codes WHERE code = ? AND status = ?',
+      [code, 'Code Expired'],
+    );
+    return result !== undefined;
+  }
+
   async markCodeAsExpired(code: string): Promise<void> {
     await db.run(
       'UPDATE redeemed_codes SET status = \'expired\', expires_at = CURRENT_TIMESTAMP WHERE code = ?',

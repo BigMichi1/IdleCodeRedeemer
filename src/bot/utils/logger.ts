@@ -29,6 +29,7 @@ const customLevels = {
 // Create logger instance
 const logger = winston.createLogger({
   levels: customLevels.levels,
+  level: 'info', // Set default level to info
   format: winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.errors({ stack: true }),

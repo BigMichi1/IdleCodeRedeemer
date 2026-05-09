@@ -7,6 +7,7 @@ import {
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
+import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
   .setName('redeempublic')
@@ -20,11 +21,13 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   try {
+    logger.info(`[REDEEMPUBLIC] Command started by ${interaction.user.tag}`);
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // Check if user has credentials
     const credentials = await userManager.getCredentials(interaction.user.id);
     if (!credentials) {
+      logger.warn(`[REDEEMPUBLIC] No credentials found for ${interaction.user.tag}`);
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ No Credentials Found')
@@ -35,6 +38,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const code = interaction.options.getString('code', false)?.toUpperCase().replaceAll('-', '');
+    logger.info(`[REDEEMPUBLIC] User ${interaction.user.tag} requested code: ${code || '(list public codes)'}`);
 
     if (!code) {
       // Show available public codes
@@ -87,11 +91,27 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
+    // Check if code is expired
+    const isExpired = await codeManager.isCodeExpired(code);
+    if (isExpired) {
+      logger.warn(`[REDEEMPUBLIC] Code ${code} is expired - rejecting without API call`);
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setTitle('❌ Code Expired')
+        .setDescription(`The code \`${code}\` has expired and can no longer be redeemed.`);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
     // Check if code exists in public codes
     const publicCodes = await codeManager.getPublicUnexpiredCodes();
+    logger.info(`[REDEEMPUBLIC] Found ${publicCodes.length} public codes in database`);
+    
     const codeExists = publicCodes.some(c => c.code === code);
 
     if (!codeExists) {
+      logger.warn(`[REDEEMPUBLIC] Code ${code} not found in public codes by ${interaction.user.tag}`);
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Code Not Found')

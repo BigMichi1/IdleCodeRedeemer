@@ -97,10 +97,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!command) return;
 
   try {
-    logger.debug(`Executing command: ${interaction.commandName} by ${interaction.user.tag}`);
+    const options = interaction.options.data.map((opt: any) => `${opt.name}=${opt.value}`).join(' ');
+    const cmdMsg = `[COMMAND] ${interaction.commandName} ${options || '(no args)'} from ${interaction.user.tag}`;
+    
+    logger.info(cmdMsg);
+    
+    const startTime = Date.now();
     await command.execute(interaction);
+    const duration = Date.now() - startTime;
+    
+    const resultMsg = `[COMMAND] ${interaction.commandName} completed successfully in ${duration}ms`;
+    logger.info(resultMsg);
   } catch (error) {
-    logger.error(`Error executing command ${interaction.commandName}:`, error);
+    const errorMsg = `[COMMAND] Error executing command ${interaction.commandName} from ${interaction.user.tag}`;
+    logger.error(errorMsg, error);
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
         content: '❌ There was an error while executing this command!',
