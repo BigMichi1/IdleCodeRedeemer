@@ -4,9 +4,9 @@ WORKDIR /app
 
 # Install dependencies
 RUN apt-get update \
-    && apt-get -y --no-install-recommends install \
-        curl git ca-certificates build-essential \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get -y --no-install-recommends install \
+    curl git ca-certificates build-essential \
+  && rm -rf /var/lib/apt/lists/*
 
 # Configure Mise environment
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]

@@ -108,14 +108,14 @@ mise run watch
 All tasks are run through Mise. Use `mise tasks` to see all available commands:
 
 ```bash
-mise run install       # Install dependencies
-mise run dev           # Start development server
-mise run build         # Build TypeScript
-mise run watch         # Watch & rebuild on changes
-mise run lint          # Check code quality
-mise run lint:fix      # Auto-fix linting issues
-mise run audit         # Check for vulnerabilities
-mise run clean         # Clean build artifacts
+mise run install  # Install dependencies
+mise run dev      # Start development server
+mise run build    # Build TypeScript
+mise run watch    # Watch & rebuild on changes
+mise run lint     # Check code quality
+mise run lint:fix # Auto-fix linting issues
+mise run audit    # Check for vulnerabilities
+mise run clean    # Clean build artifacts
 ```
 
 ## Database
@@ -182,9 +182,9 @@ The bot saves API responses to `debug/` folder automatically:
 ## Environment Variables
 
 ```bash
-DISCORD_TOKEN          # Bot token from Discord Developer Portal
-DISCORD_GUILD_ID       # Server ID (for guild-specific commands)
-DISCORD_CHANNEL_ID     # Channel ID (for auto code scanning)
-DB_PATH                # Database file path (default: ./data/idle.db)
-NODE_ENV               # development or production
+DISCORD_TOKEN      # Bot token from Discord Developer Portal
+DISCORD_GUILD_ID   # Server ID (for guild-specific commands)
+DISCORD_CHANNEL_ID # Channel ID (for auto code scanning)
+DB_PATH            # Database file path (default: ./data/idle.db)
+NODE_ENV           # development or production
 ```

@@ -73,37 +73,37 @@ mise run docker-up
 ### Development
 
 ```bash
-mise run install      # Install dependencies
-mise run dev          # Run bot in dev mode (with TypeScript support)
-mise run build        # Build TypeScript to JavaScript
-mise run watch        # Watch & rebuild on file changes
-mise run start        # Run production bot
+mise run install # Install dependencies
+mise run dev     # Run bot in dev mode (with TypeScript support)
+mise run build   # Build TypeScript to JavaScript
+mise run watch   # Watch & rebuild on file changes
+mise run start   # Run production bot
 ```
 
 ### Docker
 
 ```bash
-mise run docker-build     # Build Docker image
-mise run docker-up        # Start with docker-compose
-mise run docker-down      # Stop containers
-mise run docker-logs      # View logs
-mise run docker-restart   # Restart bot
+mise run docker-build   # Build Docker image
+mise run docker-up      # Start with docker-compose
+mise run docker-down    # Stop containers
+mise run docker-logs    # View logs
+mise run docker-restart # Restart bot
 ```
 
 ### Maintenance
 
 ```bash
-mise run lint         # Check code quality with ESLint
-mise run lint:fix     # Auto-fix ESLint issues
-mise run audit        # Check for vulnerabilities
-mise run update       # Update all dependencies
-mise run clean        # Remove build artifacts
+mise run lint     # Check code quality with ESLint
+mise run lint:fix # Auto-fix ESLint issues
+mise run audit    # Check for vulnerabilities
+mise run update   # Update all dependencies
+mise run clean    # Remove build artifacts
 ```
 
 ### Help
 
 ```bash
-mise run help         # Show all tasks
+mise run help # Show all tasks
 ```
 
 ## Manual Commands
@@ -129,11 +129,11 @@ Mise integrates with `direnv` for automatic environment loading:
 
 ```bash
 # Install direnv
-brew install direnv  # or apt-get install direnv
+brew install direnv # or apt-get install direnv
 
 # Setup direnv hook in your shell
 # Add this to ~/.zshrc or ~/.bashrc:
-eval "$(direnv hook zsh)"  # or bash
+eval "$(direnv hook zsh)" # or bash
 
 # Allow direnv in this project
 direnv allow
@@ -147,8 +147,8 @@ Now when you `cd` into the project, tools and environment variables load automat
 
 ```toml
 [tools]
-bun = "1.0"      # Latest 1.x version
-node = "20"      # Latest 20.x version
+bun = "1.0" # Latest 1.x version
+node = "20" # Latest 20.x version
 ```
 
 ## Troubleshooting
@@ -164,7 +164,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 mise install
-mise cache clean  # Clear cache if issues persist
+mise cache clean # Clear cache if issues persist
 ```
 
 **Environment not loading?**

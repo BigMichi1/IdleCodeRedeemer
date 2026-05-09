@@ -42,16 +42,30 @@
   "devDependencies": {
     "@types/node": "^25.6.2",
     "@types/node-fetch": "^2.6.13",
-    "prettier": "^3.2.5",
+    "prettier": "^3.8.3",
+    "prettier-plugin-sh": "^0.18.1",
+    "prettier-plugin-toml": "^2.0.6",
     "syncpack": "^15.0.0",
-    "typescript": "^6.0.3",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
   },
   "lint-staged": {
-    "*.ts": ["eslint --fix", "prettier --write"],
-    "*.{md,yml,yaml}": ["prettier --write"],
-    "package.json": ["syncpack fix --source", "prettier --write"],
-    "Dockerfile*": ["prettier --write"],
-    "*.json": ["prettier --write"]
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "package.json": [
+      "syncpack fix --source",
+      "prettier --write"
+    ],
+    "Dockerfile*": [
+      "prettier --write"
+    ],
+    "*.json": [
+      "prettier --write"
+    ]
   }
 }

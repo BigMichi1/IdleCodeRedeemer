@@ -192,13 +192,13 @@ NODE_ENV=development
 Use Mise for all development tasks. The environment is automatically configured:
 
 ```bash
-mise run install     # Setup all tools & dependencies
-mise run dev         # Start bot with auto-rebuild
-mise run build       # Compile TypeScript
-mise run watch       # Watch for changes and rebuild
-mise run lint        # Check code quality
-mise run lint:fix    # Auto-fix linting issues
-mise tasks           # View all available tasks
+mise run install  # Setup all tools & dependencies
+mise run dev      # Start bot with auto-rebuild
+mise run build    # Compile TypeScript
+mise run watch    # Watch for changes and rebuild
+mise run lint     # Check code quality
+mise run lint:fix # Auto-fix linting issues
+mise tasks        # View all available tasks
 ```
 
 ## Database
