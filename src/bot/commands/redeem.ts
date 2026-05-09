@@ -1,0 +1,207 @@
+import {
+  SlashCommandBuilder,
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  MessageFlags,
+} from 'discord.js';
+import { userManager } from '../database/userManager';
+import { codeManager } from '../database/codeManager';
+import IdleChampionsApi from '../api/idleChampionsApi';
+
+export const data = new SlashCommandBuilder()
+  .setName('redeem')
+  .setDescription('Redeem an Idle Champions code')
+  .addStringOption((option) =>
+    option
+      .setName('code')
+      .setDescription('The code to redeem')
+      .setRequired(true)
+  );
+
+export async function execute(interaction: ChatInputCommandInteraction) {
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    // Check if user has credentials
+    const credentials = await userManager.getCredentials(interaction.user.id);
+    if (!credentials) {
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setTitle('❌ No Credentials Found')
+        .setDescription('Please set up your Idle Champions credentials first using `/setup`');
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    const code = interaction.options.getString('code', true).toUpperCase().replaceAll('-', '');
+
+    // Check if already redeemed
+    const isRedeemed = await codeManager.isCodeRedeemed(code);
+    if (isRedeemed) {
+      const embed = new EmbedBuilder()
+        .setColor(0xffaa00)
+        .setTitle('⚠️ Code Already Redeemed')
+        .setDescription(`The code \`${code}\` has already been redeemed.`);
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    // Get server
+    let server = credentials.server;
+    if (!server) {
+      server = await IdleChampionsApi.getServer();
+      if (!server) {
+        const embed = new EmbedBuilder()
+          .setColor(0xff0000)
+          .setTitle('❌ Error')
+          .setDescription('Could not determine game server.');
+
+        await interaction.editReply({ embeds: [embed] });
+        return;
+      }
+      await userManager.updateServer(interaction.user.id, server);
+    }
+
+    // Get fresh user details to get current instance ID
+    let userResult = await IdleChampionsApi.getUserDetails({
+      server,
+      user_id: credentials.userId,
+      hash: credentials.userHash,
+    });
+
+    // Handle server switch
+    if (userResult instanceof Object && 'status' in userResult && (userResult as any).status === 4) {
+      server = (userResult as any).newServer;
+      if (!server) {
+        const embed = new EmbedBuilder()
+          .setColor(0xff0000)
+          .setTitle('❌ Error')
+          .setDescription('Server switch failed.');
+
+        await interaction.editReply({ embeds: [embed] });
+        return;
+      }
+      await userManager.updateServer(interaction.user.id, server);
+      
+      userResult = await IdleChampionsApi.getUserDetails({
+        server,
+        user_id: credentials.userId,
+        hash: credentials.userHash,
+      });
+    }
+
+    const userData = userResult as any;
+    if (!userData || !userData.details) {
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setTitle('❌ Error')
+        .setDescription('Could not retrieve user data.');
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    // Get instance ID from user details
+    let instanceId = userData.details.instance_id || '0';
+    if (!instanceId || instanceId === '0') {
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setTitle('❌ Error')
+        .setDescription('Could not retrieve valid instance ID from server.');
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    // Submit code
+    const response = await IdleChampionsApi.submitCode({
+      server,
+      code,
+      user_id: credentials.userId,
+      hash: credentials.userHash,
+      instanceId,
+    });
+
+    // Type guard: check if response has codeStatus (CodeSubmitResponse)
+    if (!(response instanceof Object && 'codeStatus' in response)) {
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setTitle('❌ Error')
+        .setDescription('Failed to redeem code.');
+
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
+
+    // Save to database
+    const codeResponse = response as any;
+    const statusName = getCodeStatusName(codeResponse.codeStatus);
+    await codeManager.addRedeemedCode(
+      code,
+      interaction.user.id,
+      statusName,
+      codeResponse.lootDetail
+    );
+
+    // Build response embed
+    const isSuccess = codeResponse.codeStatus === 0; // 0 = Success
+    const embed = new EmbedBuilder()
+      .setColor(isSuccess ? 0x00ff00 : 0xffaa00)
+      .setTitle(isSuccess ? '✅ Code Redeemed!' : `⚠️ ${statusName}`)
+      .addFields({ name: 'Code', value: `\`${code}\``, inline: false });
+
+    // Format loot nicely
+    if (codeResponse.lootDetail && Array.isArray(codeResponse.lootDetail) && codeResponse.lootDetail.length > 0) {
+      const lootLines = codeResponse.lootDetail
+        .map((loot: any) => {
+          if (loot.chest_type_id !== undefined) {
+            const chestName = getChestTypeName(loot.chest_type_id);
+            return `• ${chestName}: ${loot.before} → ${loot.after} (+${loot.count})`;
+          } else if (loot.loot_item) {
+            return `• ${loot.loot_item.replace(/_/g, ' ')}: x${loot.count}`;
+          }
+          return `• ${JSON.stringify(loot)}`;
+        })
+        .join('\n');
+
+      embed.addFields({ name: '📦 Loot Received', value: lootLines || 'Unknown loot', inline: false });
+    }
+
+    await interaction.editReply({ embeds: [embed] });
+  } catch (error) {
+    console.error('[REDEEM COMMAND] Error:', error);
+    await interaction.editReply({
+      content: '❌ An error occurred while redeeming the code.',
+    });
+  }
+}
+
+enum CodeSubmitStatus {
+  Success = 'Success',
+  AlreadyRedeemed = 'Already Redeemed',
+  InvalidParameters = 'Invalid Parameters',
+  NotValidCombo = 'Not a Valid Code',
+  Expired = 'Code Expired',
+  CannotRedeem = 'Cannot Redeem',
+}
+
+function getCodeStatusName(status: any): string {
+  const statusMap: { [key: number]: string } = {
+    0: 'Success',
+    1: 'Already Redeemed',
+    2: 'Invalid Parameters',
+    3: 'Not a Valid Code',
+    4: 'Code Expired',
+    5: 'Cannot Redeem',
+  };
+  return statusMap[status] || 'Unknown Status';
+}
+
+function getChestTypeName(chestTypeId: number): string {
+  const chestTypes: { [key: number]: string } = {
+    282: 'Electrum Chest',
+  };
+  return chestTypes[chestTypeId] || `Chest ${chestTypeId}`;
+}

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  idle-code-redeemer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: idle-code-redeemer
+    restart: unless-stopped
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-357247482247380994}
+      DB_PATH: /app/data/idle.db
+      NODE_ENV: production
+    volumes:
+      - ./data:/app/data
+    networks:
+      - idle-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  idle-network:
+    driver: bridge
