@@ -41,7 +41,14 @@ COPY src/bot ./src/bot
 COPY src/lib ./src/lib
 
 # Build the bot
-RUN mise run build && test -d dist || (echo "Build failed - dist/ directory not created" && exit 1)
+RUN echo "Building TypeScript..." && \
+    mise run build && \
+    echo "Build completed successfully" && \
+    test -d dist && echo "dist/ directory verified" || \
+    (echo "ERROR: Build failed - dist/ directory not found" && \
+     echo "Current directory contents:" && ls -la && \
+     echo "Source files:" && find src -type f -name "*.ts" | head -20 && \
+     exit 1)
 
 # Create data directory
 RUN mkdir -p /app/data api-logs

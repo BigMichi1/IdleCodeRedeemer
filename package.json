@@ -4,10 +4,10 @@
   "description": "Discord bot for Idle Champions code scanning and redemption",
   "main": "dist/bot/bot.js",
   "scripts": {
-    "build": "bun run --bun tsc -p tsconfig.bot.json",
+    "build": "tsc -p tsconfig.bot.json",
     "start": "bun run dist/bot/bot.js",
     "dev": "bun run --bun src/bot/bot.ts",
-    "watch": "bun run --bun tsc -p tsconfig.bot.json --watch",
+    "watch": "tsc -p tsconfig.bot.json --watch",
     "migrate": "bun run --bun src/bot/database/migrate.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
