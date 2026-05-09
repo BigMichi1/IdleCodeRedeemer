@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-05-09T15:05:15.076Z",
+  "userId": "316463",
+  "action": "redeemcoupon",
+  "request": {
+    "url": "https://ps29.idlechampions.com/~idledragons/post.php?call=redeemcoupon&user_id=3164***&hash=***&code=***&instance_id=2124704681&timestamp=0&request_id=0&language_id=1&network_id=21&mobile_client_version=999&localization_aware=true",
+    "method": "POST",
+    "body": {
+      "code": "PLOPGISTTULE"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ok": true,
+    "body": {
+      "success": true,
+      "loot_details": [
+        {
+          "loot_item": "generic_chest",
+          "loot_action": "generic_chest",
+          "count": 1,
+          "chest_type_id": 282,
+          "before": 1649,
+          "after": 1650,
+          "hc_pack": false
+        }
+      ],
+      "okay": true,
+      "actions": [
+        {
+          "action": "update_chest_count",
+          "chest_type_id": 282,
+          "count": 1650
+        }
+      ],
+      "memory_usage": "8 mb",
+      "apc_stats": {
+        "gets": 75,
+        "gets_time": "0.00000",
+        "sets": 0,
+        "sets_time": "0.00000"
+      },
+      "db_stats": {
+        "1": false,
+        "32": false
+      },
+      "processing_time": "0.00790"
+    }
+  }
+}

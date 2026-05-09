@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-05-09T15:12:21.274Z",
+  "userId": "316463",
+  "action": "redeemcoupon",
+  "request": {
+    "url": "https://ps29.idlechampions.com/~idledragons/post.php?call=redeemcoupon&user_id=3164***&hash=***&code=***&instance_id=2124704681&timestamp=0&request_id=0&language_id=1&network_id=21&mobile_client_version=999&localization_aware=true",
+    "method": "POST",
+    "body": {
+      "code": "#OVER&UNDURR"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ok": true,
+    "body": {
+      "success": true,
+      "failure_reason": "offer_has_expired",
+      "okay": false,
+      "fail_message": "offer_has_expired",
+      "actions": [],
+      "memory_usage": "8 mb",
+      "apc_stats": {
+        "gets": 71,
+        "gets_time": "0.00000",
+        "sets": 1,
+        "sets_time": "0.00000"
+      },
+      "db_stats": {
+        "1": false,
+        "32": false
+      },
+      "processing_time": "0.02094"
+    }
+  }
+}

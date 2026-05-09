@@ -156,7 +156,8 @@ class IdleChampionsApi {
           return new GenericResponse(ResponseStatus.SwitchServer, redeemResponse.switch_play_server);
         }
 
-        const reason = redeemResponse.failure_reason?.toLowerCase() || '';
+        const failureReason = redeemResponse.failure_reason ? String(redeemResponse.failure_reason) : '';
+        const reason = failureReason.toLowerCase();
 
         if (reason.includes('already') || reason.includes('someone')) {
           return new CodeSubmitResponse(CodeSubmitStatus.AlreadyRedeemed);
@@ -164,7 +165,8 @@ class IdleChampionsApi {
         if (reason.includes('expired')) {
           return new CodeSubmitResponse(CodeSubmitStatus.Expired);
         }
-        if (reason.includes('combo') || reason.includes('invalid')) {
+        if (reason.includes('combo') || reason.includes('invalid') || reason.includes('valid_combination')) {
+          logger.warn(`[REDEEM API] Invalid code combination: ${failureReason}`);
           return new CodeSubmitResponse(CodeSubmitStatus.NotValidCombo);
         }
         if (reason.includes('outdated')) {
@@ -179,8 +181,9 @@ class IdleChampionsApi {
         if (redeemResponse.success && redeemResponse.okay) {
           return new CodeSubmitResponse(CodeSubmitStatus.Success, redeemResponse?.loot_details);
         }
-        logger.error('Unknown failure reason:', redeemResponse.failure_reason);
-        return new GenericResponse(ResponseStatus.Failed);
+        // Default to NotValidCombo for any unrecognized failure reason
+        logger.warn(`[REDEEM API] Unrecognized failure reason: ${failureReason}`);
+        return new CodeSubmitResponse(CodeSubmitStatus.NotValidCombo);
       }
     } catch (error) {
       logger.error('Error submitting code:', error);

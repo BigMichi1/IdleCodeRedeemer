@@ -107,7 +107,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Check if code exists in public codes
     const publicCodes = await codeManager.getPublicUnexpiredCodes();
     logger.info(`[REDEEMPUBLIC] Found ${publicCodes.length} public codes in database`);
-    
+
     const codeExists = publicCodes.some(c => c.code === code);
 
     if (!codeExists) {

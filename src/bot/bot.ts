@@ -99,13 +99,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     const options = interaction.options.data.map((opt: any) => `${opt.name}=${opt.value}`).join(' ');
     const cmdMsg = `[COMMAND] ${interaction.commandName} ${options || '(no args)'} from ${interaction.user.tag}`;
-    
+
     logger.info(cmdMsg);
-    
+
     const startTime = Date.now();
     await command.execute(interaction);
     const duration = Date.now() - startTime;
-    
+
     const resultMsg = `[COMMAND] ${interaction.commandName} completed successfully in ${duration}ms`;
     logger.info(resultMsg);
   } catch (error) {
