@@ -1,0 +1,58 @@
+version: 2
+updates:
+  # npm dependencies
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - bigmichi1
+    allow:
+      - dependency-type: all
+    commit-message:
+      prefix: "chore(deps):"
+      prefix-development: "chore(deps-dev):"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: auto
+    groups:
+      - dependency-type: development
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "typescript"
+      - dependency-type: runtime
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+    reviewers:
+      - bigmichi1
+    commit-message:
+      prefix: "ci:"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: auto
+
+  # Docker dependencies
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+    reviewers:
+      - bigmichi1
+    commit-message:
+      prefix: "chore(docker):"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: auto

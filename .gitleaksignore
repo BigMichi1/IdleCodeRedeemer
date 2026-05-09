@@ -1,0 +1,13 @@
+# Gitleaks ignore patterns for false positives
+# Format: Comment above each pattern to explain why it's ignored
+
+# Example/template tokens in documentation and examples
+README.md
+docs/
+
+# Test files and examples that use fake tokens
+.env.example
+src/bot/.env.example
+
+# Configuration files
+.secrets.baseline

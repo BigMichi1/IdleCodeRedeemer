@@ -52,31 +52,31 @@ idle-code-redeemer/
 ## Key Files
 
 ### Core Bot
-- **[src/bot/bot.ts](src/bot/bot.ts)** - Discord client initialization, event handlers, command routing
-- **[src/bot/api/idleChampionsApi.ts](src/bot/api/idleChampionsApi.ts)** - Game server API client with query-parameter format
+- **[src/bot/bot.ts](../src/bot/bot.ts)** - Discord client initialization, event handlers, command routing
+- **[src/bot/api/idleChampionsApi.ts](../src/bot/api/idleChampionsApi.ts)** - Game server API client with query-parameter format
 
 ### Commands (6 slash commands)
-- **[src/bot/commands/setup.ts](src/bot/commands/setup.ts)** - `/setup user_id:<id> user_hash:<hash>`
-- **[src/bot/commands/redeem.ts](src/bot/commands/redeem.ts)** - `/redeem code:<code>`
-- **[src/bot/commands/inventory.ts](src/bot/commands/inventory.ts)** - `/inventory` (gold, rubies, equipment, progress)
-- **[src/bot/commands/open.ts](src/bot/commands/open.ts)** - `/open chest_type:<type> count:<count>`
-- **[src/bot/commands/blacksmith.ts](src/bot/commands/blacksmith.ts)** - `/blacksmith contract_type:<type> hero_id:<id> count:<count>`
-- **[src/bot/commands/help.ts](src/bot/commands/help.ts)** - `/help`
+- **[src/bot/commands/setup.ts](../src/bot/commands/setup.ts)** - `/setup user_id:<id> user_hash:<hash>`
+- **[src/bot/commands/redeem.ts](../src/bot/commands/redeem.ts)** - `/redeem code:<code>`
+- **[src/bot/commands/inventory.ts](../src/bot/commands/inventory.ts)** - `/inventory` (gold, rubies, equipment, progress)
+- **[src/bot/commands/open.ts](../src/bot/commands/open.ts)** - `/open chest_type:<type> count:<count>`
+- **[src/bot/commands/blacksmith.ts](../src/bot/commands/blacksmith.ts)** - `/blacksmith contract_type:<type> hero_id:<id> count:<count>`
+- **[src/bot/commands/help.ts](../src/bot/commands/help.ts)** - `/help`
 
 ### Database
-- **[src/bot/database/db.ts](src/bot/database/db.ts)** - SQLite connection & schema
-- **[src/bot/database/userManager.ts](src/bot/database/userManager.ts)** - User credential storage
-- **[src/bot/database/codeManager.ts](src/bot/database/codeManager.ts)** - Code tracking & history
+- **[src/bot/database/db.ts](../src/bot/database/db.ts)** - SQLite connection & schema
+- **[src/bot/database/userManager.ts](../src/bot/database/userManager.ts)** - User credential storage
+- **[src/bot/database/codeManager.ts](../src/bot/database/codeManager.ts)** - Code tracking & history
 
 ### Auto Features
-- **[src/bot/handlers/codeScanner.ts](src/bot/handlers/codeScanner.ts)** - Message scanning for codes (regex pattern)
-- **[src/bot/utils/debugLogger.ts](src/bot/utils/debugLogger.ts)** - API response logging with auto-cleanup
+- **[src/bot/handlers/codeScanner.ts](../src/bot/handlers/codeScanner.ts)** - Message scanning for codes (regex pattern)
+- **[src/bot/utils/debugLogger.ts](../src/bot/utils/debugLogger.ts)** - API response logging with auto-cleanup
 
 ### Configuration
-- **[.env.example](.env.example)** - Template for environment variables
-- **[.mise.toml](.mise.toml)** - Task definitions for Mise (optional tool manager)
-- **[package.json](package.json)** - npm scripts & dependencies
-- **[tsconfig.bot.json](tsconfig.bot.json)** - TypeScript compiler options
+- **[.env.example](../.env.example)** - Template for environment variables
+- **[.mise.toml](../.mise.toml)** - Task definitions for Mise (optional tool manager)
+- **[package.json](../package.json)** - npm scripts & dependencies
+- **[tsconfig.bot.json](../tsconfig.bot.json)** - TypeScript compiler options
 
 ## Dependencies
 
