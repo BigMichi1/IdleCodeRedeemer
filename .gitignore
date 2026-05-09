@@ -6,9 +6,7 @@ yarn.lock
 
 # Build outputs
 dist/
-*.js
-*.js.map
-*.d.ts
+dist-bundle/
 
 # Environment
 .env
@@ -42,6 +40,7 @@ Thumbs.db
 logs/
 *.log
 npm-debug.log*
+api-logs/
 
 # Testing
 coverage/

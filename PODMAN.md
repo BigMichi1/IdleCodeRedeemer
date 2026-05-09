@@ -28,10 +28,10 @@ sudo yum install podman
 
 ```bash
 # Build locally
-podman build -t idle-code-redeemer .
+podman build -t --format docker idle-code-redeemer .
 
 # Or with a specific tag
-podman build -t idle-code-redeemer:v1.0.0 .
+podman build -t --format docker idle-code-redeemer:v1.0.0 .
 ```
 
 ### Running with Podman Compose

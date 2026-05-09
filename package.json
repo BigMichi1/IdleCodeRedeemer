@@ -5,7 +5,9 @@
   "main": "dist/bot/bot.js",
   "scripts": {
     "build": "tsc -p tsconfig.bot.json",
+    "build:prod": "node esbuild.prod.js",
     "start": "bun run dist/bot/bot.js",
+    "start:prod": "bun run dist-bundle/bot.js",
     "dev": "bun run --bun src/bot/bot.ts",
     "watch": "tsc -p tsconfig.bot.json --watch",
     "migrate": "bun run --bun src/bot/database/migrate.ts",
@@ -39,6 +41,7 @@
     "@typescript-eslint/eslint-plugin": "8.59.2",
     "@typescript-eslint/parser": "8.59.2",
     "commitlint": "21.0.0",
+    "esbuild": "^0.28.0",
     "eslint": "10.3.0",
     "husky": "9.1.7",
     "lint-staged": "17.0.3",

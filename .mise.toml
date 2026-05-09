@@ -13,6 +13,10 @@ node = "24"
 description = "Install dependencies with Bun"
 run = "bun install"
 
+[tasks."prod:install"]
+description = "Install production dependencies only with Bun"
+run = "bun install --production --frozen-lockfile --ignore-scripts"
+
 [tasks.dev]
 description = "Run bot in development mode with TypeScript support"
 run = "bun run dev"
@@ -22,9 +26,19 @@ env = { NODE_ENV = "development" }
 description = "Build TypeScript to JavaScript"
 run = "bun run build"
 
+[tasks."prod:build"]
+description = "Build minified production bundle"
+run = "bun run build:prod"
+env = { NODE_ENV = "production" }
+
 [tasks.start]
 description = "Start the bot in production"
 run = "bun start"
+env = { NODE_ENV = "production" }
+
+[tasks."prod:start"]
+description = "Start the minified production bundle"
+run = "bun run start:prod"
 env = { NODE_ENV = "production" }
 
 [tasks.watch]
