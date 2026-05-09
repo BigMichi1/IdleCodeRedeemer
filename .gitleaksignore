@@ -11,3 +11,16 @@ src/bot/.env.example
 
 # Configuration files
 .secrets.baseline
+
+# Setup/configuration files with environment variable references (not secrets)
+.mise.toml
+docker-compose.yml
+
+# Type definitions that mention "passwords" (not actual secrets)
+src/lib/chrome.d.ts
+
+# GitHub Actions workflows contain pattern names, not actual secrets
+.github/workflows/
+
+# Application code that reads from environment variables (not secrets themselves)
+src/bot/bot.ts
