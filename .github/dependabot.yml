@@ -9,7 +9,12 @@ updates:
       time: "03:00"
     open-pull-requests-limit: 5
     reviewers:
-      - bigmichi1
+      - BigMichi1
+      - Copilot
+    labels:
+      - "dependencies"
+      - "automerge"
+      - "bun"
     commit-message:
       prefix: "chore(deps):"
       include: "scope"
@@ -26,7 +31,12 @@ updates:
       day: monday
       time: "04:00"
     reviewers:
-      - bigmichi1
+      - BigMichi1
+      - Copilot
+    labels:
+      - "dependencies"
+      - "automerge"
+      - "github_actions"
 
   # Docker dependencies
   - package-ecosystem: docker
@@ -36,7 +46,12 @@ updates:
       day: monday
       time: "05:00"
     reviewers:
-      - bigmichi1
+      - BigMichi1
+      - Copilot
+    labels:
+      - "dependencies"
+      - "automerge"
+      - "docker"
 
   # Docker Compose dependencies
   - package-ecosystem: docker-compose
@@ -46,4 +61,9 @@ updates:
       day: monday
       time: "05:30"
     reviewers:
-      - bigmichi1
+      - BigMichi1
+      - Copilot
+    labels:
+      - "dependencies"
+      - "automerge"
+      - "docker_compose"
