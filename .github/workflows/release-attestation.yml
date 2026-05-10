@@ -151,7 +151,7 @@ jobs:
           EOF
 
           # Print manifest for verification
-          cat RELEASE_MANIFEST.txt | sed "s/\$VERSION/$VERSION/g" | sed "s/\$REGISTRY/$REGISTRY/g" | sed "s/\$IMAGE_NAME/$IMAGE_NAME/g"
+          sed -e "s|\$VERSION|$VERSION|g" -e "s|\$REGISTRY|$REGISTRY|g" -e "s|\$IMAGE_NAME|$IMAGE_NAME|g" RELEASE_MANIFEST.txt
 
       - name: Create Attestation File
         id: attestation
