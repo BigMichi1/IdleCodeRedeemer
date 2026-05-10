@@ -5,6 +5,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { userManager } from '../database/userManager';
+import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
 
 enum ContractType {
@@ -151,6 +152,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       heroId,
       count,
       instanceId,
+    });
+
+    // Log action
+    await auditManager.logAction(interaction.user.id, 'BLACKSMITH_USED', {
+      contractType: contractName,
+      heroId,
+      count,
     });
 
     // Build response embed

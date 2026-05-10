@@ -6,6 +6,7 @@ import {
 } from 'discord.js';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
+import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
 import logger from '../utils/logger';
 
@@ -41,6 +42,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const isRedeemed = await codeManager.isCodeRedeemed(code);
     if (isRedeemed) {
       logger.info(`[REDEEM] Code ${code} already redeemed`);
+      await auditManager.logAction(interaction.user.id, 'CODE_REDEEM_FAILED', {
+        code,
+        reason: 'Already Redeemed',
+      });
       const embed = new EmbedBuilder()
         .setColor(0xffaa00)
         .setTitle('⚠️ Code Already Redeemed')
@@ -54,6 +59,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const isExpired = await codeManager.isCodeExpired(code);
     if (isExpired) {
       logger.warn(`[REDEEM] Code ${code} is expired - rejecting without API call`);
+      await auditManager.logAction(interaction.user.id, 'CODE_REDEEM_FAILED', {
+        code,
+        reason: 'Code Expired',
+      });
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Code Expired')
@@ -187,6 +196,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         codeResponse.lootDetail,
         shouldBePublic // Private by default, public if second user redeems successfully
       );
+
+      // Log successful redeem
+      await auditManager.logAction(interaction.user.id, 'CODE_REDEEMED', {
+        code,
+        status: statusName,
+        autoPublic: shouldBePublic,
+      });
     } else {
       // For invalid/already redeemed codes - check if the code was explicitly made public
       // If so, switch it back to private (might be a mistake)
@@ -198,6 +214,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         );
         await codeManager.markCodeAsPrivate(code);
       }
+
+      // Log failed redeem
+      await auditManager.logAction(interaction.user.id, 'CODE_REDEEM_FAILED', {
+        code,
+        reason: statusName,
+      });
     }
 
     // Build response embed

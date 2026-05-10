@@ -5,6 +5,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { userManager } from '../database/userManager';
+import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
 
 enum ChestType {
@@ -156,6 +157,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       chestTypeId: chestTypeId as any,
       count,
       instanceId,
+    });
+
+    // Log action
+    await auditManager.logAction(interaction.user.id, 'CHESTS_OPENED', {
+      chestType: chestName,
+      count,
     });
 
     // Build response embed

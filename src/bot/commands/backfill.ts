@@ -7,6 +7,7 @@ import {
   ChannelType,
 } from 'discord.js';
 import { backfillManager } from '../database/backfillManager';
+import { auditManager } from '../database/auditManager';
 import { backfillChannelHistory } from '../handlers/backfillHandler';
 import logger from '../utils/logger';
 
@@ -84,6 +85,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       `[BACKFILL CMD] Operation ${operationId} started for channel ${targetChannel.name}`
     );
 
+    // Log backfill start
+    await auditManager.logAction(interaction.user.id, 'BACKFILL_STARTED', {
+      operationId,
+      channel: targetChannel.name,
+    });
+
     // Create progress tracker
     let progressMessage = '';
     const updateProgress = (message: string) => {
@@ -130,6 +137,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     logger.info(
       `[BACKFILL CMD] Operation ${operationId} completed: found=${stats.codesFound}, redeemed=${stats.codesRedeemed}`
     );
+
+    // Log backfill completion
+    await auditManager.logAction(interaction.user.id, 'BACKFILL_COMPLETED', {
+      operationId,
+      codesFound: stats.codesFound,
+      codesRedeemed: stats.codesRedeemed,
+      errors: stats.errors.length,
+    });
   } catch (error) {
     logger.error('[BACKFILL CMD] Command error:', error);
 

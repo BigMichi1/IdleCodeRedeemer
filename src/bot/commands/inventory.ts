@@ -5,6 +5,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { userManager } from '../database/userManager';
+import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
 
 export const data = new SlashCommandBuilder()
@@ -211,6 +212,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         });
       }
     }
+
+    // Log action
+    await auditManager.logAction(interaction.user.id, 'VIEWED_INVENTORY', {});
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {

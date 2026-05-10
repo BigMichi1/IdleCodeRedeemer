@@ -5,6 +5,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { codeManager } from '../database/codeManager';
+import { auditManager } from '../database/auditManager';
 
 export const data = new SlashCommandBuilder()
   .setName('makepublic')
@@ -35,6 +36,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     // Mark code as public
     await codeManager.markCodeAsPublic(code);
+
+    // Log action
+    await auditManager.logAction(interaction.user.id, 'CODE_MADE_PUBLIC', { code });
 
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)

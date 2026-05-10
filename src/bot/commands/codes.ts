@@ -5,6 +5,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { codeManager } from '../database/codeManager';
+import { auditManager } from '../database/auditManager';
 
 export const data = new SlashCommandBuilder()
   .setName('codes')
@@ -23,6 +24,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const count = interaction.options.getNumber('count', false) || 10;
+
+    // Log action
+    await auditManager.logAction(interaction.user.id, 'VIEWED_CODES', { count });
 
     const redeemedCodes = await codeManager.getRedeemedCodeDetails(interaction.user.id, count);
 

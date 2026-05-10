@@ -5,6 +5,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { userManager } from '../database/userManager';
+import { auditManager } from '../database/auditManager';
 
 export const data = new SlashCommandBuilder()
   .setName('setup')
@@ -34,6 +35,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       userHash,
     });
     console.log('[SETUP] Credentials saved');
+
+    // Log action
+    await auditManager.logAction(interaction.user.id, 'USER_SETUP', { userId });
 
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)
