@@ -258,6 +258,27 @@ The project includes complete API documentation for all external software interf
 - **Usage Examples**: Complete examples for common workflows
 - **Backward Compatibility**: API stability and breaking changes tracking
 
+## Security Assessment [OSPS-SA-03.01]
+
+The project performs a comprehensive security assessment to understand potential security threats and risks. See [docs/security-assessment.md](docs/security-assessment.md) for:
+
+- **Threat Model**: Identified actors and attack vectors
+- **Vulnerability Assessment**: 7 major threat areas analyzed
+  - Credential Management (HIGH impact, MEDIUM likelihood)
+  - External API Communication (MEDIUM impact, with known SSL issue)
+  - Discord Integration (MEDIUM impact, LOW likelihood)
+  - Dependency Vulnerabilities (LOW impact, MEDIUM likelihood)
+  - Database Security (MEDIUM impact, MEDIUM likelihood)
+  - Code & Build Security (LOW impact, MEDIUM likelihood)
+  - Operational Security (MEDIUM impact, HIGH likelihood)
+- **Risk Summary**: Risk matrix with likelihood, impact, and mitigation status
+- **Security Controls**: Preventive, detective, and responsive controls
+- **Known Issues**: SSL certificate issue, plaintext credentials, single admin
+- **Recommendations**: CRITICAL, HIGH, MEDIUM, and LOW priority actions
+- **Best Practices**: For both users and developers
+- **Regulatory Compliance**: Data protection and policy considerations
+- **Overall Risk Assessment**: MEDIUM (with strong mitigations)
+
 ## Automated Test Suites & CI/CD Testing [OSPS-QA-06.01]
 
 All code is validated through automated test suites running in CI/CD pipelines before merging to the primary branch.

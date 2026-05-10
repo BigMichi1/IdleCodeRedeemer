@@ -8,6 +8,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 - **[Build Instructions](BUILD.md)** - How to build the software (required libraries, frameworks, dependencies)
 - **[System Design](docs/system-design.md)** - Architecture, actors, actions, and data flows
 - **[API Reference](docs/api-reference.md)** - Discord commands, parameters, responses, and data structures
+- **[Security Assessment](docs/security-assessment.md)** - Threat analysis, vulnerabilities, and mitigations
 - **[Testing Strategy](docs/testing-strategy.md)** - Automated test suites run before every merge
 - **[Contributing Guide](CONTRIBUTING.md)** - Guidelines for developers contributing to the project
 - **[Status Checks](docs/status-checks.md)** - Automated checks required before merging to primary branch
