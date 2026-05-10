@@ -1,0 +1,69 @@
+#!/bin/sh
+
+# Get the project root directory
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Check if we're pushing to a remote
+if [ -z "$1" ]; then
+  echo "Error: Remote not provided to pre-push hook"
+  exit 1
+fi
+
+REMOTE="$1"
+LOCAL_REF="$2"
+REMOTE_REF="$3"
+REMOTE_URL="$4"
+
+# Determine the commit range to check
+if [ -z "$REMOTE_REF" ] || [ "$REMOTE_REF" = "0000000000000000000000000000000000000000" ]; then
+  # Deleting a branch
+  exit 0
+fi
+
+if [ -z "$LOCAL_REF" ] || [ "$LOCAL_REF" = "0000000000000000000000000000000000000000" ]; then
+  # Pushing a new branch - check from merge-base with remote main/master
+  COMMIT_RANGE="$(git merge-base $REMOTE/$REMOTE_REF HEAD)..$LOCAL_REF"
+else
+  # Normal push - check commits being pushed
+  COMMIT_RANGE="$REMOTE_REF..$LOCAL_REF"
+fi
+
+# Get the list of commits being pushed
+echo "🔍 Checking DCO sign-offs for commits being pushed..."
+commits=$(git rev-list "$COMMIT_RANGE" 2>/dev/null)
+
+# If no commits in range, exit successfully
+if [ -z "$commits" ]; then
+  exit 0
+fi
+
+unsigned_commits=()
+while IFS= read -r commit; do
+  if ! git log --format=%B -n 1 "$commit" | grep -q "^Signed-off-by:"; then
+    unsigned_commits+=("$commit")
+  fi
+done <<EOF
+$commits
+EOF
+
+if [ ${#unsigned_commits[@]} -gt 0 ]; then
+  echo ""
+  echo "❌ DCO Check Failed"
+  echo ""
+  echo "The following commits are not signed off:"
+  for commit in "${unsigned_commits[@]}"; do
+    echo "  - $(git log --oneline -n 1 $commit)"
+  done
+  echo ""
+  echo "Please sign off on all commits using:"
+  echo "  git commit --amend -s"
+  echo ""
+  echo "After amending, force-push with:"
+  echo "  git push --force-with-lease"
+  echo ""
+  echo "For more information, see DCO.md"
+  exit 1
+fi
+
+echo "✅ All commits are properly signed off"
+exit 0
