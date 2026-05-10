@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Project Governance & Members [OSPS-GV-01.01]** - Documented project members, roles, and access to sensitive resources
+  - NEW: [GOVERNANCE.md](GOVERNANCE.md) - Complete governance documentation
+  - Lists active maintainers (@BigMichi1 as lead maintainer)
+  - Documents access to sensitive resources (GitHub, Docker, secrets, database)
+  - Describes decision-making and code review processes
+  - Includes vulnerability response procedures
+  - Future maintainer criteria documented
+  - Audit trail and compliance verification procedures
+
 - **Build Instructions [OSPS-DO-07.01]** - Comprehensive documentation on how to build the software
   - NEW: [BUILD.md](BUILD.md) - Complete build instructions with prerequisites, installation, and build procedures
   - NEW: [CONTRIBUTING.md](CONTRIBUTING.md) - Developer contribution guidelines with development setup

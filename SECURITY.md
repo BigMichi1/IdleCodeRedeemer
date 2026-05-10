@@ -231,6 +231,22 @@ When a release is created:
 
 For complete dependency management details, see [docs/dependency-management.md](docs/dependency-management.md).
 
+## Project Members & Governance [OSPS-GV-01.01]
+
+This project maintains a documented list of project members with access to sensitive resources.
+
+**See [GOVERNANCE.md](GOVERNANCE.md) for:**
+- ✅ List of active maintainers and their roles
+- ✅ Access to sensitive resources (repository, secrets, Docker images, databases)
+- ✅ Decision-making process and code review procedures
+- ✅ Contact information for security issues
+- ✅ Future maintainer criteria and onboarding process
+
+**Current Leadership:**
+- **Owner & Lead Maintainer**: @BigMichi1 (michael@bigmichi1.de)
+
+For vulnerability reporting and sensitive inquiries, see [GOVERNANCE.md#communication](GOVERNANCE.md#communication).
+
 ## Build Instructions & Development Documentation [OSPS-DO-07.01]
 
 This project provides comprehensive instructions on how to build the software from source, including all required libraries, frameworks, SDKs, and dependencies.

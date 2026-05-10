@@ -7,6 +7,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 - **[Full README](docs/full-documentation.md)** - Main documentation & all features
 - **[Build Instructions](BUILD.md)** - How to build the software (required libraries, frameworks, dependencies)
 - **[Contributing Guide](CONTRIBUTING.md)** - Guidelines for developers contributing to the project
+- **[Project Governance](GOVERNANCE.md)** - Project members, roles, and access to sensitive resources
 - **[Development Guide](docs/development.md)** - Setup, architecture & tech stack
 - **[Project Structure](docs/structure.md)** - Directory layout & key files
 - **[Mise Setup Guide](docs/mise.md)** - Tool management reference

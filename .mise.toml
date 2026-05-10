@@ -103,6 +103,10 @@ echo "2. Add your DISCORD_TOKEN"
 echo "3. Run: mise run dev"
 '''
 
+[tasks.commitlint]
+description = "Validate commit message format"
+run = "bunx commitlint --edit"
+
 [tasks.help]
 description = "Show all available tasks"
 run = "mise tasks --list"
