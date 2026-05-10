@@ -41,9 +41,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const embed = new EmbedBuilder()
         .setColor(0xffaa00)
         .setTitle('⚠️ Backfill In Progress')
-        .setDescription(
-          'A backfill operation is already running. Please wait for it to complete.'
-        );
+        .setDescription('A backfill operation is already running. Please wait for it to complete.');
 
       await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       return;
@@ -55,9 +53,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const embed = new EmbedBuilder()
         .setColor(0xffaa00)
         .setTitle('⏱️ Rate Limited')
-        .setDescription(
-          'You can only initiate a backfill once per hour. Please try again later.'
-        );
+        .setDescription('You can only initiate a backfill once per hour. Please try again later.');
 
       await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       return;
@@ -84,7 +80,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     // Start the backfill operation
     const operationId = await backfillManager.startBackfill(interaction.user.id);
-    logger.info(`[BACKFILL CMD] Operation ${operationId} started for channel ${targetChannel.name}`);
+    logger.info(
+      `[BACKFILL CMD] Operation ${operationId} started for channel ${targetChannel.name}`
+    );
 
     // Create progress tracker
     let progressMessage = '';

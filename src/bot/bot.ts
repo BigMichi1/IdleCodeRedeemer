@@ -104,7 +104,9 @@ client.on(Events.ClientReady, async () => {
       }
     } else if (!shouldBackfill) {
       const lastBackfill = await backfillManager.getLastBackfill();
-      logger.info(`Skipping startup backfill - last run was less than 6 hours ago at ${lastBackfill?.completed_at}`);
+      logger.info(
+        `Skipping startup backfill - last run was less than 6 hours ago at ${lastBackfill?.completed_at}`
+      );
     } else {
       logger.info('Skipping startup backfill - DISCORD_CHANNEL_ID not configured');
     }

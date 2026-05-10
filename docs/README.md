@@ -161,6 +161,7 @@ Recover missed codes from Discord message history. Scans the entire message hist
 - **Example:** `/backfill` or `/backfill channel:#code-drops`
 
 **Automatic Startup Backfill:**
+
 - Runs automatically when the bot starts if `DISCORD_CHANNEL_ID` is configured
 - Only runs if the last backfill was more than 6 hours ago
 - Helps catch codes that appeared while the bot was offline

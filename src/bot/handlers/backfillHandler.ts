@@ -47,7 +47,9 @@ export async function backfillChannelHistory(
     // Fetch messages in batches (Discord API limit is 100)
     while (true) {
       try {
-        onProgress?.(`Fetching messages (batch starting from ${beforeId ? 'messageId ' + beforeId : 'latest'})...`);
+        onProgress?.(
+          `Fetching messages (batch starting from ${beforeId ? 'messageId ' + beforeId : 'latest'})...`
+        );
 
         const messages = await textChannel.messages.fetch({
           limit: 100,
@@ -91,7 +93,9 @@ export async function backfillChannelHistory(
       }
     }
 
-    onProgress?.(`Found ${stats.codesFound} codes in ${messageCount} messages. Now attempting to redeem...`);
+    onProgress?.(
+      `Found ${stats.codesFound} codes in ${messageCount} messages. Now attempting to redeem...`
+    );
 
     // Now attempt to redeem found codes for each user with credentials
     const users = await userManager.getAllUsers();

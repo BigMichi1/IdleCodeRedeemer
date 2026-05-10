@@ -26,7 +26,9 @@ class BackfillManager {
    */
   async startBackfill(discordId: string): Promise<number> {
     if (this.backfillInProgress) {
-      throw new Error('A backfill operation is already in progress. Please wait for it to complete.');
+      throw new Error(
+        'A backfill operation is already in progress. Please wait for it to complete.'
+      );
     }
 
     this.backfillInProgress = true;
@@ -117,10 +119,9 @@ class BackfillManager {
    * Get backfill operation by ID
    */
   async getBackfillById(operationId: number): Promise<BackfillOperation | undefined> {
-    return db.get<BackfillOperation>(
-      'SELECT * FROM backfill_operations WHERE id = ?',
-      [operationId]
-    );
+    return db.get<BackfillOperation>('SELECT * FROM backfill_operations WHERE id = ?', [
+      operationId,
+    ]);
   }
 }
 
