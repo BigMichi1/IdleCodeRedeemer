@@ -38,7 +38,7 @@ export { sqlite };
 
 export function initializeDatabase(): void {
   // In dev, process.execPath is the bun CLI; in prod it's the compiled binary.
-  const isCompiledBinary = !process.execPath.includes('bun');
+  const isCompiledBinary = path.basename(process.execPath) !== 'bun';
   const migrationsFolder =
     process.env.MIGRATIONS_PATH ??
     (isCompiledBinary
