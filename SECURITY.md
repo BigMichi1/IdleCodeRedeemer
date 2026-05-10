@@ -231,6 +231,36 @@ When a release is created:
 
 For complete dependency management details, see [docs/dependency-management.md](docs/dependency-management.md).
 
+## Automated Test Suites & CI/CD Testing [OSPS-QA-06.01]
+
+All code is validated through automated test suites running in CI/CD pipelines before merging to the primary branch.
+
+**See [docs/testing-strategy.md](docs/testing-strategy.md) for:**
+- ✅ All automated test suites (build, lint, security, type checking, formatting) [OSPS-QA-06.01]
+- ✅ How each test suite works and what it verifies [OSPS-QA-06.01]
+- ✅ Running tests locally before submission [OSPS-QA-06.01]
+- ✅ CI/CD pipeline flow and test execution [OSPS-QA-06.01]
+- ✅ Test results visibility to all contributors [OSPS-QA-06.01]
+- ✅ Consistent test environment (Docker) [OSPS-QA-06.01]
+- ✅ Troubleshooting failed tests [OSPS-QA-06.01]
+
+**Test Suites Required to Pass:**
+1. Build & Compilation (TypeScript strict mode) - `mise run build`
+2. Code Quality/Linting (ESLint) - `mise run lint`
+3. Security Scanning (CodeQL, dependencies, secrets)
+4. Type Safety (TypeScript strict mode) - part of build
+5. Code Formatting (Prettier) - `mise run format`
+
+**Local Testing Before PR:**
+```bash
+mise run build      # Compile and check types
+mise run lint:fix   # Fix linting issues
+mise run format     # Format code
+bun audit           # Check for vulnerabilities
+```
+
+**Failing tests block PR merge.** Contributors must ensure all tests pass locally before submitting.
+
 ## Status Checks & Branch Protection [OSPS-QA-03.01]
 
 All commits to the primary branch must pass automated status checks before merging. No commits can be merged if required checks fail.

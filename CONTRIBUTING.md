@@ -534,30 +534,113 @@ git commit -m "type(scope): message"
 
 ## Testing
 
-### Unit Tests
+### Automated Test Suites
+
+Before any code is merged to the primary branch, automated test suites run in CI/CD pipelines. These tests validate that code meets functional and quality expectations. [OSPS-QA-06.01]
+
+**Test Suites That Run Automatically:**
+
+1. **Build & Compilation Tests** - TypeScript strict mode compilation
+   ```bash
+   # Local: Compile your code
+   mise run build
+   ```
+
+2. **Code Quality & Linting Tests** - ESLint validates code standards
+   ```bash
+   # Local: Run linting
+   mise run lint
+   
+   # Local: Fix auto-fixable linting issues
+   mise run lint:fix
+   ```
+
+3. **Security Vulnerability Scanning** - CodeQL, dependencies, secrets
+   ```bash
+   # Local: Check for vulnerable dependencies
+   bun audit
+   ```
+
+4. **Type Safety Validation** - TypeScript strict mode
+   - Runs as part of build process
+   - No explicit command needed
+
+5. **Code Formatting Tests** - Prettier enforces consistent formatting
+   ```bash
+   # Local: Format your code
+   mise run format
+   
+   # Local: Check formatting without changing
+   mise run format:check
+   ```
+
+**These tests run on every PR and must pass before merging. All contributors can see test results in the pull request status checks.**
+
+### Running Tests Before Submitting PR
+
+Run these commands locally to catch issues before submission:
 
 ```bash
-# Run all tests
-mise run test
+# Install dependencies
+mise run install
 
-# Run tests in watch mode
-mise run test:watch
+# Build and compile code
+mise run build
 
-# Run specific test file
-mise run test -- src/commands/__tests__/setup.test.ts
+# Fix linting issues
+mise run lint:fix
+
+# Format code
+mise run format
+
+# Check for vulnerabilities
+bun audit
+
+# Sign off on commits
+git commit -s -m "message"
 ```
 
 ### Manual Testing
 
+For Discord bot features, test manually:
+
 ```bash
-# Start development server
+# Start development bot
 mise run dev
 
-# In Discord:
+# In your test Discord server:
 # /setup user_id:YOUR_USER_ID user_hash:YOUR_HASH
 # /help
 # /inventory
 ```
+
+Verify that:
+- Commands execute without errors
+- Bot responds appropriately
+- Database operations work
+- API calls succeed
+
+### Understanding Test Failures
+
+If a test fails in CI/CD:
+
+1. **Click "Details"** on the failed check in your PR
+2. **Read the error message** carefully
+3. **Fix the underlying issue** (don't bypass the test)
+4. **Push corrections** - tests automatically re-run
+5. **Verify all pass** before requesting review
+
+For detailed troubleshooting, see [docs/testing-strategy.md](../../docs/testing-strategy.md#troubleshooting-failed-tests).
+
+### For More Information
+
+See [docs/testing-strategy.md](../../docs/testing-strategy.md) for complete testing documentation, including:
+- All test suites and what they verify
+- How to run tests locally
+- CI/CD pipeline flow
+- Test result visibility
+- Best practices
+- Troubleshooting failed tests
 
 ### Integration Testing
 

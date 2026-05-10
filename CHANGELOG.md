@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Automated Test Suites & CI/CD Testing [OSPS-QA-06.01]** - Test suites run before every merge
+  - NEW: [docs/testing-strategy.md](docs/testing-strategy.md) - Complete testing strategy and automated test documentation
+  - 5 automated test suites documented:
+    - Build & Compilation Tests (TypeScript strict mode)
+    - Code Quality & Linting Tests (ESLint validation)
+    - Security Vulnerability Scanning (CodeQL, dependency audit, secret scanning)
+    - Type Safety Validation (TypeScript strict mode)
+    - Code Formatting Tests (Prettier enforcement)
+  - 6 CI/CD workflows that run tests automatically
+  - Test results visible to all contributors in PR status checks
+  - Local testing available via `mise run` commands
+  - Consistent test environment (Docker container)
+  - Troubleshooting guide for failed tests
+  - Test checklist before submitting PR
+  - Enhanced CONTRIBUTING.md with testing procedures [OSPS-QA-06.01]
+
 - **Status Checks & Branch Protection [OSPS-QA-03.01]** - Automated checks required to pass before merging
   - NEW: [docs/status-checks.md](docs/status-checks.md) - Complete status checks documentation
   - DCO Sign-Off verification (all commits must be legally signed)
