@@ -5,9 +5,9 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 **📖 Quick Links to Documentation:**
 
 - **[Full README](docs/full-documentation.md)** - Main documentation & all features
-- **[Development Guide](docs/DEVELOPMENT.md)** - Setup, architecture & tech stack
-- **[Project Structure](docs/STRUCTURE.md)** - Directory layout & key files
-- **[Mise Setup Guide](docs/MISE.md)** - Tool management reference
+- **[Development Guide](docs/development.md)** - Setup, architecture & tech stack
+- **[Project Structure](docs/structure.md)** - Directory layout & key files
+- **[Mise Setup Guide](docs/mise.md)** - Tool management reference
 - **[Podman Guide](docs/podman.md)** - Using Podman instead of Docker
 
 ## 🚀 Quick Start (5 minutes)
@@ -79,9 +79,9 @@ See [docker-compose.example.yml](docker-compose.example.yml) for all available c
 For detailed information, please see:
 
 - **[Full README](docs/full-documentation.md)** - All features, commands, architecture & troubleshooting
-- **[Development Guide](docs/DEVELOPMENT.md)** - Development setup, structure & debugging
-- **[Project Structure](docs/STRUCTURE.md)** - Complete directory layout & key files
-- **[Mise Setup Guide](docs/MISE.md)** - Tool management & available tasks
+- **[Development Guide](docs/development.md)** - Development setup, structure & debugging
+- **[Project Structure](docs/structure.md)** - Complete directory layout & key files
+- **[Mise Setup Guide](docs/mise.md)** - Tool management & available tasks
 
 ## 📄 License
 

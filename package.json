@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "Discord bot for Idle Champions code scanning and redemption",
   "main": "dist/bot/bot.js",
+  "docs": "docs",
   "scripts": {
     "build": "tsc -p tsconfig.bot.json",
     "build:prod": "node esbuild.prod.js",
