@@ -37,6 +37,7 @@ cp .env.example .env
 # - DISCORD_TOKEN (from Discord Developer Portal)
 # - DISCORD_GUILD_ID (your server ID)
 # - DISCORD_CHANNEL_ID (where bot scans for codes)
+# - DISCORD_CODE_AUTHOR_ID (ID of the bot that posts codes, e.g. Idle Champions #combinations)
 
 # 4. Start the bot
 mise run dev
@@ -206,6 +207,7 @@ lib/
 DISCORD_TOKEN=your_bot_token_here
 DISCORD_GUILD_ID=1214259114725605436
 DISCORD_CHANNEL_ID=1502624358055809104
+DISCORD_CODE_AUTHOR_ID=1502625533236744222
 DB_PATH=./data/idle.db
 NODE_ENV=development
 ```

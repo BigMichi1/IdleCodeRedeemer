@@ -232,6 +232,7 @@ The bot saves API responses to `debug/` folder automatically:
 DISCORD_TOKEN      # Bot token from Discord Developer Portal
 DISCORD_GUILD_ID   # Server ID (for guild-specific commands)
 DISCORD_CHANNEL_ID # Channel ID (for auto code scanning)
+DISCORD_CODE_AUTHOR_ID # User/bot ID that posts promo codes (filters backfill to that author only)
 DB_PATH            # Database file path (default: ./data/idle.db)
 NODE_ENV           # development or production
 ```

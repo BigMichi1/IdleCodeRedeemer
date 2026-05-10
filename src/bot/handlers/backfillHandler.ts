@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import type { Channel, TextChannel } from 'discord.js';
 import { ChannelType } from 'discord.js';
 import { scanMessageForCodes, extractCodesFromText } from './codeScanner';
@@ -5,6 +7,25 @@ import { codeManager } from '../database/codeManager';
 import { userManager } from '../database/userManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
 import logger from '../utils/logger';
+
+const API_LOGS_DIR = path.join(process.cwd(), 'api-logs');
+
+type RawMessage = { id: string; author: string; authorId: string; bot: boolean; content: string; createdAt: string };
+
+function dumpDiscordMessages(channelName: string, label: string, messages: RawMessage[]): void {
+  if (messages.length === 0) return;
+  try {
+    if (!fs.existsSync(API_LOGS_DIR)) {
+      fs.mkdirSync(API_LOGS_DIR, { recursive: true });
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = path.join(API_LOGS_DIR, `discord_${label}_${channelName}_${timestamp}.json`);
+    fs.writeFileSync(filename, JSON.stringify({ channel: channelName, label, count: messages.length, messages }, null, 2));
+    logger.info(`[BACKFILL] Dumped ${messages.length} ${label} messages to ${filename}`);
+  } catch (err) {
+    logger.warn(`[BACKFILL] Failed to dump Discord messages: ${err}`);
+  }
+}
 
 interface BackfillStats {
   codesFound: number;
@@ -43,6 +64,12 @@ export async function backfillChannelHistory(
     let messageCount = 0;
     let beforeId: string | undefined;
     const allCodes = new Set<string>();
+    // DISCORD_CODE_AUTHOR_ID: when set, only messages from that user/bot ID are
+    // scanned for codes. All other messages are saved to a separate dump file
+    // so they can be inspected if an issue is reported later.
+    const codeAuthorId = process.env.DISCORD_CODE_AUTHOR_ID ?? '';
+    const codeMessages: RawMessage[] = [];
+    const otherMessages: RawMessage[] = [];
 
     // Fetch messages in batches (Discord API limit is 100)
     while (true) {
@@ -64,8 +91,25 @@ export async function backfillChannelHistory(
 
         // Process each message for codes
         for (const [, message] of messages) {
-          // Skip bot messages
-          if (message.author.bot || message.webhookId) {
+          const raw: RawMessage = {
+            id: message.id,
+            author: message.author.tag,
+            authorId: message.author.id,
+            bot: message.author.bot || !!message.webhookId,
+            content: message.content,
+            createdAt: message.createdAt.toISOString(),
+          };
+
+          // If a code author is configured, only scan messages from that author;
+          // otherwise fall back to scanning all messages.
+          const isCodeCandidate = codeAuthorId
+            ? message.author.id === codeAuthorId
+            : true;
+
+          if (isCodeCandidate) {
+            codeMessages.push(raw);
+          } else {
+            otherMessages.push(raw);
             continue;
           }
 
@@ -96,6 +140,10 @@ export async function backfillChannelHistory(
     onProgress?.(
       `Found ${stats.codesFound} codes in ${messageCount} messages. Now attempting to redeem...`
     );
+
+    // Dump messages split by role for future inspection
+    dumpDiscordMessages(textChannel.name, 'code-candidates', codeMessages);
+    dumpDiscordMessages(textChannel.name, 'other-messages', otherMessages);
 
     // Now attempt to redeem found codes for each user with credentials
     const users = await userManager.getAllUsers();

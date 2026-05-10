@@ -37,9 +37,13 @@ export const db = _db;
 export { sqlite };
 
 export function initializeDatabase(): void {
+  // In dev, process.execPath is the bun CLI; in prod it's the compiled binary.
+  const isCompiledBinary = !process.execPath.includes('bun');
   const migrationsFolder =
     process.env.MIGRATIONS_PATH ??
-    path.join(path.dirname(process.execPath), 'migrations');
+    (isCompiledBinary
+      ? path.join(path.dirname(process.execPath), 'migrations')
+      : path.join(process.cwd(), 'src/bot/database/migrations'));
   migrate(db, { migrationsFolder });
   logger.info('Database migrations applied');
 }

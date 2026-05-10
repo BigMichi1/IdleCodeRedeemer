@@ -855,6 +855,7 @@ services:
       - DISCORD_TOKEN=<token>
       - DISCORD_GUILD_ID=<id>
       - DISCORD_CHANNEL_ID=<id>
+      - DISCORD_CODE_AUTHOR_ID=<bot_id>
     restart: always
 ```
 
