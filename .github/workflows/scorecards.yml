@@ -1,5 +1,5 @@
-# This workflow uses actions that are not certified by GitHub. They are provided
-# by a third-party and are governed by separate terms of service, privacy
+# This workflow uses actions that are not certified by GitHub. They are
+# provided by a third-party and are governed by separate terms of service, privacy
 # policy, and support documentation.
 
 name: Scorecard supply-chain security
@@ -12,6 +12,8 @@ on:
   schedule:
     - cron: '20 7 * * 2'
   push:
+    branches: ["main"]
+  pull_request:
     branches: ["main"]
 
 # Declare default permissions as read only.
@@ -53,13 +55,15 @@ jobs:
           # (Optional) "write" PAT token. Uncomment the `repo_token` line below if:
           # - you want to enable the Branch-Protection check on a *public* repository, or
           # - you are installing Scorecards on a *private* repository
-          # To create the PAT, follow the steps in https://github.com/ossf/scorecard-action#authentication-with-pat.
+          # To create the PAT, follow the steps in
+          # https://github.com/ossf/scorecard-action#authentication-with-pat.
           # repo_token: ${{ secrets.SCORECARD_TOKEN }}
 
           # Public repositories:
           #   - Publish results to OpenSSF REST API for easy access by consumers
           #   - Allows the repository to include the Scorecard badge.
-          #   - See https://github.com/ossf/scorecard-action#publishing-results.
+          #   - See
+          # https://github.com/ossf/scorecard-action#publishing-results.
           # For private repositories:
           #   - `publish_results` will always be set to `false`, regardless
           #     of the value entered here.
