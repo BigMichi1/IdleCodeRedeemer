@@ -5,6 +5,7 @@ This repository has multiple layers of protection against accidentally committin
 ## What's Protected
 
 ### Automatic Blocking
+
 - Discord tokens
 - API keys and secrets
 - Database credentials
@@ -12,6 +13,7 @@ This repository has multiple layers of protection against accidentally committin
 - Private keys
 
 ### Files Ignored
+
 - `.env` - Environment file with secrets
 - `.env.local` - Local overrides
 - `.env.*.local` - Environment-specific secrets
@@ -20,6 +22,7 @@ This repository has multiple layers of protection against accidentally committin
 ## How to Handle Secrets
 
 ### 1. Never Commit Secrets
+
 Use `.env.example` template instead of actual `.env`:
 
 ```bash
@@ -34,6 +37,7 @@ cp .env.example .env
 ```
 
 ### 2. Provide Examples
+
 Update `.env.example` with placeholder values:
 
 ```env
@@ -46,7 +50,9 @@ NODE_ENV=development
 ```
 
 ### 3. Share Secrets Securely
+
 For team members:
+
 - Use GitHub Secrets (for CI/CD)
 - Use encrypted password manager
 - Share `.env` file via secure channel (Signal, 1Password, etc.)
@@ -55,13 +61,16 @@ For team members:
 ## Pre-Commit Hooks
 
 When you run `git commit`, the pre-commit hook automatically:
+
 1. ✅ Scans staged files for secret patterns
 2. ✅ Warns if potential secrets are detected
 3. ✅ Runs linting checks
 4. ✅ Validates commit messages
 
 ### Bypass (Emergency Only)
+
 If you absolutely must bypass (not recommended):
+
 ```bash
 git commit --no-verify
 ```
@@ -71,16 +80,19 @@ git commit --no-verify
 Two workflows scan for secrets on every push and PR:
 
 ### 1. **Gitleaks** - Detects known secret patterns
+
 - Scans entire repository history
 - Checks for API keys, tokens, credentials
 - Runs on every push and PR
 
 ### 2. **TruffleHog** - Advanced entropy scanning
+
 - Detects high-entropy strings (likely secrets)
 - Searches for unused credentials
 - Runs on every push and PR
 
 ### 3. **Environment File Checker**
+
 - Ensures `.env` files are NOT tracked
 - Warns if sensitive keywords appear in code
 - Validates proper secret management
@@ -88,12 +100,15 @@ Two workflows scan for secrets on every push and PR:
 ## If You Accidentally Committed a Secret
 
 ### Step 1: Stop Using It
+
 Immediately:
+
 - Rotate the token/key/password
 - Revoke the old one in the service
 - Update `.env` with new value
 
 ### Step 2: Remove from History
+
 ```bash
 # Option A: Remove file completely
 git filter-branch --tree-filter 'rm -f .env' HEAD
@@ -105,11 +120,13 @@ git push --force
 ```
 
 ### Step 3: Notify Team
+
 - Tell team members to pull the updated history
 - Ask them to reset their `.env` files
 - Verify no one cached the old secret
 
 ### Step 4: Monitor
+
 - Check where the old secret might be logged
 - Monitor for unusual activity on that account
 - Watch GitHub security alerts
@@ -117,6 +134,7 @@ git push --force
 ## Configuration Files
 
 ### `.gitignore` - Files never tracked
+
 ```
 .env
 .env.local
@@ -126,10 +144,13 @@ logs/
 ```
 
 ### `.secrets.baseline` - Known safe patterns
+
 Stores hash of "approved" or "test" secrets that are safe to have in code (e.g., placeholder tokens in docs). This file should be reviewed carefully.
 
 ### GitHub Secrets (`.github/workflows/`)
+
 Use for CI/CD:
+
 ```yaml
 env:
   DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
@@ -138,6 +159,7 @@ env:
 ## Best Practices
 
 ### ✅ DO
+
 - Use `.env.example` as a template
 - Add helpful comments to `.env.example`
 - Keep secrets in environment variables
@@ -145,6 +167,7 @@ env:
 - Use GitHub Secrets for CI/CD
 
 ### ❌ DON'T
+
 - Hardcode secrets in code
 - Commit `.env` files
 - Share secrets via email/chat
@@ -176,6 +199,7 @@ git commit -m "test"
 ## Support
 
 For questions about secrets management:
+
 1. Check this guide
 2. Review `.github/workflows/secrets.yml` for what's scanned
 3. Ask team lead before committing sensitive data

@@ -23,6 +23,7 @@ This workflow automatically builds and publishes Docker images to GitHub Contain
 Images are published to: `ghcr.io/YOUR_USERNAME/idle-code-redeemer-bot`
 
 Example tags:
+
 - `main-sha123456` - Commit SHA
 - `v2.0.0` - Semantic version
 - `2.0` - Major.minor version
@@ -61,7 +62,7 @@ deploy:
   runs-on: ubuntu-latest
   needs: build
   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  
+
   steps:
     - name: Deploy via SSH
       uses: appleboy/ssh-action@master
@@ -76,6 +77,7 @@ deploy:
 ```
 
 **Setup Required:**
+
 1. Generate SSH key: `ssh-keygen -t ed25519 -f deploy_key`
 2. Add public key to server's `~/.ssh/authorized_keys`
 3. Add secrets to GitHub:
@@ -90,7 +92,7 @@ deploy:
   name: Deploy to Kubernetes
   runs-on: ubuntu-latest
   needs: build
-  
+
   steps:
     - name: Deploy to K8s
       uses: azure/k8s-deploy@v4
@@ -104,6 +106,7 @@ deploy:
 ### Option 3: Deploy to Container Orchestration Service
 
 Use services like:
+
 - **AWS ECS**: Use `aws-actions/amazon-ecs-deploy-task-definition`
 - **Azure Container Instances**: Use `azure/aci-deploy@v1`
 - **DigitalOcean App Platform**: Use `digitalocean/app_action@v1.1.0`
@@ -128,6 +131,7 @@ git push origin v2.0.0
 ```
 
 The workflow will automatically build and tag the image as:
+
 - `ghcr.io/username/idle-code-redeemer-bot:v2.0.0`
 - `ghcr.io/username/idle-code-redeemer-bot:2.0.0`
 - `ghcr.io/username/idle-code-redeemer-bot:2.0`
@@ -141,14 +145,17 @@ The workflow will automatically build and tag the image as:
 ## Troubleshooting
 
 **Build fails with "permission denied"**
+
 - Check Dockerfile permissions
 - Ensure all required files are committed to git
 
 **Image not published to registry**
+
 - Confirm you're on `main` branch or have a version tag
 - Check that GITHUB_TOKEN secret is available (automatic)
 
 **Deployment not triggering**
+
 - Verify the branch/tag matches the workflow triggers
 - Check the workflow file is in `.github/workflows/` directory
 

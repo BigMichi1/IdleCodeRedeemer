@@ -7,6 +7,7 @@ Dependabot automatically keeps your dependencies up-to-date by creating pull req
 The configuration in `.github/dependabot.yml` covers three ecosystems:
 
 ### 1. **npm Dependencies** (Weekly)
+
 - Checks for updates every Monday at 3:00 AM UTC
 - Limits to 5 open PRs at a time
 - Groups development and runtime dependencies separately
@@ -14,11 +15,13 @@ The configuration in `.github/dependabot.yml` covers three ecosystems:
 - Targets: TypeScript, ESLint, Bun, Discord.js, and other npm packages
 
 ### 2. **GitHub Actions** (Weekly)
+
 - Checks for updates every Monday at 4:00 AM UTC
 - Auto-rebases branches
 - Keeps CI/CD workflows up-to-date
 
 ### 3. **Docker** (Weekly)
+
 - Checks for base image updates every Monday at 5:00 AM UTC
 - Watches the `debian:13-slim` base image
 - Auto-rebases branches
@@ -26,17 +29,21 @@ The configuration in `.github/dependabot.yml` covers three ecosystems:
 ## Managing Dependabot PRs
 
 ### Enable Dependabot
+
 Dependabot is enabled by default for all public repositories. For private repos:
+
 1. Go to **Settings → Code security & analysis**
 2. Enable **Dependabot version updates** and **Dependabot alerts**
 
 ### Review & Merge
+
 1. **Actions tab** → View Dependabot PRs
 2. Review the changelog and dependencies
 3. Run tests (GitHub Actions will run automatically)
 4. Approve and merge when confident
 
 ### Commands
+
 Add these comments to Dependabot PRs:
 
 ```
@@ -49,12 +56,15 @@ Add these comments to Dependabot PRs:
 ```
 
 ### Configure Intervals
+
 Change update frequency by modifying the `schedule.interval` in `.github/dependabot.yml`:
+
 - `daily` - Check every day
 - `weekly` - Check every week (default)
 - `monthly` - Check every month
 
 ### Disable for Specific Packages
+
 Add to your `package.json`:
 
 ```json
@@ -66,10 +76,11 @@ Add to your `package.json`:
 ```
 
 Or in `.github/dependabot.yml`:
+
 ```yaml
 ignore:
-  - dependency-name: "package-name"
-  - dependency-name: "another-package"
+  - dependency-name: 'package-name'
+  - dependency-name: 'another-package'
 ```
 
 ## Security Updates
@@ -92,15 +103,18 @@ Dependabot will **always** create PRs for security vulnerabilities regardless of
 ## Troubleshooting
 
 **Dependabot not creating PRs:**
+
 - Check it's enabled in Settings
 - Verify `.github/dependabot.yml` syntax
 - Wait up to 24 hours for first run
 
 **Too many PRs:**
+
 - Reduce `open-pull-requests-limit` in `.github/dependabot.yml`
 - Change `interval` to `monthly` instead of `weekly`
 
 **Want to skip an update:**
+
 - Comment `@dependabot ignore this dependency` on the PR
 - Or add to `ignore` list in `.github/dependabot.yml`
 
