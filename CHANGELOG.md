@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Developer Certificate of Origin (DCO) Enforcement [OSPS-LE-01.01]** - All contributors must assert legal authorization
+  - NEW: [DCO.md](DCO.md) - Complete DCO documentation and sign-off procedures
+  - NEW: GitHub Actions workflow to check all commits are signed off
+  - DCO requirement in [CONTRIBUTING.md](CONTRIBUTING.md) with sign-off instructions
+  - Status check prevents merging unsigned commits
+  - Git configuration guide for easy sign-off (`git commit -s`)
+  - Amendment procedures for previously unsigned commits
+  - Enforces that contributors certify legal right to contribute
+
 - **Contributor Requirements & Guidelines [OSPS-GV-03.02]** - Comprehensive guide for acceptable contributions
   - NEW: Enhanced [CONTRIBUTING.md](CONTRIBUTING.md) with detailed acceptance criteria
   - Requirements for code quality (linting, TypeScript strict mode, security)

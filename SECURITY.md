@@ -231,6 +231,27 @@ When a release is created:
 
 For complete dependency management details, see [docs/dependency-management.md](docs/dependency-management.md).
 
+## Developer Certificate of Origin (DCO) [OSPS-LE-01.01]
+
+This project requires all code contributors to assert that they are legally authorized to make the associated contributions.
+
+**See [DCO.md](DCO.md) and [CONTRIBUTING.md#developer-certificate-of-origin](CONTRIBUTING.md#developer-certificate-of-origin) for:**
+- ✅ Developer Certificate of Origin (DCO) requirements [OSPS-LE-01.01]
+- ✅ How to sign off on commits (`git commit -s`) [OSPS-LE-01.01]
+- ✅ Git configuration for easy sign-offs [OSPS-LE-01.01]
+- ✅ Amendment procedures for unsigned commits [OSPS-LE-01.01]
+- ✅ GitHub Actions status check enforcement [OSPS-LE-01.01]
+- ✅ Legal assertions required in every commit [OSPS-LE-01.01]
+
+**Enforcement:**
+All commits must include a "Signed-off-by" trailer certifying the contributor has the legal right to submit the code. Pull requests with unsigned commits will fail CI/CD checks and cannot be merged.
+
+**Example Sign-Off:**
+```bash
+git commit -s -m "feat: add new feature"
+# Results in: Signed-off-by: Jane Doe <jane@example.com>
+```
+
 ## Code Contribution Requirements [OSPS-GV-03.02]
 
 The project maintains comprehensive contributor guidelines that serve as the source of truth for both contributors and code reviewers.

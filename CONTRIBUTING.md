@@ -5,6 +5,7 @@ Thank you for your interest in contributing to the Idle Champions Code Redeemer 
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
+- [Developer Certificate of Origin](#developer-certificate-of-origin)
 - [Requirements for Acceptable Contributions](#requirements-for-acceptable-contributions)
 - [How to Contribute](#how-to-contribute)
 - [Development Setup](#development-setup)
@@ -17,6 +18,77 @@ Thank you for your interest in contributing to the Idle Champions Code Redeemer 
 ## Code of Conduct
 
 This project adheres to a Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+
+## Developer Certificate of Origin
+
+This project requires all code contributors to assert that they are legally authorized to make the associated contributions. We enforce this through the **Developer Certificate of Origin (DCO)**. [OSPS-LE-01.01]
+
+### What is the DCO?
+
+The DCO is a lightweight way for contributors to certify that they have the legal right to submit their contributions.
+
+### How to Sign Your Commits
+
+All commits must be signed off with the `-s` flag:
+
+```bash
+git commit -s -m "type(scope): description"
+```
+
+This adds a "Signed-off-by" trailer to your commit message, legally asserting you have the right to submit the code.
+
+### Sign-Off Example
+
+```bash
+# Commit with sign-off
+git commit -s -m "feat(commands): add new /inventory command"
+
+# Results in:
+# feat(commands): add new /inventory command
+#
+# Signed-off-by: Jane Doe <jane@example.com>
+```
+
+### Configure Git for Easy Sign-Off
+
+```bash
+# Set your name and email globally
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# Optional: Create an alias for faster commits
+git config --global alias.cs 'commit -s'
+# Then use: git cs -m "message"
+```
+
+### DCO Enforcement
+
+This project enforces DCO via:
+
+- ✅ **GitHub Actions** - Status check verifies all commits are signed off
+- ✅ **Pre-commit Hooks** - Warn about unsigned commits
+- ✅ **Pull Request Requirements** - Blocks merging if commits lack sign-offs
+
+**If a commit is missing a sign-off, the pull request will fail CI/CD checks and cannot be merged.**
+
+### If You Forgot to Sign Off
+
+Amend your commits:
+
+```bash
+# Single commit
+git commit --amend -s
+git push --force-with-lease
+
+# Multiple commits - rebase and sign
+git rebase -i HEAD~<number-of-commits>
+# Change 'pick' to 'reword', add '-s' flag when editing
+git push --force-with-lease
+```
+
+### More Information
+
+For complete DCO details, see [DCO.md](DCO.md).
 
 ## Requirements for Acceptable Contributions
 

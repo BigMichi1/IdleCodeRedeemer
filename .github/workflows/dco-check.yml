@@ -1,0 +1,55 @@
+name: DCO Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+jobs:
+  dco:
+    name: DCO Sign-Off Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check DCO sign-offs
+        run: |
+          # Get the list of commits in the PR or push
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # For PRs, check commits from base to head
+            COMMIT_RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            # For pushes, check all new commits
+            COMMIT_RANGE="HEAD~${{ github.event.push.size }}..HEAD"
+          fi
+
+          # Check for Signed-off-by in commit messages
+          unsigned_commits=()
+          while IFS= read -r commit; do
+            if ! git log --format=%B -n 1 "$commit" | grep -q "^Signed-off-by:"; then
+              unsigned_commits+=("$commit")
+            fi
+          done < <(git rev-list "$COMMIT_RANGE")
+
+          if [ ${#unsigned_commits[@]} -gt 0 ]; then
+            echo "❌ DCO Check Failed"
+            echo ""
+            echo "The following commits are not signed off:"
+            for commit in "${unsigned_commits[@]}"; do
+              echo "  - $(git log --oneline -n 1 $commit)"
+            done
+            echo ""
+            echo "Please sign off on all commits using:"
+            echo "  git commit --amend -s"
+            echo "  git push --force-with-lease"
+            echo ""
+            echo "For more information, see DCO.md"
+            exit 1
+          fi
+
+          echo "✅ All commits are properly signed off"
