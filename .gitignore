@@ -1,12 +1,12 @@
 # Dependencies
 node_modules/
-bun.lockb
 package-lock.json
 yarn.lock
 
 # Build outputs
 dist/
 dist-bundle/
+build.log
 
 # Environment
 .env

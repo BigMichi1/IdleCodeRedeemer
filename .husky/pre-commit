@@ -1,2 +1,26 @@
 #!/bin/sh
-bunx lint-staged
+
+# Get the project root directory
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Scan for secrets with Gitleaks via local bin/mise
+echo "🔐 Scanning for secrets with Gitleaks..."
+"$PROJECT_ROOT/bin/mise" run gitleaks detect --source . --config "$PROJECT_ROOT/.gitleaks.toml" --verbose
+
+if [ $? -ne 0 ]; then
+  echo "❌ ERROR: Gitleaks detected secrets!"
+  echo "   Please remove secrets before committing."
+  exit 1
+fi
+
+# Run linting via ESLint directly
+echo "✨ Running linters..."
+cd "$PROJECT_ROOT"
+"$PROJECT_ROOT/bin/mise" run lint:fix
+
+if [ $? -ne 0 ]; then
+  echo "❌ ERROR: Linting failed!"
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"

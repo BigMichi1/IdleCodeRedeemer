@@ -1,0 +1,16 @@
+[allowlist]
+description = "Gitleaks allowlist configuration"
+
+# Allow specific paths (example files, documentation, configs)
+paths = [
+    ".env.example",
+    "src/bot/.env.example",
+    "README.md",
+    "docs/",
+    ".github/workflows/",
+]
+
+# Allowlist specific commits with known false positives
+commits = [
+    "e8ea0d4e8eda173f9ed54e736967492d216fc120",  # Example Discord IDs in .env.example
+]

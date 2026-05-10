@@ -5,10 +5,17 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 **📖 Quick Links to Documentation:**
 
 - **[Full README](docs/full-documentation.md)** - Main documentation & all features
+- **[Build Instructions](BUILD.md)** - How to build the software (required libraries, frameworks, dependencies)
+- **[Contributing Guide](CONTRIBUTING.md)** - Guidelines for developers contributing to the project
 - **[Development Guide](docs/development.md)** - Setup, architecture & tech stack
 - **[Project Structure](docs/structure.md)** - Directory layout & key files
 - **[Mise Setup Guide](docs/mise.md)** - Tool management reference
 - **[Podman Guide](docs/podman.md)** - Using Podman instead of Docker
+- **[Dependency Management](docs/dependency-management.md)** - Bun, package.json, and bun.lock strategy
+- **[Cryptographic Signing](docs/cryptographic-signing.md)** - Release signatures & verification
+- **[Security Policy](SECURITY.md)** - Reporting vulnerabilities & security contacts
+- **[Versioning & Releases](VERSIONING.md)** - How to create releases with SemVer
+- **[Changelog](CHANGELOG.md)** - Version history & release notes
 
 ## 🚀 Quick Start (5 minutes)
 

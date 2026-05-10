@@ -1,2 +1,7 @@
 #!/bin/sh
-bunx commitlint --edit "$1"
+
+# Get the project root directory
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Validate commit message format via local bin/mise
+"$PROJECT_ROOT/bin/mise" run -- bunx commitlint --edit "$1"

@@ -60,14 +60,48 @@ For team members:
 
 ## Pre-Commit Hooks
 
-When you run `git commit`, the pre-commit hook automatically:
+When you run `git commit`, the pre-commit hooks (in `.husky/`) run automatically to protect your code:
 
-1. ✅ Scans staged files for secret patterns
-2. ✅ Warns if potential secrets are detected
-3. ✅ Runs linting checks
-4. ✅ Validates commit messages
+### What Runs
+
+1. ✅ **Gitleaks** - Scans for hardcoded secrets (API keys, tokens, credentials)
+2. ✅ **ESLint** - TypeScript/formatting checks via lint-staged
+3. ✅ **Commitlint** (commit-msg hook) - Validates commit message format
+
+### How It Works
+
+The hooks use the local `bin/mise` to ensure consistent tool versions:
+
+```bash
+# In .husky/pre-commit:
+"$PROJECT_ROOT/bin/mise" run gitleaks detect --source . --verbose
+"$PROJECT_ROOT/bin/mise" run -- bunx lint-staged
+
+# In .husky/commit-msg:
+"$PROJECT_ROOT/bin/mise" run -- bunx commitlint --edit "$1"
+```
+
+If any check fails, the commit is rejected. Fix and retry:
+
+```bash
+# See what failed
+git commit -m "..."
+
+# Fix Gitleaks warnings
+# - Remove secrets from files
+# - Update .gitignore if needed
+
+# Fix ESLint issues
+mise run lint:fix
+
+# Stage fixes and try again
+git add .
+git commit -m "..."
+```
 
 ### Bypass (Emergency Only)
+
+**⚠️ WARNING: NEVER use `--no-verify` in normal workflow**
 
 If you absolutely must bypass (not recommended):
 
@@ -75,9 +109,11 @@ If you absolutely must bypass (not recommended):
 git commit --no-verify
 ```
 
+This bypasses ALL hook checks including secret scanning. Only use in emergencies.
+
 ## GitHub Actions Scanning
 
-Two workflows scan for secrets on every push and PR:
+Additional scanning runs on every push and PR:
 
 ### 1. **Gitleaks** - Detects known secret patterns
 

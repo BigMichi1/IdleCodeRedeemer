@@ -2,6 +2,16 @@
 
 This Discord bot was converted from the Idle Champions Code Redeemer browser extension. All browser extension code has been removed; only the Discord bot remains.
 
+## Repository Composition [OSPS-QA-04.01]
+
+This project consists of a **single monolithic repository** containing all source code:
+
+| Component   | Repository      | Status | Purpose                                                              |
+| ----------- | --------------- | ------ | -------------------------------------------------------------------- |
+| Discord Bot | This repository | Active | Main bot codebase - handles commands, API interactions, and database |
+
+**No subprojects or submodules exist.** All functionality is contained within this single repository and compiled into a single Docker container image for deployment.
+
 ## Directory Layout
 
 ```

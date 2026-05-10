@@ -8,6 +8,8 @@ NODE_TLS_REJECT_UNAUTHORIZED = "0"
 bun = "1.3"
 # Node.js as fallback (optional, some tools may still need it)
 node = "24"
+# Gitleaks for secret detection
+gitleaks = "8.21"
 
 [tasks.install]
 description = "Install dependencies with Bun"
@@ -72,6 +74,10 @@ run = "bun run lint"
 [tasks."lint:fix"]
 description = "Auto-fix ESLint issues"
 run = "bun run lint:fix"
+
+[tasks.gitleaks]
+description = "Scan for secrets with Gitleaks"
+run = "gitleaks detect --source . --verbose"
 
 [tasks.audit]
 description = "Audit dependencies for vulnerabilities"

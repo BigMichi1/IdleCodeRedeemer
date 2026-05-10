@@ -1,0 +1,30 @@
+# GitHub CODEOWNERS file
+# This file enforces the principle of least privilege by requiring code owner approval
+# for all changes. See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: All changes require approval from the primary maintainer
+* @BigMichi1
+
+# Security-critical files: Workflows and configurations
+.github/workflows/ @BigMichi1
+.github/dependabot.yml @BigMichi1
+eslint.config.js @BigMichi1
+tsconfig.bot.json @BigMichi1
+
+# Source code: Core bot and API logic
+src/ @BigMichi1
+src/bot/ @BigMichi1
+src/bot/api/ @BigMichi1
+src/bot/database/ @BigMichi1
+src/bot/commands/ @BigMichi1
+
+# Documentation: Security and deployment guidance
+docs/ @BigMichi1
+docs/github-secrets.md @BigMichi1
+docs/github-deployment.md @BigMichi1
+
+# Root configuration files
+Dockerfile @BigMichi1
+docker-compose.yml @BigMichi1
+package.json @BigMichi1
+.env.example @BigMichi1
