@@ -1,4 +1,6 @@
+import { eq, ne, and, or, isNull, gt, sql } from 'drizzle-orm';
 import { db } from './db';
+import { redeemedCodes, pendingCodes } from './schema/index';
 
 interface RedeemedCode {
   code: string;
@@ -9,16 +11,7 @@ interface RedeemedCode {
   expiresAt?: string;
 }
 
-interface RedeemedCodeRow {
-  id: number;
-  code: string;
-  discord_id: string;
-  redeemed_at: string;
-  status: string;
-  loot_detail: string;
-  is_public: number;
-  expires_at: string | null;
-}
+type RedeemedCodeRow = typeof redeemedCodes.$inferSelect;
 
 class CodeManager {
   async addRedeemedCode(
@@ -28,132 +21,137 @@ class CodeManager {
     lootDetail?: string,
     isPublic: boolean = false
   ): Promise<void> {
-    await db.run(
-      `INSERT OR REPLACE INTO redeemed_codes (code, discord_id, status, loot_detail, is_public)
-       VALUES (?, ?, ?, ?, ?)`,
-      [code, discordId, status, lootDetail ? JSON.stringify(lootDetail) : null, isPublic ? 1 : 0]
-    );
+    db.insert(redeemedCodes)
+      .values({
+        code,
+        discordId,
+        status,
+        lootDetail: lootDetail ? JSON.stringify(lootDetail) : null,
+        isPublic: isPublic ? 1 : 0,
+      })
+      .onConflictDoUpdate({
+        target: redeemedCodes.code,
+        set: { discordId, status, lootDetail: lootDetail ? JSON.stringify(lootDetail) : null, isPublic: isPublic ? 1 : 0 },
+      })
+      .run();
   }
 
   async isCodeRedeemed(code: string): Promise<boolean> {
-    const result = await db.get(
-      "SELECT code FROM redeemed_codes WHERE code = ? AND (status = 'Success' OR status = 'Code Expired')",
-      [code]
-    );
+    const result = db
+      .select({ code: redeemedCodes.code })
+      .from(redeemedCodes)
+      .where(and(eq(redeemedCodes.code, code), or(eq(redeemedCodes.status, 'Success'), eq(redeemedCodes.status, 'Code Expired'))))
+      .get();
     return result !== undefined;
   }
 
   async getRedeemedCodes(discordId: string): Promise<string[]> {
-    const results = await db.all<{ code: string }>(
-      'SELECT code FROM redeemed_codes WHERE discord_id = ? ORDER BY redeemed_at DESC LIMIT 100',
-      [discordId]
-    );
+    const results = db
+      .select({ code: redeemedCodes.code })
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.discordId, discordId))
+      .orderBy(sql`${redeemedCodes.redeemedAt} DESC`)
+      .limit(100)
+      .all();
     return results.map((r) => r.code);
   }
 
   async getRedeemedCodeDetails(discordId: string, limit: number = 10): Promise<RedeemedCodeRow[]> {
-    const results = await db.all<RedeemedCodeRow>(
-      `SELECT id, code, discord_id, redeemed_at, status, loot_detail, is_public, expires_at
-       FROM redeemed_codes 
-       WHERE discord_id = ? 
-       ORDER BY redeemed_at DESC 
-       LIMIT ?`,
-      [discordId, limit]
-    );
-    return results;
+    return db
+      .select()
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.discordId, discordId))
+      .orderBy(sql`${redeemedCodes.redeemedAt} DESC`)
+      .limit(limit)
+      .all();
   }
 
   async getPublicUnexpiredCodes(): Promise<RedeemedCodeRow[]> {
-    const results = await db.all<RedeemedCodeRow>(
-      `SELECT id, code, discord_id, redeemed_at, status, loot_detail, is_public, expires_at
-       FROM redeemed_codes 
-       WHERE is_public = 1 
-       AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
-       AND status = 'Success'
-       ORDER BY redeemed_at DESC`,
-      []
-    );
-    return results;
+    return db
+      .select()
+      .from(redeemedCodes)
+      .where(
+        and(
+          eq(redeemedCodes.isPublic, 1),
+          eq(redeemedCodes.status, 'Success'),
+          or(isNull(redeemedCodes.expiresAt), gt(redeemedCodes.expiresAt, sql`CURRENT_TIMESTAMP`))
+        )
+      )
+      .orderBy(sql`${redeemedCodes.redeemedAt} DESC`)
+      .all();
   }
 
   async getSuccessfulRedeemCount(code: string): Promise<number> {
-    const result = await db.get<{ count: number }>(
-      "SELECT COUNT(*) as count FROM redeemed_codes WHERE code = ? AND status = 'Success'",
-      [code]
-    );
-    return result?.count || 0;
+    const result = db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(redeemedCodes)
+      .where(and(eq(redeemedCodes.code, code), eq(redeemedCodes.status, 'Success')))
+      .get();
+    return result?.count ?? 0;
   }
 
   async isCodeSuccessfullyRedeemedByOther(code: string, discordId: string): Promise<boolean> {
-    const result = await db.get(
-      "SELECT code FROM redeemed_codes WHERE code = ? AND discord_id != ? AND status = 'Success'",
-      [code, discordId]
-    );
+    const result = db
+      .select({ code: redeemedCodes.code })
+      .from(redeemedCodes)
+      .where(and(eq(redeemedCodes.code, code), ne(redeemedCodes.discordId, discordId), eq(redeemedCodes.status, 'Success')))
+      .get();
     return result !== undefined;
   }
 
   async isCodePublic(code: string): Promise<boolean> {
-    const result = await db.get(
-      'SELECT code FROM redeemed_codes WHERE code = ? AND is_public = 1',
-      [code]
-    );
+    const result = db
+      .select({ code: redeemedCodes.code })
+      .from(redeemedCodes)
+      .where(and(eq(redeemedCodes.code, code), eq(redeemedCodes.isPublic, 1)))
+      .get();
     return result !== undefined;
   }
 
   async isCodeExpired(code: string): Promise<boolean> {
-    const result = await db.get('SELECT code FROM redeemed_codes WHERE code = ? AND status = ?', [
-      code,
-      'Code Expired',
-    ]);
+    const result = db
+      .select({ code: redeemedCodes.code })
+      .from(redeemedCodes)
+      .where(and(eq(redeemedCodes.code, code), eq(redeemedCodes.status, 'Code Expired')))
+      .get();
     return result !== undefined;
   }
 
   async markCodeAsExpired(code: string): Promise<void> {
-    await db.run(
-      "UPDATE redeemed_codes SET status = 'expired', expires_at = CURRENT_TIMESTAMP WHERE code = ?",
-      [code]
-    );
+    db.update(redeemedCodes)
+      .set({ status: 'Code Expired', expiresAt: sql`CURRENT_TIMESTAMP` })
+      .where(eq(redeemedCodes.code, code))
+      .run();
   }
 
   async markCodeAsPublic(code: string): Promise<void> {
-    await db.run('UPDATE redeemed_codes SET is_public = 1 WHERE code = ?', [code]);
+    db.update(redeemedCodes).set({ isPublic: 1 }).where(eq(redeemedCodes.code, code)).run();
   }
 
   async markCodeAsPrivate(code: string): Promise<void> {
-    await db.run('UPDATE redeemed_codes SET is_public = 0 WHERE code = ?', [code]);
+    db.update(redeemedCodes).set({ isPublic: 0 }).where(eq(redeemedCodes.code, code)).run();
   }
 
   async addPendingCode(code: string, discordId?: string): Promise<void> {
-    await db.run('INSERT INTO pending_codes (code, discord_id) VALUES (?, ?)', [
-      code,
-      discordId || null,
-    ]);
+    db.insert(pendingCodes).values({ code, discordId: discordId ?? null }).run();
   }
 
   async getPendingCodes(discordId?: string): Promise<string[]> {
-    let sql = 'SELECT code FROM pending_codes';
-    let params: any[] = [];
-
-    if (discordId) {
-      sql += ' WHERE discord_id = ?';
-      params = [discordId];
-    }
-
-    sql += ' ORDER BY found_at ASC';
-
-    const results = await db.all<{ code: string }>(sql, params);
+    const results = discordId
+      ? db.select({ code: pendingCodes.code }).from(pendingCodes).where(eq(pendingCodes.discordId, discordId)).orderBy(sql`${pendingCodes.foundAt} ASC`).all()
+      : db.select({ code: pendingCodes.code }).from(pendingCodes).orderBy(sql`${pendingCodes.foundAt} ASC`).all();
     return results.map((r) => r.code);
   }
 
   async removePendingCode(code: string): Promise<void> {
-    await db.run('DELETE FROM pending_codes WHERE code = ?', [code]);
+    db.delete(pendingCodes).where(eq(pendingCodes.code, code)).run();
   }
 
   async clearPendingCodes(discordId?: string): Promise<void> {
     if (discordId) {
-      await db.run('DELETE FROM pending_codes WHERE discord_id = ?', [discordId]);
+      db.delete(pendingCodes).where(eq(pendingCodes.discordId, discordId)).run();
     } else {
-      await db.run('DELETE FROM pending_codes');
+      db.delete(pendingCodes).run();
     }
   }
 }

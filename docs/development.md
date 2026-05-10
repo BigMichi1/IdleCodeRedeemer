@@ -45,10 +45,19 @@ src/bot/
 │   ├── backfill.ts             # Recover missed codes from history
 │   └── help.ts                 # Command help
 ├── database/
-│   ├── db.ts                   # SQLite connection & queries
+│   ├── db.ts                   # Drizzle database connection & migrate()
 │   ├── userManager.ts          # User credentials storage
 │   ├── codeManager.ts          # Code tracking & history
-│   └── backfillManager.ts      # Backfill operations & locking
+│   ├── auditManager.ts         # Audit log operations
+│   ├── backfillManager.ts      # Backfill operations & locking
+│   ├── schema/                 # Drizzle table definitions (one file per table)
+│   │   ├── index.ts
+│   │   ├── users.ts
+│   │   ├── redeemed_codes.ts
+│   │   ├── pending_codes.ts
+│   │   ├── audit_log.ts
+│   │   └── backfill_operations.ts
+│   └── migrations/             # Auto-generated SQL migrations (drizzle-kit)
 ├── handlers/
 │   ├── codeScanner.ts          # Message code detection
 │   └── backfillHandler.ts      # Message history scanning & redemption
@@ -62,11 +71,12 @@ lib/
 ## Key Technologies
 
 - **Mise** - Task runner and tool version manager (MANDATORY)
-- **Bun 1.3.9** - JavaScript runtime (3-4x faster than Node.js)
+- **Bun 1.3.13** - JavaScript runtime (3-4x faster than Node.js; also used as package manager)
 - **discord.js 14.26** - Discord bot framework
-- **sqlite3** - Local database
-- **node-fetch** - HTTP client (for game API)
-- **TypeScript** - Type-safe development
+- **bun:sqlite** - Built-in SQLite module (replaces `sqlite3`)
+- **Drizzle ORM** - Type-safe query builder and schema manager
+- **Bun Fetch API** - Built-in HTTP client (replaces `node-fetch`)
+- **TypeScript** - Type-safe development (`noEmit: true`; type-check only)
 
 ## Important Notes
 
@@ -98,34 +108,46 @@ POST /~idledragons/post.php?call=redeemcoupon&user_id=X&hash=Y&instance_id=Z&cod
 
 ## Building
 
-Use Mise for all build tasks:
+The production build compiles TypeScript into a self-contained native binary:
 
 ```bash
-# Build the project
+# Build production binary (bun build --compile)
+mise run prod:build
+
+# Type-check only (no output files)
 mise run build
 
-# Watch for changes and rebuild
-mise run watch
+# Run the binary
+./dist-bundle/bot
 ```
+
+For development, Bun runs TypeScript directly — no compile step is needed.
 
 ## Common Tasks
 
 All tasks are run through Mise. Use `mise tasks` to see all available commands:
 
 ```bash
-mise run install  # Install dependencies
-mise run dev      # Start development server
-mise run build    # Build TypeScript
-mise run watch    # Watch & rebuild on changes
-mise run lint     # Check code quality
-mise run lint:fix # Auto-fix linting issues
-mise run audit    # Check for vulnerabilities
-mise run clean    # Clean build artifacts
+mise run install      # Install dependencies
+mise run dev          # Start bot directly from TypeScript source
+mise run build        # Type-check only (noEmit: true)
+mise run prod:build   # Build self-contained production binary
+mise run lint         # Check code quality
+mise run lint:fix     # Auto-fix linting issues
+mise run audit        # Check for vulnerabilities
+mise run clean        # Clean build artifacts
 ```
 
 ## Database
 
-SQLite database (`./data/idle.db`) with the following structure:
+SQLite database (`./data/idle.db`) managed with Drizzle ORM. Schema is defined in TypeScript files under `src/bot/database/schema/`. Migrations are automatically applied at startup via `migrate()`.
+
+To regenerate migrations after schema changes:
+
+```bash
+bun run db:generate   # Regenerate SQL migrations from schema
+bun run db:studio     # Open Drizzle Studio (visual DB browser)
+```
 
 ```mermaid
 erDiagram
@@ -147,8 +169,10 @@ erDiagram
         int id PK
         string code
         string discord_id FK
-        string status
+        string status "Success or Code Expired"
         json loot
+        int is_public "0 = private, 1 = public"
+        datetime expires_at
         datetime timestamp
     }
 
@@ -169,7 +193,7 @@ erDiagram
 
     BACKFILL_OPERATIONS {
         int id PK
-        string initiated_by "user ID or 'system'"
+        string initiated_by "discord_id FK or 'system'"
         datetime started_at
         datetime completed_at
         int codes_found

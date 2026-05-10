@@ -378,14 +378,14 @@ See [BUILD.md](BUILD.md) for complete build documentation including:
 # Install dependencies
 mise run install
 
-# Development build (watch mode)
-mise run watch
+# Development build (type-check only)
+mise run build
 
-# Production build
+# Production build (self-contained binary)
 mise run prod:build
 
 # Run the bot
-bun run dist/bot/bot.js
+./dist-bundle/bot
 ```
 
 ## Making Changes

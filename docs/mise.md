@@ -114,13 +114,9 @@ If you prefer not to use Mise tasks, you can still run everything manually:
 # Activate tools manually
 eval "$(mise activate)"
 
-# Then use bun/node directly
+# Then use bun directly
 bun install
 bun run dev
-
-# Or use npm if you prefer
-npm install
-npm run dev
 ```
 
 ## Environment Setup (Optional: direnv)

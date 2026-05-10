@@ -26,6 +26,10 @@ env = { NODE_ENV = "development" }
 description = "Build standalone executable with Bun"
 run = "bun run build"
 
+[tasks.typecheck]
+description = "Type-check TypeScript source without emitting files"
+run = "bun run typecheck"
+
 [tasks."prod:build"]
 description = "Build minified production executable"
 run = "bun run build"

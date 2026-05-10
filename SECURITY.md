@@ -707,11 +707,11 @@ This project provides comprehensive instructions on how to build the software fr
 # Install all required dependencies
 mise run install
 
-# Build the project
-mise run build
+# Build the production binary
+mise run prod:build
 
 # Run the bot
-bun run dist/bot/bot.js
+./dist-bundle/bot
 ```
 
 See [BUILD.md](BUILD.md) for comprehensive build instructions and troubleshooting.

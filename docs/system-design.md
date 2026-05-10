@@ -817,21 +817,29 @@ Message Handler Error
 
 ### Docker Container
 
-```
-FROM node:24-slim
-
-COPY --chown=node:node . /app
+```dockerfile
+# Builder stage
+FROM debian:13.4-slim AS builder
 WORKDIR /app
+COPY .mise.toml package.json bun.lock ./
+RUN bin/mise install && bin/mise run install
+COPY tsconfig.bot.json ./
+COPY src/bot ./src/bot
+COPY src/lib ./src/lib
+RUN bin/mise run prod:build
 
-RUN bun install --frozen-lockfile
-RUN bun run build
-
-CMD ["node", "dist/bot/bot.js"]
+# Production stage — only the binary needed
+FROM debian:13.4-slim AS production
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
+COPY --from=builder /app/dist-bundle/bot ./dist-bundle/bot
+RUN mkdir -p /app/data /app/api-logs
+CMD ["/app/dist-bundle/bot"]
 ```
 
 **Environment**:
-- Bun 1.3.9+ runtime pre-configured
-- Node.js 24 LTS base image
+- Self-contained ELF binary with embedded Bun runtime
+- No Bun, Node.js, or `node_modules` required at runtime
 - Discord bot token via ENV var
 - Database persisted to volume
 

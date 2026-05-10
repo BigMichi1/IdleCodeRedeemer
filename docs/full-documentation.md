@@ -19,7 +19,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ### Prerequisites
 
-- Mise 2024+ (or Bun 1.3.9+ if you prefer to manage tools manually)
+- Mise 2024+ (or Bun 1.3.13+ if you prefer to manage tools manually)
 - Discord bot token
 
 ### Setup (5 minutes)
@@ -180,15 +180,22 @@ Display all available commands with brief descriptions.
 
 ```
 src/bot/
-├── bot.ts                 # Main Discord client & event handlers
+├── bot.ts                     # Main Discord client & event handlers
 ├── api/
 │   └── idleChampionsApi.ts    # Game server API client
-├── commands/              # Slash command handlers
-├── database/              # SQLite management (users, codes, audit log)
+├── commands/              # Slash command handlers (9 commands)
+├── database/              # Database layer (Drizzle ORM)
+│   ├── db.ts              # Drizzle connection & migrate() on startup
+│   ├── userManager.ts     # User credentials
+│   ├── codeManager.ts     # Code tracking & history
+│   ├── auditManager.ts    # Audit log
+│   ├── backfillManager.ts # Backfill locking & tracking
+│   ├── schema/            # Drizzle table definitions (one file per table)
+│   └── migrations/        # Auto-generated SQL migrations
 ├── handlers/              # Message scanning for codes
 └── utils/                 # Helpers (debug logging, etc.)
 lib/
-├── *.d.ts                 # Type definitions from extension
+└── *.d.ts                 # Type definitions from game API
 ```
 
 ## Configuration
@@ -219,12 +226,18 @@ mise tasks        # View all available tasks
 
 ## Database
 
-SQLite database with 4 tables:
+SQLite database managed with Drizzle ORM (`bun:sqlite` + `drizzle-orm`). Migrations are applied automatically at startup.
 
-- **users** - Discord user credentials (encrypted)
-- **redeemed_codes** - Code history and status
+- **users** - Discord user credentials
+- **redeemed_codes** - Code history (status: `Success` or `Code Expired`; includes `is_public` and `expires_at`)
 - **pending_codes** - Codes waiting to be redeemed
 - **audit_log** - All bot actions
+- **backfill_operations** - Backfill run history & global lock
+
+```bash
+bun run db:generate   # Regenerate migrations from schema changes
+bun run db:studio     # Open Drizzle Studio (visual DB browser)
+```
 
 ## Troubleshooting
 
@@ -246,9 +259,9 @@ SQLite database with 4 tables:
 
 ## Documentation
 
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development guide and architecture
-- **[STRUCTURE.md](STRUCTURE.md)** - Complete project structure
-- **[MISE.md](MISE.md)** - Mise tool setup and task reference
+- **[Development Guide](development.md)** - Development setup, structure & debugging
+- **[Project Structure](structure.md)** - Complete directory layout & key files
+- **[Mise Setup Guide](mise.md)** - Tool management & available tasks
 
 ## Original Extension
 

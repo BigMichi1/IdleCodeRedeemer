@@ -1,4 +1,6 @@
+import { eq, sql } from 'drizzle-orm';
 import { db } from './db';
+import { users } from './schema/index';
 
 interface UserCredentials {
   discordId: string;
@@ -8,74 +10,66 @@ interface UserCredentials {
   instanceId?: string;
 }
 
-interface StoredUser {
-  discord_id: string;
-  user_id: string;
-  user_hash: string;
-  server: string | null;
-  instance_id: string | null;
-  created_at: string;
-  updated_at: string;
+function rowToCredentials(user: typeof users.$inferSelect): UserCredentials {
+  return {
+    discordId: user.discordId,
+    userId: user.userId,
+    userHash: user.userHash,
+    server: user.server ?? undefined,
+    instanceId: user.instanceId ?? undefined,
+  };
 }
 
 class UserManager {
   async saveCredentials(credentials: UserCredentials): Promise<void> {
     const { discordId, userId, userHash, server, instanceId } = credentials;
 
-    await db.run(
-      `INSERT OR REPLACE INTO users (discord_id, user_id, user_hash, server, instance_id, updated_at)
-       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      [discordId, userId, userHash, server || null, instanceId || null]
-    );
+    db.insert(users)
+      .values({ discordId, userId, userHash, server: server ?? null, instanceId: instanceId ?? null })
+      .onConflictDoUpdate({
+        target: users.discordId,
+        set: {
+          userId,
+          userHash,
+          server: server ?? null,
+          instanceId: instanceId ?? null,
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        },
+      })
+      .run();
   }
 
   async getCredentials(discordId: string): Promise<UserCredentials | null> {
-    const user = await db.get<StoredUser>('SELECT * FROM users WHERE discord_id = ?', [discordId]);
-
-    if (!user) return null;
-
-    return {
-      discordId: user.discord_id,
-      userId: user.user_id,
-      userHash: user.user_hash,
-      server: user.server || undefined,
-      instanceId: user.instance_id || undefined,
-    };
+    const user = db.select().from(users).where(eq(users.discordId, discordId)).get();
+    return user ? rowToCredentials(user) : null;
   }
 
   async deleteCredentials(discordId: string): Promise<void> {
-    await db.run('DELETE FROM users WHERE discord_id = ?', [discordId]);
+    db.delete(users).where(eq(users.discordId, discordId)).run();
   }
 
   async hasCredentials(discordId: string): Promise<boolean> {
-    const user = await db.get('SELECT discord_id FROM users WHERE discord_id = ?', [discordId]);
+    const user = db.select({ discordId: users.discordId }).from(users).where(eq(users.discordId, discordId)).get();
     return user !== undefined;
   }
 
   async updateServer(discordId: string, server: string): Promise<void> {
-    await db.run(
-      'UPDATE users SET server = ?, updated_at = CURRENT_TIMESTAMP WHERE discord_id = ?',
-      [server, discordId]
-    );
+    db.update(users)
+      .set({ server, updatedAt: sql`CURRENT_TIMESTAMP` })
+      .where(eq(users.discordId, discordId))
+      .run();
   }
 
   async updateInstanceId(discordId: string, instanceId: string): Promise<void> {
-    await db.run(
-      'UPDATE users SET instance_id = ?, updated_at = CURRENT_TIMESTAMP WHERE discord_id = ?',
-      [instanceId, discordId]
-    );
+    db.update(users)
+      .set({ instanceId, updatedAt: sql`CURRENT_TIMESTAMP` })
+      .where(eq(users.discordId, discordId))
+      .run();
   }
 
   async getAllUsers(): Promise<UserCredentials[]> {
-    const users = await db.all<StoredUser>('SELECT * FROM users ORDER BY created_at DESC');
-
-    return users.map((user) => ({
-      discordId: user.discord_id,
-      userId: user.user_id,
-      userHash: user.user_hash,
-      server: user.server || undefined,
-      instanceId: user.instance_id || undefined,
-    }));
+    const rows = db.select().from(users).orderBy(sql`${users.createdAt} DESC`).all();
+    return rows.map(rowToCredentials);
   }
 }
 

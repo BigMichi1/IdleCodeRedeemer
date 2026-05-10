@@ -287,15 +287,15 @@ The project assumes the risk and implements verification through other means.
 
 **Vulnerability Details**:
 
-| Component | Version | Status | Risk |
-|-----------|---------|--------|------|
-| discord.js | 14.26.4 | Current | LOW |
-| TypeScript | 6.0.3 | Current | LOW |
-| Bun | 1.3.9+ | Current | LOW |
-| node-fetch | 3.3+ | Current | MEDIUM - Network operations |
-| sqlite3 | Latest | Current | MEDIUM - Database operations |
-| ESLint | Latest | Current | LOW - Dev dependency |
-| Prettier | Latest | Current | LOW - Dev dependency |
+| Component   | Version  | Status  | Risk                         |
+| ----------- | -------- | ------- | ---------------------------- |
+| discord.js  | 14.26.4  | Current | LOW                          |
+| TypeScript  | 6.0.3    | Current | LOW                          |
+| Bun         | 1.3.13   | Current | LOW                          |
+| drizzle-orm | 0.45.2   | Current | LOW - ORM, parameterized queries |
+| bun:sqlite  | built-in | Current | LOW - First-party SQLite module |
+| ESLint      | Latest   | Current | LOW - Dev dependency         |
+| Prettier    | Latest   | Current | LOW - Dev dependency         |
 
 **Attack Scenarios**:
 
@@ -317,10 +317,10 @@ The project assumes the risk and implements verification through other means.
    - Mitigated: Only necessary crypto (via discord.js)
 
 4. **Memory Safety Issue**
-   - Native binding (node-fetch) has buffer overflow
+   - Native binding in a dependency has buffer overflow
    - Attacker crafts malicious response triggering overflow
    - Process crashes or RCE
-   - Mitigated: Proper error handling, input validation
+   - Mitigated: Bun built-in fetch and `bun:sqlite` (first-party, audited modules); proper error handling
 
 **Mitigation Strategies in Place**:
 - ✅ Frozen lockfile (bun.lock) - prevents version mutations

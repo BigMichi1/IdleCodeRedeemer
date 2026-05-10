@@ -59,6 +59,9 @@ ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 # Copy the self-contained compiled executable from builder
 COPY --from=builder /app/dist-bundle/bot ./dist-bundle/bot
 
+# Copy database migrations (required at runtime for schema setup)
+COPY --from=builder /app/src/bot/database/migrations ./dist-bundle/migrations
+
 # Create data and logs directories
 RUN mkdir -p /app/data /app/api-logs
 
