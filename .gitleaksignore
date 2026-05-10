@@ -1,26 +1,4 @@
-# Gitleaks ignore patterns for false positives
-# Format: Comment above each pattern to explain why it's ignored
+# Gitleaks ignore file for secret fingerprints
+# Note: File path exclusions are handled in .gitleaks.toml
+# This file should only contain secret fingerprints to ignore (if needed)
 
-# Example/template tokens in documentation and examples
-README.md
-docs/
-
-# Test files and examples that use fake tokens
-.env.example
-src/bot/.env.example
-
-# Configuration files
-.secrets.baseline
-
-# Setup/configuration files with environment variable references (not secrets)
-.mise.toml
-docker-compose.yml
-
-# Type definitions that mention "passwords" (not actual secrets)
-src/lib/chrome.d.ts
-
-# GitHub Actions workflows contain pattern names, not actual secrets
-.github/workflows/
-
-# Application code that reads from environment variables (not secrets themselves)
-src/bot/bot.ts

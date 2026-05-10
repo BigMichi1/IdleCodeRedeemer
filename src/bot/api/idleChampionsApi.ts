@@ -3,8 +3,6 @@
 /// <reference path="../../lib/server_definitions.d.ts" />
 /// <reference path="../../lib/blacksmith_response.d.ts" />
 
-import fetch from 'node-fetch';
-import * as https from 'https';
 import logger from '../utils/logger';
 import { apiRequestLogger } from '../utils/apiRequestLogger';
 
@@ -63,9 +61,6 @@ class IdleChampionsApi {
   public static readonly MAX_BUY_CHESTS = 250;
   public static readonly MAX_OPEN_CHESTS = 1000;
   public static readonly MAX_BLACKSMITH = 1000;
-  private static readonly httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
-  });
 
   static async getServer(): Promise<string | undefined> {
     const request = new URL('https://master.idlechampions.com/~idledragons/post.php');
@@ -78,7 +73,7 @@ class IdleChampionsApi {
     request.searchParams.append('localization_aware', 'true');
 
     try {
-      const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const response = await fetch(request.toString());
       const body = await IdleChampionsApi.tryToJson(response.clone());
 
       apiRequestLogger.log(
@@ -147,7 +142,7 @@ class IdleChampionsApi {
     logger.debug(`Submitting code to: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
-      const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const response = await fetch(request.toString());
       const redeemResponse: RedeemCodeResponse = await IdleChampionsApi.tryToJson(response.clone());
 
       apiRequestLogger.log(
@@ -249,7 +244,7 @@ class IdleChampionsApi {
     request.searchParams.append('localization_aware', 'true');
 
     try {
-      const fetchPromise = fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const fetchPromise = fetch(request.toString());
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('API request timeout after 5s')), 5000)
       );
@@ -344,7 +339,7 @@ class IdleChampionsApi {
     logger.debug(`Opening chests from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
-      const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const response = await fetch(request.toString());
       const openGenericChestResponse: OpenGenericChestResponse = await IdleChampionsApi.tryToJson(
         response.clone()
       );
@@ -426,7 +421,7 @@ class IdleChampionsApi {
     logger.debug(`Purchasing chests from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
-      const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const response = await fetch(request.toString());
       const purchaseResponse: PurchaseChestResponse = await IdleChampionsApi.tryToJson(
         response.clone()
       );
@@ -509,7 +504,7 @@ class IdleChampionsApi {
     logger.debug(`Using blacksmith from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
-      const response = await fetch(request.toString(), { agent: this.httpsAgent } as any);
+      const response = await fetch(request.toString());
       const useServerBuffResponse: UseServerBuffResponse = await IdleChampionsApi.tryToJson(
         response.clone()
       );

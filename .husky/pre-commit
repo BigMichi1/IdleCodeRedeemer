@@ -5,7 +5,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Scan for secrets with Gitleaks via local bin/mise
 echo "🔐 Scanning for secrets with Gitleaks..."
-"$PROJECT_ROOT/bin/mise" run gitleaks detect --source . --config "$PROJECT_ROOT/.gitleaks.toml" --verbose
+"$PROJECT_ROOT/bin/mise" run gitleaks detect --source . --config "$PROJECT_ROOT/.gitleaks.toml"
 
 if [ $? -ne 0 ]; then
   echo "❌ ERROR: Gitleaks detected secrets!"

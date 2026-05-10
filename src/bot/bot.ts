@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { db } from './database/db';
 import { scanMessageForCodes } from './handlers/codeScanner';
@@ -16,8 +15,6 @@ import path from 'path';
 // CRITICAL: Disable certificate validation for Idle Champions API
 // Their server has an expired certificate - this must be set BEFORE any HTTPS requests
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-dotenv.config();
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
