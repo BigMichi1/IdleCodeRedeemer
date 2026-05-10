@@ -50,7 +50,7 @@ WORKDIR /app
 # Install only ca-certificates for HTTPS (the bot calls external APIs)
 RUN apt-get update \
   && apt-get -y --no-install-recommends install \
-    ca-certificates \
+    ca-certificates procps \
   && rm -rf /var/lib/apt/lists/*
 
 # Disable SSL cert validation for Idle Champions API (expired certificate)
