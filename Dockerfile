@@ -1,5 +1,5 @@
 # Builder stage
-FROM debian:13.4-slim AS builder
+FROM debian:13.4-slim@sha256:109e2c65005bf160609e4ba6acf7783752f8502ad218e298253428690b9eaa4b AS builder
 
 WORKDIR /app
 
@@ -44,7 +44,7 @@ COPY src/lib ./src/lib
 RUN bin/mise run prod:build
 
 # Production stage
-FROM debian:13.4-slim AS production
+FROM debian:13.4-slim@sha256:109e2c65005bf160609e4ba6acf7783752f8502ad218e298253428690b9eaa4b AS production
 
 WORKDIR /app
 
