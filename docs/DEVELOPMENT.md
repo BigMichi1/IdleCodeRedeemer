@@ -40,13 +40,18 @@ src/bot/
 │   ├── inventory.ts            # Show account info
 │   ├── open.ts                 # Open chests
 │   ├── blacksmith.ts           # Upgrade heroes
+│   ├── codes.ts                # Show code history
+│   ├── makepublic.ts           # Share codes with other users
+│   ├── backfill.ts             # Recover missed codes from history
 │   └── help.ts                 # Command help
 ├── database/
 │   ├── db.ts                   # SQLite connection & queries
 │   ├── userManager.ts          # User credentials storage
-│   └── codeManager.ts          # Code tracking & history
+│   ├── codeManager.ts          # Code tracking & history
+│   └── backfillManager.ts      # Backfill operations & locking
 ├── handlers/
-│   └── codeScanner.ts          # Message code detection
+│   ├── codeScanner.ts          # Message code detection
+│   └── backfillHandler.ts      # Message history scanning & redemption
 └── utils/
     └── debugLogger.ts          # Response logging & cleanup
 
@@ -154,6 +159,14 @@ SQLite database (`./data/idle.db`) contains:
 - action
 - details (JSON)
 - timestamp
+
+**backfill_operations**
+
+- id (PK)
+- initiated_by (user who initiated or "system" for automatic)
+- started_at, completed_at
+- codes_found, codes_redeemed (counts)
+- status (in_progress, completed, failed)
 
 ## Testing Commands
 

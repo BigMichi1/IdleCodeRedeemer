@@ -4,8 +4,9 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ## Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/help`
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
+- ⏮️ **Message History Backfill** - Recover missed codes from message history (protected with rate limiting)
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
 - ⚒️ **Blacksmith** - Upgrade heroes with contracts
@@ -62,6 +63,7 @@ brew install mise
 | `/blacksmith contract_type:<type> hero_id:<id> count:<count>` | Upgrade heroes                                        |
 | `/codes [count:<count>]`                                      | Show your redeemed codes history (last 10)            |
 | `/makepublic code:<code>`                                     | Share one of your redeemed codes with other users     |
+| `/backfill [channel:<channel>]`                               | Recover missed codes from message history             |
 | `/help`                                                       | Show all commands                                     |
 
 ### Setup & Authentication
@@ -141,6 +143,28 @@ Share one of your previously redeemed codes with other users. Other users can re
 - **Requirement:** You must have already redeemed this code
 - **Note:** Codes automatically become public when a second user successfully redeems them
 - **Example:** `/makepublic code:SHARED123`
+
+#### `/backfill [channel:<channel>]`
+
+Recover missed codes from Discord message history. Scans the entire message history of a channel and redeems any codes that weren't previously found.
+
+- **Optional parameters:**
+  - `channel` - Target channel to scan (defaults to current channel)
+- **Requirements:**
+  - You must have "Manage Messages" permission (admin-only)
+  - Only works on text channels
+- **Protection:**
+  - Only one backfill can run at a time (global lock)
+  - Per-user rate limit: 1 hour between initiations
+  - Automatically runs on startup if last run was >6 hours ago
+- **Response:** Shows stats (codes found, redeemed, pending, any errors)
+- **Example:** `/backfill` or `/backfill channel:#code-drops`
+
+**Automatic Startup Backfill:**
+- Runs automatically when the bot starts if `DISCORD_CHANNEL_ID` is configured
+- Only runs if the last backfill was more than 6 hours ago
+- Helps catch codes that appeared while the bot was offline
+- No manual action needed
 
 ### Help
 

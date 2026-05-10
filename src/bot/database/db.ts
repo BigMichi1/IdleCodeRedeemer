@@ -69,6 +69,17 @@ class Database {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (discord_id) REFERENCES users(discord_id)
         )`,
+        // Backfill operations table - tracks backfill runs to prevent duplicates
+        `CREATE TABLE IF NOT EXISTS backfill_operations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          initiated_by TEXT NOT NULL,
+          started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          completed_at DATETIME,
+          codes_found INTEGER DEFAULT 0,
+          codes_redeemed INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'in_progress',
+          FOREIGN KEY (initiated_by) REFERENCES users(discord_id)
+        )`,
       ];
 
       let completed = 0;

@@ -65,6 +65,18 @@ class UserManager {
       [instanceId, discordId]
     );
   }
+
+  async getAllUsers(): Promise<UserCredentials[]> {
+    const users = await db.all<StoredUser>('SELECT * FROM users ORDER BY created_at DESC');
+
+    return users.map((user) => ({
+      discordId: user.discord_id,
+      userId: user.user_id,
+      userHash: user.user_hash,
+      server: user.server || undefined,
+      instanceId: user.instance_id || undefined,
+    }));
+  }
 }
 
 export const userManager = new UserManager();

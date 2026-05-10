@@ -2,8 +2,10 @@ import dotenv from 'dotenv';
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { db } from './database/db';
 import { scanMessageForCodes } from './handlers/codeScanner';
+import { backfillChannelHistory } from './handlers/backfillHandler';
 import { codeManager } from './database/codeManager';
 import { userManager } from './database/userManager';
+import { backfillManager } from './database/backfillManager';
 import IdleChampionsApi from './api/idleChampionsApi';
 import { initDebugLogger } from './utils/debugLogger';
 import logger from './utils/logger';
@@ -70,6 +72,42 @@ client.on(Events.ClientReady, async () => {
     logger.info('Initializing database...');
     await db.initialize();
     logger.info('Database initialized');
+
+    // Check if startup backfill should run
+    const shouldBackfill = await backfillManager.shouldRunStartupBackfill();
+    if (shouldBackfill && CHANNEL_ID) {
+      logger.info('Running startup backfill...');
+      try {
+        const channel = await client.channels.fetch(CHANNEL_ID);
+        if (channel) {
+          const operationId = await backfillManager.startBackfill(client.user?.id || 'system');
+
+          const stats = await backfillChannelHistory(channel, (message) => {
+            logger.info(`[STARTUP BACKFILL] ${message}`);
+          });
+
+          await backfillManager.updateBackfill(
+            operationId,
+            stats.codesFound,
+            stats.codesRedeemed,
+            stats.errors.length === 0 ? 'completed' : 'failed'
+          );
+
+          logger.info(
+            `Startup backfill completed: found=${stats.codesFound}, redeemed=${stats.codesRedeemed}`
+          );
+        } else {
+          logger.warn('Startup backfill: Could not fetch channel');
+        }
+      } catch (backfillError) {
+        logger.error('Error during startup backfill:', backfillError);
+      }
+    } else if (!shouldBackfill) {
+      const lastBackfill = await backfillManager.getLastBackfill();
+      logger.info(`Skipping startup backfill - last run was less than 6 hours ago at ${lastBackfill?.completed_at}`);
+    } else {
+      logger.info('Skipping startup backfill - DISCORD_CHANNEL_ID not configured');
+    }
 
     // Register slash commands
     logger.debug(`GUILD_ID from env: ${GUILD_ID}`);

@@ -63,8 +63,9 @@ See [docker-compose.example.yml](docker-compose.example.yml) for all available c
 
 ## ✨ Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/help`
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
+- ⏮️ **Message History Backfill** - Recover missed codes from message history with built-in rate limiting
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
 - ⚒️ **Blacksmith** - Upgrade heroes with contracts
