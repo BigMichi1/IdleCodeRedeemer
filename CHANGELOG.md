@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **System Design & Architecture [OSPS-SA-01.01]** - Design documentation for all actors and actions
+  - NEW: [docs/system-design.md](docs/system-design.md) - Complete system design and architecture documentation
+  - Actors documented: Discord users, Discord servers, Discord bot, Idle Champions API, SQLite database
+  - Actions documented: 9 slash commands with complete data flows
+  - Message scanning for automatic code detection
+  - Message history backfill operations
+  - API client interactions with Idle Champions server
+  - Database persistence and management
+  - Data models: User credentials, code history, backfill state, debug logs
+  - Component interactions and subsystems
+  - Security architecture (credential management, encryption, access control)
+  - Error handling and resilience patterns
+  - Scalability and performance characteristics
+  - High-level system architecture diagram
+  - Detailed data flow diagrams for each major operation
+  - Updated for new features and breaking changes
+  - OSPS-SA-01.01 compliance tracking
+
 - **Automated Test Suites & CI/CD Testing [OSPS-QA-06.01]** - Test suites run before every merge
   - NEW: [docs/testing-strategy.md](docs/testing-strategy.md) - Complete testing strategy and automated test documentation
   - 5 automated test suites documented:

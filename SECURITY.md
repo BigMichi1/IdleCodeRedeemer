@@ -231,6 +231,18 @@ When a release is created:
 
 For complete dependency management details, see [docs/dependency-management.md](docs/dependency-management.md).
 
+## System Design & Architecture [OSPS-SA-01.01]
+
+The project includes comprehensive design documentation describing all actors and actions within the system. See [docs/system-design.md](docs/system-design.md) for:
+
+- **Actors**: Discord users, Discord servers, Discord bot, Idle Champions API, SQLite database
+- **Actions**: 9 slash commands, message scanning, backfill operations, API interactions, database operations
+- **Data Flows**: Complete flow diagrams for each major operation
+- **Architecture**: Component interactions, subsystems, deployment
+- **Data Models**: User credentials, code history, backfill state, API logs
+- **Security**: Credential management, encryption, access control, data isolation
+- **Error Handling**: API failures, database failures, message handler resilience
+
 ## Automated Test Suites & CI/CD Testing [OSPS-QA-06.01]
 
 All code is validated through automated test suites running in CI/CD pipelines before merging to the primary branch.
