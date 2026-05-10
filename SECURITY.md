@@ -284,10 +284,13 @@ Use GitHub's private vulnerability reporting feature:
 
 ### Email Contact
 
-For issues you cannot report via GitHub, contact the maintainer directly:
+For issues you cannot report via GitHub, contact the security team directly:
 
-- **Email**: [Check repository contact methods in SECURITY_CONTACTS.md]
+- **Email**: See [SECURITY_CONTACTS.md](SECURITY_CONTACTS.md) for actual contact information
 - **Response time**: Security issues will be reviewed within 1 business day per CVD Policy
+- **Privacy**: All reports are treated confidentially until 30 days after patch release
+
+For complete contact information, multiple reporting methods, and FAQ, see [SECURITY_CONTACTS.md](SECURITY_CONTACTS.md).
 
 ## What to Include in a Report
 

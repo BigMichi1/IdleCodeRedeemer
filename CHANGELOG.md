@@ -8,6 +8,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Private Vulnerability Reporting Channels [OSPS-VM-03.01]** - Security contact methods
+  - NEW: [SECURITY_CONTACTS.md](SECURITY_CONTACTS.md) - Complete vulnerability reporting documentation
+  - **Primary Reporting Methods**:
+    - GitHub Security Advisory (preferred method)
+      - Private, tracked, secure
+      - Direct to maintainers
+      - Built-in GitHub feature
+      - Acknowledgment within 1 business day
+    - Email to security contact
+      - For researchers without GitHub account
+      - PGP/GPG encryption supported
+      - Attachments allowed
+      - Acknowledgment within 1 business day
+    - GitHub private messaging
+      - Integrated with GitHub interface
+      - Can escalate to Security Advisory
+      - Acknowledgment within 1 business day
+  - **Contact Information**:
+    - Primary security contact listed
+    - Backup contact for redundancy
+    - Multiple communication methods
+    - Response time commitments
+  - **Privacy & Confidentiality**:
+    - All reports treated as confidential
+    - No third-party disclosure without consent
+    - 30-day minimum before public disclosure
+    - Details shared only with minimum necessary team
+  - **Encryption Support**:
+    - PGP/GPG key publishing (when available)
+    - Email encryption instructions
+    - GitHub Security Advisory handles encryption automatically
+  - **Report Guidelines**:
+    - Essential information required
+    - Helpful optional information
+    - Proof-of-concept submission
+    - CVSS scoring guidance
+  - **Tracking & Status Updates**:
+    - Tracking IDs provided
+    - Milestone-based status updates
+    - Initial acknowledgment within 1 business day
+    - Closure notification with details
+  - **Researcher Recognition**:
+    - Public credit option
+    - Anonymous credit option
+    - CVE credit listing
+    - No recognition option
+  - **FAQ Section**:
+    - Report confidentiality
+    - Timeline expectations
+    - Credit and recognition
+    - Multiple vulnerability handling
+    - Issue categorization
+  - [OSPS-VM-03.01] compliance
+
 - **Coordinated Vulnerability Disclosure Policy [OSPS-VM-01.01]** - Security vulnerability handling
   - NEW: Comprehensive CVD policy added to [SECURITY.md](SECURITY.md)
   - Clear response timeframes documented:
