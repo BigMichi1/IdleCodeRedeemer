@@ -33,6 +33,12 @@ services:
       # Defaults to 357247482247380994 if not specified
       DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-357247482247380994}
       
+      # Optional: Discord user/bot ID that posts promo codes (e.g. the Idle
+      # Champions #combinations bot). When set, backfill only scans messages
+      # from this author; all other messages are saved to api-logs/ for inspection.
+      # Find this ID by enabling Developer Mode in Discord → right-click the bot → Copy User ID.
+      DISCORD_CODE_AUTHOR_ID: ${DISCORD_CODE_AUTHOR_ID:-}
+      
       # Database location (inside container)
       DB_PATH: /app/data/idle.db
       

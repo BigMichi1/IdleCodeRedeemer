@@ -102,6 +102,7 @@ The `.env` file configuration works the same as with Docker:
 export DISCORD_TOKEN=your_bot_token_here
 export DISCORD_GUILD_ID=optional_guild_id
 export DISCORD_CHANNEL_ID=optional_channel_id
+export DISCORD_CODE_AUTHOR_ID=optional_code_author_bot_id
 ```
 
 Or add them to your `docker-compose.yml` (or `.env` file if using podman-compose).

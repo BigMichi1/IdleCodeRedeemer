@@ -1,17 +1,20 @@
 import { Message } from 'discord.js';
 import { codeManager } from '../database/codeManager';
 
+// Aligned with the Idle Champions Chrome extension regex
 const CODE_REGEX = /(?:[A-Z0-9*!@#$%^&*]-?){12}(?:(?:[A-Z0-9*!@#$%^&*]-?){4})?/g;
+
+// Strip Discord custom emoji tags (<:name:id> and <a:name:id>) before scanning
+// to avoid false positives from emoji names and snowflake IDs.
+function stripDiscordEmojis(text: string): string {
+  return text.replace(/<a?:[^:]+:\d+>/g, '');
+}
 
 export async function scanMessageForCodes(message: Message): Promise<string[]> {
   try {
-    // Skip bot messages and messages from the bot itself
-    if (message.author.bot || message.webhookId) {
-      return [];
-    }
 
-    // Extract text content (skip embeds for now, focus on message content)
-    const messageText = message.content.toUpperCase();
+    // Strip emoji tags then uppercase for matching
+    const messageText = stripDiscordEmojis(message.content).toUpperCase();
 
     const codeMatches = messageText.match(CODE_REGEX) || [];
     const codes: string[] = [];
@@ -37,6 +40,6 @@ export async function scanMessageForCodes(message: Message): Promise<string[]> {
 }
 
 export function extractCodesFromText(text: string): string[] {
-  const codeMatches = text.toUpperCase().match(CODE_REGEX) || [];
+  const codeMatches = stripDiscordEmojis(text).toUpperCase().match(CODE_REGEX) || [];
   return codeMatches.map((code) => code.replaceAll('-', ''));
 }
