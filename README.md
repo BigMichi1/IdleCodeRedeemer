@@ -4,11 +4,11 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 **📖 Quick Links to Documentation:**
 
-- **[Full README](docs/README.md)** - Main documentation & all features
+- **[Full README](docs/full-documentation.md)** - Main documentation & all features
 - **[Development Guide](docs/DEVELOPMENT.md)** - Setup, architecture & tech stack
 - **[Project Structure](docs/STRUCTURE.md)** - Directory layout & key files
 - **[Mise Setup Guide](docs/MISE.md)** - Tool management reference
-- **[Podman Guide](PODMAN.md)** - Using Podman instead of Docker
+- **[Podman Guide](docs/podman.md)** - Using Podman instead of Docker
 
 ## 🚀 Quick Start (5 minutes)
 
@@ -51,7 +51,7 @@ export DISCORD_TOKEN=your_bot_token_here
 docker-compose up -d
 ```
 
-**Don't have Docker?** Use [Podman instead](PODMAN.md) - it's a drop-in replacement with identical syntax.
+**Don't have Docker?** Use [Podman instead](docs/podman.md) - it's a drop-in replacement with identical syntax.
 
 See [docker-compose.example.yml](docker-compose.example.yml) for all available configuration options.
 
@@ -78,7 +78,7 @@ See [docker-compose.example.yml](docker-compose.example.yml) for all available c
 
 For detailed information, please see:
 
-- **[Full README](docs/README.md)** - All features, commands, architecture & troubleshooting
+- **[Full README](docs/full-documentation.md)** - All features, commands, architecture & troubleshooting
 - **[Development Guide](docs/DEVELOPMENT.md)** - Development setup, structure & debugging
 - **[Project Structure](docs/STRUCTURE.md)** - Complete directory layout & key files
 - **[Mise Setup Guide](docs/MISE.md)** - Tool management & available tasks
