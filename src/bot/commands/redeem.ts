@@ -154,22 +154,55 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    // Save to database (private code)
     const codeResponse = response as any;
     const statusName = getCodeStatusName(codeResponse.codeStatus);
+    const isSuccess = codeResponse.codeStatus === 0; // 0 = Success
+    const isExpiredStatus = codeResponse.codeStatus === 4; // 4 = Code Expired
+
     logger.info(
       `[REDEEM] Code ${code} redeemed with status: ${statusName} for user ${interaction.user.tag}`
     );
-    await codeManager.addRedeemedCode(
-      code,
-      interaction.user.id,
-      statusName,
-      codeResponse.lootDetail,
-      false // Private code
-    );
+
+    // Only store successful or expired redeems
+    if (isSuccess || isExpiredStatus) {
+      let shouldBePublic = false;
+
+      // If successful, check if another user already successfully redeemed it
+      if (isSuccess) {
+        const wasRedeemedByOther = await codeManager.isCodeSuccessfullyRedeemedByOther(
+          code,
+          interaction.user.id
+        );
+        if (wasRedeemedByOther) {
+          // Second user redeeming successfully - make it public
+          shouldBePublic = true;
+          logger.info(
+            `[REDEEM] Code ${code} will be auto-made public (second successful redeem)`
+          );
+        }
+      }
+
+      await codeManager.addRedeemedCode(
+        code,
+        interaction.user.id,
+        statusName,
+        codeResponse.lootDetail,
+        shouldBePublic // Private by default, public if second user redeems successfully
+      );
+    } else {
+      // For invalid/already redeemed codes - check if the code was explicitly made public
+      // If so, switch it back to private (might be a mistake)
+      const codeWasPublic = await codeManager.isCodePublic(code);
+
+      if (codeWasPublic) {
+        logger.warn(
+          `[REDEEM] Code ${code} was public but is now invalid - switching back to private`
+        );
+        await codeManager.markCodeAsPrivate(code);
+      }
+    }
 
     // Build response embed
-    const isSuccess = codeResponse.codeStatus === 0; // 0 = Success
     const embed = new EmbedBuilder()
       .setColor(isSuccess ? 0x00ff00 : 0xffaa00)
       .setTitle(isSuccess ? '✅ Code Redeemed!' : `⚠️ ${statusName}`)

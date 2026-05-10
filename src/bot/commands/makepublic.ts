@@ -40,7 +40,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       .setColor(0x00ff00)
       .setTitle('✅ Code Shared Successfully')
       .setDescription(
-        `The code \`${code}\` is now public!\n\nOther users can now redeem it using \`/redeempublic code:${code}\``
+        `The code \`${code}\` is now public!\n\nOther users can now redeem it using \`/redeem code:${code}\``
       )
       .setFooter({ text: 'Public codes are shared with all server members' });
 

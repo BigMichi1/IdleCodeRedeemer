@@ -36,7 +36,10 @@ class CodeManager {
   }
 
   async isCodeRedeemed(code: string): Promise<boolean> {
-    const result = await db.get('SELECT code FROM redeemed_codes WHERE code = ?', [code]);
+    const result = await db.get(
+      "SELECT code FROM redeemed_codes WHERE code = ? AND (status = 'Success' OR status = 'Code Expired')",
+      [code]
+    );
     return result !== undefined;
   }
 
@@ -66,11 +69,34 @@ class CodeManager {
        FROM redeemed_codes 
        WHERE is_public = 1 
        AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
-       AND status = 'success'
+       AND status = 'Success'
        ORDER BY redeemed_at DESC`,
       []
     );
     return results;
+  }
+
+  async getSuccessfulRedeemCount(code: string): Promise<number> {
+    const result = await db.get<{ count: number }>(
+      "SELECT COUNT(*) as count FROM redeemed_codes WHERE code = ? AND status = 'Success'",
+      [code]
+    );
+    return result?.count || 0;
+  }
+
+  async isCodeSuccessfullyRedeemedByOther(code: string, discordId: string): Promise<boolean> {
+    const result = await db.get(
+      "SELECT code FROM redeemed_codes WHERE code = ? AND discord_id != ? AND status = 'Success'",
+      [code, discordId]
+    );
+    return result !== undefined;
+  }
+
+  async isCodePublic(code: string): Promise<boolean> {
+    const result = await db.get('SELECT code FROM redeemed_codes WHERE code = ? AND is_public = 1', [
+      code,
+    ]);
+    return result !== undefined;
   }
 
   async isCodeExpired(code: string): Promise<boolean> {
@@ -90,6 +116,10 @@ class CodeManager {
 
   async markCodeAsPublic(code: string): Promise<void> {
     await db.run('UPDATE redeemed_codes SET is_public = 1 WHERE code = ?', [code]);
+  }
+
+  async markCodeAsPrivate(code: string): Promise<void> {
+    await db.run('UPDATE redeemed_codes SET is_public = 0 WHERE code = ?', [code]);
   }
 
   async addPendingCode(code: string, discordId?: string): Promise<void> {

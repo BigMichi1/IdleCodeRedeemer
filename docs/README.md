@@ -4,7 +4,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ## Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/redeempublic`, `/help`
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/help`
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
@@ -62,7 +62,6 @@ brew install mise
 | `/blacksmith contract_type:<type> hero_id:<id> count:<count>` | Upgrade heroes                                        |
 | `/codes [count:<count>]`                                      | Show your redeemed codes history (last 10)            |
 | `/makepublic code:<code>`                                     | Share one of your redeemed codes with other users     |
-| `/redeempublic [code:<code>]`                                 | Redeem public codes shared by other users             |
 | `/help`                                                       | Show all commands                                     |
 
 ### Setup & Authentication
@@ -87,15 +86,6 @@ Manually redeem a single code and immediately receive rewards.
   - `code` - The promo code to redeem (e.g., `IDLE2024`)
 - **Response:** Shows rewards obtained (gold, rubies, chests, etc.)
 - **Example:** `/redeem code:IDLE2024`
-
-#### `/redeempublic [code:<code>]`
-
-Redeem public codes that other users have shared. Leave the code empty to see all available shared codes, or specify a code to redeem it directly.
-
-- **Optional parameters:**
-  - `code` - Specific code to redeem (if empty, shows available codes)
-- **Benefits:** Access codes from community members who used `/makepublic`
-- **Example:** `/redeempublic` or `/redeempublic code:SHARED123`
 
 ### Inventory & Progress
 
@@ -144,11 +134,12 @@ View your personal code redemption history.
 
 #### `/makepublic code:<code>`
 
-Share one of your previously redeemed codes with other users. They can then use it with `/redeempublic`.
+Share one of your previously redeemed codes with other users. Other users can redeem the same code via `/redeem` and the rewards will be shared.
 
 - **Required parameters:**
   - `code` - One of your redeemed codes (must be in your history)
 - **Requirement:** You must have already redeemed this code
+- **Note:** Codes automatically become public when a second user successfully redeems them
 - **Example:** `/makepublic code:SHARED123`
 
 ### Help
