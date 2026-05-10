@@ -232,6 +232,9 @@ function getCodeStatusName(status: any): string {
 
 function getChestTypeName(chestTypeId: number): string {
   const chestTypes: { [key: number]: string } = {
+    1: 'Silver Chest',
+    2: 'Gold Chest',
+    230: 'Modron Chest',
     282: 'Electrum Chest',
   };
   return chestTypes[chestTypeId] || `Chest ${chestTypeId}`;
