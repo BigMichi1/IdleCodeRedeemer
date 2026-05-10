@@ -76,9 +76,7 @@ jobs:
 
       - name: Install Cosign
         if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@59acb6260d6c0973cfc4afef3887f1cbe7fb8c9d # v3.5.0
-        with:
-          cosign-release: 'v2.2.0'
+        uses: sigstore/cosign-installer@v4.1.0
 
       - name: Sign Docker image with Cosign (Keyless - OIDC)
         if: github.event_name != 'pull_request'
