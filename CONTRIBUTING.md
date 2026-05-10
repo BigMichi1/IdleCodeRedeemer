@@ -11,6 +11,7 @@ Thank you for your interest in contributing to the Idle Champions Code Redeemer 
 - [Development Setup](#development-setup)
 - [Building the Project](#building-the-project)
 - [Making Changes](#making-changes)
+- [Status Checks & Branch Protection](#status-checks--branch-protection)
 - [Testing](#testing)
 - [Submitting Changes](#submitting-changes)
 - [Code Standards](#code-standards)
@@ -566,6 +567,91 @@ For changes affecting the Idle Champions API:
 2. Add the bot with appropriate permissions
 3. Test with real game API responses (see `api-logs/` directory)
 4. Verify database operations
+
+## Status Checks & Branch Protection
+
+All commits to the primary branch (`main`) must pass automated status checks before merging. These checks are enforced via branch protection and GitHub Actions. [OSPS-QA-03.01]
+
+### Required Status Checks
+
+The following automated checks MUST pass:
+
+✅ **DCO Sign-Off** - All commits must be legally signed off
+- Command: `git commit -s -m "message"`
+- Failure: Unsigned commits block PR from merging
+- Fix: Amend and sign off with `git commit --amend -s && git push --force-with-lease`
+
+✅ **Docker Build** - Docker image must build successfully
+- Triggers: Every push and PR
+- Failure: Build errors shown in GitHub Actions logs
+- Fix: Review Dockerfile, check dependencies, push corrections
+
+✅ **CodeQL Security** - Security vulnerability scanning
+- Triggers: Every push and PR
+- Failure: Critical/high-severity issues block merge
+- Fix: Address CodeQL alerts in GitHub Security tab
+
+✅ **Dependency Review** - Check for vulnerable dependencies
+- Triggers: When package.json is changed
+- Failure: New vulnerable dependencies block merge
+- Fix: Update to patched version or remove dependency
+
+✅ **Secret Scanning** - Detect credentials in code
+- Triggers: Every push and PR
+- Failure: Hardcoded secrets block merge
+- Fix: Remove secret, use .env instead, commit if needed
+
+### Branch Protection Policy
+
+The `main` branch is configured with:
+
+- ✅ All status checks MUST pass before merge
+- ✅ Branches must be up to date (rebase required)
+- ✅ Pull request review required (1 approval)
+- ✅ CODEOWNERS review required for sensitive files
+- ❌ No force pushes allowed
+- ❌ No deletion allowed
+- ❌ Admin cannot bypass (ensures consistency)
+
+### What If Checks Fail?
+
+1. **Review the failure** - Click "Details" on failed check in PR
+2. **Understand the issue** - Read error message or logs
+3. **Fix the problem** - Correct the underlying issue
+4. **Push corrections** - New commits trigger checks to re-run
+5. **Wait for re-test** - GitHub Actions automatically re-run
+6. **Once all pass** - PR becomes mergeable (with review approval)
+
+### Before Submitting Your PR
+
+Run these locally to catch issues early:
+
+```bash
+# Lint your code
+mise run lint
+
+# Format your code
+mise run format
+
+# Build to verify
+mise run build
+
+# Run tests
+mise run test
+
+# Sign off on commits
+git commit -s -m "message"
+```
+
+**This prevents CI failures and keeps the PR process smooth.**
+
+### For More Information
+
+See [docs/status-checks.md](docs/status-checks.md) for complete details on:
+- All required checks and what they verify
+- How to interpret check results
+- Troubleshooting specific failures
+- Bypass procedures (rare, admin-only)
 
 ## Submitting Changes
 

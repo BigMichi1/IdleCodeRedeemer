@@ -231,6 +231,36 @@ When a release is created:
 
 For complete dependency management details, see [docs/dependency-management.md](docs/dependency-management.md).
 
+## Status Checks & Branch Protection [OSPS-QA-03.01]
+
+All commits to the primary branch must pass automated status checks before merging. No commits can be merged if required checks fail.
+
+**See [docs/status-checks.md](docs/status-checks.md) for:**
+- ✅ Required status checks configuration [OSPS-QA-03.01]
+  - DCO Sign-Off (legal authorization)
+  - Docker Build (runtime validation)
+  - CodeQL (security scanning)
+  - Dependency Review (vulnerability prevention)
+  - Secret Scanning (credential detection)
+  - OpenSSF Scorecards (compliance tracking)
+- ✅ Branch protection rules (cannot be bypassed by default) [OSPS-QA-03.01]
+- ✅ How status checks work in pull requests [OSPS-QA-03.01]
+- ✅ Troubleshooting failed checks [OSPS-QA-03.01]
+- ✅ Manual bypass procedures (admin-only, logged) [OSPS-QA-03.01]
+
+**Key Requirement:**
+No pull request can be merged if:
+- Any required status check is failing
+- Optional checks not configured as blockers (only advisory)
+- Pull request lacks required code review approval
+
+**How It Helps:**
+- Prevents defective code from being merged
+- Ensures security checks are not skipped
+- Detects vulnerable dependencies before release
+- Verifies legal authorization (DCO)
+- Maintains code quality standards
+
 ## Developer Certificate of Origin (DCO) [OSPS-LE-01.01]
 
 This project requires all code contributors to assert that they are legally authorized to make the associated contributions.

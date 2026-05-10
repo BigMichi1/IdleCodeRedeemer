@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Status Checks & Branch Protection [OSPS-QA-03.01]** - Automated checks required to pass before merging
+  - NEW: [docs/status-checks.md](docs/status-checks.md) - Complete status checks documentation
+  - DCO Sign-Off verification (all commits must be legally signed)
+  - Docker Build & Push status check (image published to GHCR with Cosign signing)
+  - CodeQL security scanning (detects vulnerabilities)
+  - Dependency Review (prevents vulnerable dependencies)
+  - Secret Scanning (detects hardcoded credentials)
+  - OpenSSF Scorecards (compliance tracking)
+  - Branch protection enforces all required checks
+  - No admin bypass allowed (ensures consistency)
+  - Status checks documentation in CONTRIBUTING.md
+  - Troubleshooting guide for failed checks
+
 - **Developer Certificate of Origin (DCO) Enforcement [OSPS-LE-01.01]** - All contributors must assert legal authorization
   - NEW: [DCO.md](DCO.md) - Complete DCO documentation and sign-off procedures
   - NEW: GitHub Actions workflow to check all commits are signed off
