@@ -1,6 +1,6 @@
 # Project Governance
 
-This document describes the project members, their roles, and their access to sensitive resources in the Idle Champions Code Redeemer Bot project. [OSPS-GV-01.01]
+This document describes the project members, their roles, and their access to sensitive resources in the Idle Champions Code Redeemer Bot project. [OSPS-GV-01.01] [OSPS-GV-01.02]
 
 ## Table of Contents
 

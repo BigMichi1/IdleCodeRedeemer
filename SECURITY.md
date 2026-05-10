@@ -231,16 +231,21 @@ When a release is created:
 
 For complete dependency management details, see [docs/dependency-management.md](docs/dependency-management.md).
 
-## Project Members & Governance [OSPS-GV-01.01]
+## Project Members & Governance [OSPS-GV-01.01, OSPS-GV-01.02]
 
-This project maintains a documented list of project members with access to sensitive resources.
+This project maintains comprehensive documentation of project members, their roles, and access to sensitive resources.
 
 **See [GOVERNANCE.md](GOVERNANCE.md) for:**
-- ✅ List of active maintainers and their roles
-- ✅ Access to sensitive resources (repository, secrets, Docker images, databases)
-- ✅ Decision-making process and code review procedures
-- ✅ Contact information for security issues
-- ✅ Future maintainer criteria and onboarding process
+- ✅ List of active maintainers and their roles [OSPS-GV-01.01]
+- ✅ Detailed descriptions of roles and responsibilities [OSPS-GV-01.02]
+  - Owner & Lead Maintainer: Code review, releases, security response, repository settings
+  - Future Maintainer role: Code review, release approval, security triage
+  - Security Officer role: Vulnerability response, security audits, secret management
+  - Release Manager role: Versioning, changelog, release notes
+- ✅ Access to sensitive resources (repository, secrets, Docker images, databases) [OSPS-GV-01.01]
+- ✅ Decision-making process and code review procedures [OSPS-GV-01.02]
+- ✅ Contact information for security issues [OSPS-VM-02.01]
+- ✅ Future maintainer criteria and onboarding process [OSPS-GV-01.02]
 
 **Current Leadership:**
 - **Owner & Lead Maintainer**: @BigMichi1 (michael@bigmichi1.de)

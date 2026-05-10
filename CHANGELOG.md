@@ -8,9 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- **Project Governance & Members [OSPS-GV-01.01]** - Documented project members, roles, and access to sensitive resources
+- **Project Governance & Members [OSPS-GV-01.01, OSPS-GV-01.02]** - Documented project members, roles, and access to sensitive resources
   - NEW: [GOVERNANCE.md](GOVERNANCE.md) - Complete governance documentation
   - Lists active maintainers (@BigMichi1 as lead maintainer)
+  - Detailed descriptions of roles and responsibilities (Owner & Lead Maintainer, Future Roles)
   - Documents access to sensitive resources (GitHub, Docker, secrets, database)
   - Describes decision-making and code review processes
   - Includes vulnerability response procedures
