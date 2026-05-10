@@ -243,6 +243,21 @@ The project includes comprehensive design documentation describing all actors an
 - **Security**: Credential management, encryption, access control, data isolation
 - **Error Handling**: API failures, database failures, message handler resilience
 
+## External Software Interfaces & API Reference [OSPS-SA-02.01]
+
+The project includes complete API documentation for all external software interfaces. See [docs/api-reference.md](docs/api-reference.md) for:
+
+- **Discord Bot API**: 9 slash commands with parameters, responses, and error handling
+- **Command Parameters**: Detailed description of each parameter and valid values
+- **Response Formats**: Discord embeds, ephemeral responses, data structures
+- **Error Responses**: Error codes, causes, and resolution steps
+- **Message Event API**: Automatic code detection patterns and behavior
+- **Rate Limiting**: Discord API limits, Idle Champions API limits, application throttling
+- **Authentication**: User credential storage, API authentication, security properties
+- **Data Structures**: JSON schemas for requests and responses
+- **Usage Examples**: Complete examples for common workflows
+- **Backward Compatibility**: API stability and breaking changes tracking
+
 ## Automated Test Suites & CI/CD Testing [OSPS-QA-06.01]
 
 All code is validated through automated test suites running in CI/CD pipelines before merging to the primary branch.

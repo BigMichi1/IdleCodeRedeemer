@@ -8,6 +8,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **External Software Interfaces & API Reference [OSPS-SA-02.01]** - Complete API documentation
+  - NEW: [docs/api-reference.md](docs/api-reference.md) - Comprehensive API reference documentation
+  - Discord Bot API: 9 slash commands fully documented
+    - `/setup` - Store credentials with parameter validation
+    - `/redeem` - Manual code redemption with error handling
+    - `/inventory` - Account status with data structure
+    - `/open` - Chest opening with response format
+    - `/blacksmith` - Hero upgrades with error codes
+    - `/codes` - Code history with pagination
+    - `/makepublic` - Code sharing with visibility
+    - `/backfill` - Message history scanning with rate limiting
+    - `/help` - Command reference
+  - Message Event API: Automatic code detection documented
+    - Pattern matching (regex: `\b([A-Z0-9]{4,20})\b`)
+    - Detection behavior and response handling
+    - Data recording structure
+  - Request/response schemas with TypeScript interfaces
+  - Error codes with causes and resolution steps
+  - Rate limiting (Discord API, Idle Champions API, application throttling)
+  - Authentication and security properties
+  - Data structure documentation (embeds, ephemeral, JSON)
+  - Backward compatibility and breaking changes tracking
+  - Complete usage examples for common workflows
+  - Error handling and recovery procedures
+  - [OSPS-SA-02.01] compliance
+
 - **System Design & Architecture [OSPS-SA-01.01]** - Design documentation for all actors and actions
   - NEW: [docs/system-design.md](docs/system-design.md) - Complete system design and architecture documentation
   - Actors documented: Discord users, Discord servers, Discord bot, Idle Champions API, SQLite database
