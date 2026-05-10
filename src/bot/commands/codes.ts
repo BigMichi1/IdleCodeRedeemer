@@ -55,22 +55,24 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           error: '⚠️',
         }[statusLower] || '❓';
 
-      const dateStr = new Date(codeRow.redeemed_at).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      const dateStr = codeRow.redeemedAt
+        ? new Date(codeRow.redeemedAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : 'Unknown';
 
-      const publicBadge = codeRow.is_public ? ' 🌐 (Public)' : '';
+      const publicBadge = codeRow.isPublic ? ' 🌐 (Public)' : '';
 
       let fieldValue = `**Status:** ${statusEmoji} ${statusLower}\n`;
       fieldValue += `**Redeemed:** ${dateStr}\n`;
 
-      if (codeRow.loot_detail) {
+      if (codeRow.lootDetail) {
         try {
-          const loot = JSON.parse(codeRow.loot_detail);
+          const loot = JSON.parse(codeRow.lootDetail);
           if (loot && typeof loot === 'object') {
             const lootParts = [];
             if (loot.gold) lootParts.push(`Gold: ${loot.gold}`);

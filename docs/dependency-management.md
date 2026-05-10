@@ -73,27 +73,27 @@ When introducing a new dependency, the following criteria are evaluated:
 
 ### Current Production Dependencies
 
-| Package        | Version | Purpose                   | Selection Notes                   |
-| -------------- | ------- | ------------------------- | --------------------------------- |
-| **discord.js** | 14.26.4 | Discord bot framework     | Standard, active, well-maintained |
-| **dotenv**     | 17.4.2  | Environment configuration | Simple, lightweight, necessary    |
-| **node-fetch** | 3.3.2   | HTTP client               | Fetch API for Node/Bun            |
-| **sqlite3**    | 6.0.1   | Database driver           | Local data persistence            |
-| **winston**    | 3.19.0  | Logging framework         | Structured logging, rotation      |
+| Package          | Version | Purpose                      | Selection Notes                   |
+| ---------------- | ------- | ---------------------------- | --------------------------------- |
+| **discord.js**   | 14.26.4 | Discord bot framework        | Standard, active, well-maintained |
+| **drizzle-orm**  | 0.45.2  | Type-safe ORM for SQLite     | Zero-query overhead, TS-first     |
+| **winston**      | 3.19.0  | Logging framework            | Structured logging, rotation      |
+
+> **Note:** `dotenv`, `node-fetch`, and `sqlite3` were removed. Bun loads `.env` natively, provides a built-in Fetch API, and includes `bun:sqlite` as a first-party module.
 
 ### Current Development Dependencies
 
-| Package                 | Purpose            | Rationale                        |
-| ----------------------- | ------------------ | -------------------------------- |
-| **@typescript-eslint/** | Code quality       | Mandatory for TypeScript linting |
-| **eslint**              | Linting            | Code consistency                 |
-| **prettier**            | Formatting         | Code style consistency           |
-| **typescript**          | Compilation        | Required for development         |
-| **husky**               | Git hooks          | Mandatory for pre-commit checks  |
-| **commitlint**          | Commit validation  | Enforce Conventional Commits     |
-| **lint-staged**         | Pre-commit linting | Quality gates                    |
-| **esbuild**             | Bundling           | Production builds                |
-| **@tsconfig/bun**       | TypeScript config  | Bun runtime support              |
+| Package                 | Purpose              | Rationale                        |
+| ----------------------- | -------------------- | -------------------------------- |
+| **@typescript-eslint/** | Code quality         | Mandatory for TypeScript linting |
+| **eslint**              | Linting              | Code consistency                 |
+| **prettier**            | Formatting           | Code style consistency           |
+| **typescript**          | Type-check only      | `noEmit: true`; Bun runs TS natively |
+| **@types/bun**          | Bun type definitions | Required for `bun:sqlite` types  |
+| **drizzle-kit**         | Schema management    | Generate SQL migrations from TS schema |
+| **husky**               | Git hooks            | Mandatory for pre-commit checks  |
+| **commitlint**          | Commit validation    | Enforce Conventional Commits     |
+| **lint-staged**         | Pre-commit linting   | Quality gates                    |
 
 ### Adding New Dependencies
 
@@ -182,16 +182,18 @@ mise run update       # Wrapper for: bun update
 {
   "dependencies": {
     "discord.js": "14.26.4",
-    "dotenv": "17.4.2",
-    "node-fetch": "3.3.2",
-    "sqlite3": "6.0.1",
+    "drizzle-orm": "0.45.2",
     "winston": "3.19.0"
   },
   "devDependencies": {
+    "@types/bun": "1.3.13",
     "@typescript-eslint/eslint-plugin": "8.59.2",
+    "drizzle-kit": "0.31.10",
     "eslint": "10.3.0",
-    "prettier": "3.8.3",
-    "typescript": "5.8.2"
+    "prettier": "3.8.3"
+  },
+  "peerDependencies": {
+    "typescript": "6.0.3"
   }
 }
 ```

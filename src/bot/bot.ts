@@ -1,5 +1,5 @@
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
-import { db } from './database/db';
+import { initializeDatabase, closeDatabase } from './database/db';
 import { scanMessageForCodes } from './handlers/codeScanner';
 import { backfillChannelHistory } from './handlers/backfillHandler';
 import { codeManager } from './database/codeManager';
@@ -73,10 +73,7 @@ client.on(Events.ClientReady, async () => {
   apiRequestLogger.initialize();
 
   try {
-    // Initialize database
-    logger.info('Initializing database...');
-    await db.initialize();
-    logger.info('Database initialized');
+    initializeDatabase();
 
     // Check if startup backfill should run
     const shouldBackfill = await backfillManager.shouldRunStartupBackfill();
@@ -110,7 +107,7 @@ client.on(Events.ClientReady, async () => {
     } else if (!shouldBackfill) {
       const lastBackfill = await backfillManager.getLastBackfill();
       logger.info(
-        `Skipping startup backfill - last run was less than 6 hours ago at ${lastBackfill?.completed_at}`
+        `Skipping startup backfill - last run was less than 6 hours ago at ${lastBackfill?.completedAt}`
       );
     } else {
       logger.info('Skipping startup backfill - DISCORD_CHANNEL_ID not configured');
@@ -256,7 +253,7 @@ client.login(TOKEN);
 process.on('SIGINT', async () => {
   logger.info('Shutting down...');
   apiRequestLogger.shutdown();
-  await db.close();
+  await closeDatabase();
   client.destroy();
   process.exit(0);
 });

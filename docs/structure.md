@@ -17,18 +17,26 @@ This project consists of a **single monolithic repository** containing all sourc
 ```
 idle-code-redeemer/
 ├── README.md              ← Start here
-├── DEVELOPMENT.md         ← Dev setup & architecture
-├── MISE.md                ← Optional: Mise tool management
+├── docs/                  ← All documentation
+├── BUILD.md               ← Build instructions
 ├── LICENSE
 ├── .env.example           ← Configuration template
 ├── .gitignore
+├── drizzle.config.ts      ← Drizzle ORM / drizzle-kit configuration
 │
 ├── src/
 │   ├── bot/               ← Discord bot (ACTIVE)
 │   │   ├── bot.ts         ← Main Discord client & event handlers
 │   │   ├── api/           ← Game server API client
 │   │   ├── commands/      ← Slash command handlers (9 commands)
-│   │   ├── database/      ← SQLite managers (users, codes, audit)
+│   │   ├── database/      ← Database managers & Drizzle schema
+│   │   │   ├── db.ts      ← Drizzle connection & migrate()
+│   │   │   ├── userManager.ts
+│   │   │   ├── codeManager.ts
+│   │   │   ├── auditManager.ts
+│   │   │   ├── backfillManager.ts
+│   │   │   ├── schema/    ← Drizzle table definitions (one file per table)
+│   │   │   └── migrations/ ← Auto-generated SQL migration files
 │   │   ├── handlers/      ← Message scanning for codes
 │   │   └── utils/         ← Utilities (debug logging)
 │   │
@@ -49,12 +57,11 @@ idle-code-redeemer/
 │   └── get-credentials.js
 │
 ├── node_modules/          ← Dependencies (git-ignored)
-├── package.json           ← npm/Bun dependencies
-├── tsconfig.json          ← Global TypeScript config
-├── tsconfig.bot.json      ← Bot-specific TypeScript config
+├── package.json           ← Bun dependencies & scripts
+├── tsconfig.bot.json      ← TypeScript config (noEmit: true, type-check only)
 │
-├── .mise.toml             ← Mise task definitions (optional)
-├── Dockerfile             ← Docker container setup
+├── .mise.toml             ← Mise task definitions & tool versions
+├── Dockerfile             ← Multi-stage Docker build
 ├── docker-compose.yml     ← Multi-container orchestration
 └── .dockerignore
 ```
@@ -66,7 +73,7 @@ idle-code-redeemer/
 - **[src/bot/bot.ts](../src/bot/bot.ts)** - Discord client initialization, event handlers, command routing
 - **[src/bot/api/idleChampionsApi.ts](../src/bot/api/idleChampionsApi.ts)** - Game server API client with query-parameter format
 
-### Commands (8 slash commands)
+### Commands (9 slash commands)
 
 - **[src/bot/commands/setup.ts](../src/bot/commands/setup.ts)** - `/setup user_id:<id> user_hash:<hash>`
 - **[src/bot/commands/redeem.ts](../src/bot/commands/redeem.ts)** - `/redeem code:<code>`
@@ -75,13 +82,18 @@ idle-code-redeemer/
 - **[src/bot/commands/blacksmith.ts](../src/bot/commands/blacksmith.ts)** - `/blacksmith contract_type:<type> hero_id:<id> count:<count>`
 - **[src/bot/commands/codes.ts](../src/bot/commands/codes.ts)** - `/codes [count:<count>]` (view redeemed codes history)
 - **[src/bot/commands/makepublic.ts](../src/bot/commands/makepublic.ts)** - `/makepublic code:<code>` (share codes with other users)
+- **[src/bot/commands/backfill.ts](../src/bot/commands/backfill.ts)** - `/backfill [channel:<channel>]` (recover missed codes)
 - **[src/bot/commands/help.ts](../src/bot/commands/help.ts)** - `/help`
 
 ### Database
 
-- **[src/bot/database/db.ts](../src/bot/database/db.ts)** - SQLite connection & schema
+- **[src/bot/database/db.ts](../src/bot/database/db.ts)** - Drizzle ORM connection, `initializeDatabase()`, and `migrate()` on startup
 - **[src/bot/database/userManager.ts](../src/bot/database/userManager.ts)** - User credential storage
 - **[src/bot/database/codeManager.ts](../src/bot/database/codeManager.ts)** - Code tracking & history
+- **[src/bot/database/auditManager.ts](../src/bot/database/auditManager.ts)** - Audit log operations
+- **[src/bot/database/backfillManager.ts](../src/bot/database/backfillManager.ts)** - Backfill operations & global lock
+- **[src/bot/database/schema/](../src/bot/database/schema/)** - Drizzle table definitions (one TypeScript file per table)
+- **[src/bot/database/migrations/](../src/bot/database/migrations/)** - Auto-generated SQL migrations (committed to source)
 
 ### Auto Features
 
@@ -91,27 +103,35 @@ idle-code-redeemer/
 ### Configuration
 
 - **[.env.example](../.env.example)** - Template for environment variables
-- **[.mise.toml](../.mise.toml)** - Task definitions for Mise (optional tool manager)
-- **[package.json](../package.json)** - npm scripts & dependencies
-- **[tsconfig.bot.json](../tsconfig.bot.json)** - TypeScript compiler options
+- **[.mise.toml](../.mise.toml)** - Task definitions and tool versions (Bun 1.3.13, Gitleaks)
+- **[package.json](../package.json)** - Bun scripts & dependencies
+- **[tsconfig.bot.json](../tsconfig.bot.json)** - TypeScript compiler options (`noEmit: true` — type-check only)
+- **[drizzle.config.ts](../drizzle.config.ts)** - Drizzle Kit configuration (schema path, migrations output)
 
 ## Dependencies
 
 **Production**
 
 - `discord.js` - Discord bot framework
-- `dotenv` - Environment variable loader
-- `node-fetch` - HTTP client
-- `sqlite3` - Embedded database
+- `drizzle-orm` - Type-safe ORM for SQLite
+- `winston` - Logging framework
+
+> **Note:** `dotenv`, `node-fetch`, and `sqlite3` were removed. Bun loads `.env` natively, provides a built-in Fetch API, and includes `bun:sqlite` as a first-party module.
 
 **Development**
 
-- `typescript` - Type checking
-- `@types/*` - Type definitions
+- `typescript` - Type checking (type-check only; `noEmit: true`)
+- `@types/bun` - Bun type definitions
+- `drizzle-kit` - Schema management & migration generation
+- `eslint` - Code linting
+- `prettier` - Code formatting
+- `husky` - Git hooks
+- `commitlint` - Commit message validation
+- `lint-staged` - Pre-commit linting
 
-**Runtime (managed by Mise or manual install)**
+**Runtime (managed by Mise)**
 
-- `bun` 1.0+ - JavaScript runtime (or Node.js 20+)
+- `bun` 1.3.13 - JavaScript runtime, package manager, and bundler
 
 ## Removed (Cleanup)
 
@@ -131,8 +151,16 @@ Reason: Converted to Discord bot; extension code no longer needed.
 **For local development:**
 
 ```bash
-npm install
-NODE_TLS_REJECT_UNAUTHORIZED=0 npm run dev
+bun install
+mise run dev
+```
+
+**For production binary:**
+
+```bash
+bun install
+mise run prod:build
+./dist-bundle/bot
 ```
 
 **For Docker deployment:**
@@ -143,9 +171,11 @@ docker-compose up
 
 **For production:**
 
-- Use Bun for 3-4x faster startup
+- `mise run prod:build` compiles a self-contained binary (`dist-bundle/bot`) with Bun runtime embedded
+- No Bun, Node.js, or `node_modules` required at runtime
+- Docker image only needs the binary + `ca-certificates`
 - Configure `DISCORD_TOKEN` from Discord Developer Portal
-- Set `DISCORD_GUILD_ID` to your server ID
+- Set `DISCORD_GUILD_ID` and `DISCORD_CHANNEL_ID`
 - Runs 24/7 in the cloud
 
-See [README.md](README.md) and [DEVELOPMENT.md](DEVELOPMENT.md) for details.
+See [README.md](../README.md) and [docs/development.md](development.md) for details.

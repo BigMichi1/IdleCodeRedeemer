@@ -9,7 +9,8 @@
     "build": "bun build --compile --bytecode --minify --sourcemap src/bot/bot.ts --outfile dist-bundle/bot",
     "start": "./dist-bundle/bot",
     "dev": "bun run --bun src/bot/bot.ts",
-    "migrate": "bun run --bun src/bot/database/migrate.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "syncpack fix --source 'package.json' && prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
@@ -26,6 +27,7 @@
   "license": "ISC",
   "dependencies": {
     "discord.js": "14.26.4",
+    "drizzle-orm": "0.45.2",
     "winston": "3.19.0"
   },
   "devDependencies": {
@@ -36,13 +38,15 @@
     "@typescript-eslint/eslint-plugin": "8.59.2",
     "@typescript-eslint/parser": "8.59.2",
     "commitlint": "21.0.0",
+    "drizzle-kit": "0.31.10",
     "eslint": "10.3.0",
     "husky": "9.1.7",
     "lint-staged": "17.0.3",
     "prettier": "3.8.3",
     "prettier-plugin-sh": "0.18.1",
     "prettier-plugin-toml": "2.0.6",
-    "syncpack": "15.0.0"
+    "syncpack": "15.0.0",
+    "typescript": "6.0.3"
   },
   "peerDependencies": {
     "typescript": "6.0.3"

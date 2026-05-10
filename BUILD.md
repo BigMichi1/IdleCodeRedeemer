@@ -42,7 +42,7 @@ Bun is installed and managed automatically by Mise. No manual installation requi
 mise run install
 
 # Verify Bun works
-bun --version # Should be 1.3.9+
+bun --version # Should be 1.3.13+
 ```
 
 **Why Bun?**: 3-4x faster JavaScript runtime than Node.js. Official package manager for this project.
@@ -86,26 +86,28 @@ These are automatically installed as dependencies via Bun:
 
 #### Production Dependencies
 
-| Package        | Version | Purpose                         |
-| -------------- | ------- | ------------------------------- |
-| **discord.js** | 14.26.4 | Discord bot framework           |
-| **dotenv**     | 17.4.2  | Environment variable management |
-| **node-fetch** | 3.3.2   | HTTP client for game API        |
-| **sqlite3**    | 6.0.1   | Database driver                 |
-| **winston**    | 3.19.0  | Logging framework               |
+| Package          | Version | Purpose                              |
+| ---------------- | ------- | ------------------------------------ |
+| **discord.js**   | 14.26.4 | Discord bot framework                |
+| **drizzle-orm**  | 0.45.2  | Type-safe ORM for SQLite             |
+| **winston**      | 3.19.0  | Logging framework                    |
+
+> **Note:** `dotenv`, `node-fetch`, and `sqlite3` were removed. Bun loads `.env` files natively, provides a built-in Fetch API, and includes `bun:sqlite` as a first-party module.
 
 #### Development Dependencies
 
-| Package         | Purpose                   |
-| --------------- | ------------------------- |
-| **typescript**  | TypeScript compiler       |
-| **@types/**     | Type definitions          |
-| **eslint**      | Code quality linter       |
-| **prettier**    | Code formatter            |
-| **esbuild**     | Production bundler        |
-| **husky**       | Git hooks                 |
-| **commitlint**  | Commit message validation |
-| **lint-staged** | Pre-commit linting        |
+| Package          | Purpose                           |
+| ---------------- | --------------------------------- |
+| **typescript**   | TypeScript compiler (type-check)  |
+| **@types/bun**   | Bun type definitions              |
+| **eslint**       | Code quality linter               |
+| **prettier**     | Code formatter                    |
+| **drizzle-kit**  | Schema management & migrations    |
+| **husky**        | Git hooks                         |
+| **commitlint**   | Commit message validation         |
+| **lint-staged**  | Pre-commit linting                |
+
+> **Note:** `esbuild` was removed. The production build now uses `bun build --compile` which produces a self-contained native executable.
 
 All dependencies are defined in `package.json` and locked in `bun.lock` for reproducible builds.
 
@@ -139,9 +141,9 @@ mise run install
 
 This will:
 
-1. ✅ Install Bun 1.3.9 (if not present)
-2. ✅ Install Node.js 24 (fallback runtime)
-3. ✅ Install all npm dependencies (production + development)
+1. ✅ Install Bun 1.3.13 (if not present)
+2. ✅ Install Gitleaks 8.30.1 (secret scanning)
+3. ✅ Install all dependencies (production + development)
 4. ✅ Create `node_modules/` directory
 5. ✅ Generate `bun.lock` (lock file)
 
@@ -170,60 +172,43 @@ mise tasks
 
 Output shows all available commands like `install`, `dev`, `build`, `watch`, `lint`, etc.
 
-### Development Build
+### Development Build (Type Check Only)
 
-**Purpose**: TypeScript compilation with source maps and watch mode for development.
+**Purpose**: TypeScript is not compiled to JavaScript for development — the bot runs directly from `.ts` source via Bun. `tsc` is type-check only (`noEmit: true`).
 
 ```bash
-# Build once
-mise run build
+# Type-check only (no output files)
+mise run typecheck  # alias for: bun run typecheck
 
-# Watch for changes and rebuild automatically
-mise run watch
+# Run bot directly from TypeScript source
+mise run dev
 ```
 
 **Output**:
 
-- Compiled JavaScript: `dist/` directory
-- Source maps: `dist/**/*.js.map`
-- Ready to run with: `bun run start`
-
-**Files Generated**:
-
-```
-dist/
-├── bot/
-│   ├── bot.js          # Main bot file
-│   ├── api/
-│   ├── commands/
-│   ├── database/
-│   ├── handlers/
-│   └── utils/
-└── lib/
-    └── *.d.ts          # Type definitions
-```
+- No compiled output files (Bun runs TypeScript natively)
+- Type errors reported to console
 
 ### Production Build
 
-**Purpose**: Optimized minified bundle for deployment.
+**Purpose**: Compile the bot into a self-contained native binary using `bun build --compile --bytecode --minify --sourcemap`. The resulting binary embeds the Bun runtime — no Bun, Node.js, or `node_modules` needed at runtime.
 
 ```bash
-# Build minified production bundle
+# Build self-contained production binary
 mise run prod:build
 ```
 
 **Output**:
 
-- Single minified bundle: `dist-bundle/bot.js`
-- Significantly smaller file size (minified + tree-shaken)
-- Optimized for Docker deployment
+- Self-contained native executable: `dist-bundle/bot`
+- Embeds Bun runtime, all source code, and dependencies
+- Optimized for Docker and bare-metal deployment
 
 **Files Generated**:
 
 ```
 dist-bundle/
-├── bot.js              # Single minified file
-└── bot.js.map          # Source map (optional)
+└── bot                 # Self-contained ELF binary (Linux) / executable
 ```
 
 ### Development Server
@@ -250,14 +235,14 @@ This runs:
 After building, run the bot:
 
 ```bash
-# Start production bundle
+# Start production binary
 mise run prod:start
 
-# OR start from dist/
+# OR via Mise start task
 mise run start
 
-# OR manually with Bun
-bun run dist/bot/bot.js
+# OR directly (no Bun needed at runtime)
+./dist-bundle/bot
 ```
 
 ## Build Types
@@ -270,22 +255,18 @@ bun run dist/bot/bot.js
 # Install dependencies
 mise run install
 
-# Development build (no optimization)
+# Run bot directly from TypeScript source (no compile step needed)
+mise run dev
+
+# Type-check only (no output files)
 mise run build
-
-# OR use watch mode for continuous build
-mise run watch
-
-# Run the bot
-bun run dist/bot/bot.js
 ```
 
 **Characteristics**:
 
-- Full source maps for debugging
-- No minification (readable code)
-- Includes all source code
-- Slower bundle size
+- Bun runs TypeScript natively — no compilation step required for development
+- `tsc` used for type-checking only (`noEmit: true`)
+- Automatic restart on file changes via `bun --watch`
 - Good for development
 
 ### 2. Production Build
@@ -293,23 +274,23 @@ bun run dist/bot/bot.js
 **When to use**: Before creating a release, building Docker image
 
 ```bash
-# Install dependencies (includes dev deps for TypeScript)
+# Install dependencies (includes dev deps for type-checking and drizzle-kit)
 mise run install
 
-# Production-optimized build
+# Production-optimized binary
 mise run prod:build
 
 # Run the bot
-bun run dist-bundle/bot.js
+./dist-bundle/bot
 ```
 
 **Characteristics**:
 
-- Minified and tree-shaken
-- Optimized for size and performance
-- No source maps in production
-- Smaller bundle (faster downloads, deployment)
-- Good for Docker images
+- Self-contained ELF binary with embedded Bun runtime
+- Minified and bytecode-compiled
+- No Bun, Node.js, or `node_modules` required at runtime
+- Smaller deployment footprint
+- Good for Docker images and bare-metal servers
 
 ### 3. Docker Container Build
 
@@ -333,9 +314,8 @@ docker logs -f idle-code-redeemer
 **Dockerfile**:
 
 - Multi-stage build (builder + production)
-- Builder stage: TypeScript compilation
-- Production stage: Minimal runtime
-- Only production dependencies included
+- Builder stage: Bun compile → self-contained binary
+- Production stage: Only the binary + `ca-certificates` (no Bun/Node/npm)
 - Frozen dependency lock file for reproducibility
 
 See [Dockerfile](Dockerfile) for details.
@@ -364,14 +344,17 @@ mise run install
 cp .env.example .env
 # Edit .env with your DISCORD_TOKEN
 
-# 6. Build the project
+# 6. Type-check the project
 mise run build
 
-# 7. Verify build succeeded
-ls -la dist/bot/bot.js
+# 7. Build production binary
+mise run prod:build
 
-# 8. Run the bot
-bun run dist/bot/bot.js
+# 8. Verify binary was created
+ls -la dist-bundle/bot
+
+# 9. Run the bot
+./dist-bundle/bot
 ```
 
 ## Linting & Code Quality
@@ -440,10 +423,9 @@ mise run clean
 # - dist/ directory
 # - dist-bundle/ directory
 # - node_modules/ directory
-# - bun.lockb (lock file)
 
 # Rebuilding after clean
-mise run install && mise run build
+mise run install && mise run prod:build
 ```
 
 ## Troubleshooting
@@ -571,7 +553,7 @@ mise run prod:build
 
 ```bash
 # Reinstall Husky hooks
-npm install husky
+bun run prepare
 
 # Or reinstall all dependencies
 mise run install
