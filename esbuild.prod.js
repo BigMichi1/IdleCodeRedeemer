@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import esbuild from 'esbuild';
 
 await esbuild.build({
@@ -11,9 +11,7 @@ await esbuild.build({
   sourcemap: true,
   external: [
     'discord.js',
-    'dotenv',
-    'node-fetch',
-    'sqlite3',
+    'bun:sqlite',
     'winston',
   ],
   define: {

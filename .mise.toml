@@ -5,11 +5,9 @@ NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 [tools]
 # Bun runtime and package manager
-bun = "1.3"
-# Node.js as fallback (optional, some tools may still need it)
-node = "24"
+bun = "1.3.13"
 # Gitleaks for secret detection
-gitleaks = "8.21"
+gitleaks = "8.30.1"
 
 [tasks.install]
 description = "Install dependencies with Bun"
