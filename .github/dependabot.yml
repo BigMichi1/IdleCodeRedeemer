@@ -67,8 +67,3 @@ updates:
       - "dependencies"
       - "automerge"
       - "docker_compose"
-
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: daily
