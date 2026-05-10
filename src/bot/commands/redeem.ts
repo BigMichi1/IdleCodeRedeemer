@@ -176,9 +176,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         if (wasRedeemedByOther) {
           // Second user redeeming successfully - make it public
           shouldBePublic = true;
-          logger.info(
-            `[REDEEM] Code ${code} will be auto-made public (second successful redeem)`
-          );
+          logger.info(`[REDEEM] Code ${code} will be auto-made public (second successful redeem)`);
         }
       }
 

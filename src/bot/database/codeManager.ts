@@ -93,9 +93,10 @@ class CodeManager {
   }
 
   async isCodePublic(code: string): Promise<boolean> {
-    const result = await db.get('SELECT code FROM redeemed_codes WHERE code = ? AND is_public = 1', [
-      code,
-    ]);
+    const result = await db.get(
+      'SELECT code FROM redeemed_codes WHERE code = ? AND is_public = 1',
+      [code]
+    );
     return result !== undefined;
   }
 
