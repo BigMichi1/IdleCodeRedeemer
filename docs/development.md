@@ -125,48 +125,58 @@ mise run clean    # Clean build artifacts
 
 ## Database
 
-SQLite database (`./data/idle.db`) contains:
+SQLite database (`./data/idle.db`) with the following structure:
 
-**users**
+```mermaid
+erDiagram
+    USERS ||--o{ REDEEMED_CODES : "has"
+    USERS ||--o{ PENDING_CODES : "has"
+    USERS ||--o{ AUDIT_LOG : "generates"
 
-- discord_id (PK)
-- user_id (Idle Champions user ID)
-- user_hash (Idle Champions auth token)
-- server (game server URL)
-- instance_id (deprecated - fetched fresh each time)
-- created_at, updated_at
+    USERS {
+        string discord_id PK
+        int user_id "Idle Champions user ID"
+        string user_hash "Idle Champions auth token"
+        string server "game server URL"
+        string instance_id "deprecated"
+        datetime created_at
+        datetime updated_at
+    }
 
-**redeemed_codes**
+    REDEEMED_CODES {
+        int id PK
+        string code
+        string discord_id FK
+        string status
+        json loot
+        datetime timestamp
+    }
 
-- id (PK)
-- code
-- discord_id
-- status
-- loot (JSON)
-- timestamp
+    PENDING_CODES {
+        int id PK
+        string code
+        string discord_id FK
+        datetime added_at
+    }
 
-**pending_codes**
+    AUDIT_LOG {
+        int id PK
+        string discord_id FK
+        string action
+        json details
+        datetime timestamp
+    }
 
-- id (PK)
-- code
-- discord_id
-- added_at
-
-**audit_log**
-
-- id (PK)
-- discord_id
-- action
-- details (JSON)
-- timestamp
-
-**backfill_operations**
-
-- id (PK)
-- initiated_by (user who initiated or "system" for automatic)
-- started_at, completed_at
-- codes_found, codes_redeemed (counts)
-- status (in_progress, completed, failed)
+    BACKFILL_OPERATIONS {
+        int id PK
+        string initiated_by "user ID or 'system'"
+        datetime started_at
+        datetime completed_at
+        int codes_found
+        int codes_redeemed
+        string status "in_progress, completed, failed"
+    }
+```
 
 ## Testing Commands
 
