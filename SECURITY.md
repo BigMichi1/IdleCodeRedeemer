@@ -231,6 +231,21 @@ When a release is created:
 
 For complete dependency management details, see [docs/dependency-management.md](docs/dependency-management.md).
 
+## Code Contribution Requirements [OSPS-GV-03.02]
+
+The project maintains comprehensive contributor guidelines that serve as the source of truth for both contributors and code reviewers.
+
+**See [CONTRIBUTING.md](CONTRIBUTING.md) for:**
+- ✅ Code quality requirements (linting, TypeScript strict mode, best practices) [OSPS-GV-03.02]
+- ✅ Testing requirements (unit, integration, manual testing) [OSPS-GV-03.02]
+- ✅ Documentation requirements (code docs, CHANGELOG, user docs) [OSPS-GV-03.02]
+- ✅ Submission guidelines (PR description, checklist, automated checks) [OSPS-GV-03.02]
+- ✅ Code review criteria for maintainers [OSPS-GV-03.02]
+- ✅ Security standards for contributions [OSPS-GV-03.02]
+
+**Acceptance Criteria:**
+All contributions must pass code quality checks (ESLint, Prettier, TypeScript strict), include tests, update CHANGELOG.md, and pass code review.
+
 ## Project Members & Governance [OSPS-GV-01.01, OSPS-GV-01.02]
 
 This project maintains comprehensive documentation of project members, their roles, and access to sensitive resources.

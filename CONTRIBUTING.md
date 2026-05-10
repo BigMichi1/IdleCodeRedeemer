@@ -1,10 +1,11 @@
 # Contributing to Idle Champions Code Redeemer
 
-Thank you for your interest in contributing to the Idle Champions Code Redeemer Bot! This document provides guidelines and instructions for developers who want to contribute to the project.
+Thank you for your interest in contributing to the Idle Champions Code Redeemer Bot! This document provides guidelines and instructions for developers who want to contribute to the project. This is the source of truth for both contributors and code reviewers. [OSPS-GV-03.02]
 
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
+- [Requirements for Acceptable Contributions](#requirements-for-acceptable-contributions)
 - [How to Contribute](#how-to-contribute)
 - [Development Setup](#development-setup)
 - [Building the Project](#building-the-project)
@@ -16,6 +17,186 @@ Thank you for your interest in contributing to the Idle Champions Code Redeemer 
 ## Code of Conduct
 
 This project adheres to a Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+
+## Requirements for Acceptable Contributions
+
+All contributions must meet the following requirements to be accepted. This section is the source of truth for both contributors and code reviewers. [OSPS-GV-03.02]
+
+### 1. Code Quality Requirements
+
+Every code contribution must:
+
+✅ **Lint & Format**
+- Pass ESLint checks (`mise run lint`)
+- Follow Prettier formatting (`mise run format`)
+- No linting warnings or errors
+- Automated pre-commit hooks enforce this
+
+✅ **Type Safety**
+- Use TypeScript strict mode (`strict: true`)
+- Add type annotations for all function parameters and return types
+- Use interfaces/types for object shapes
+- No `any` type without explicit justification (// @ts-ignore)
+- Avoid implicit `any`
+
+✅ **Best Practices**
+- Follow naming conventions (camelCase for functions/variables, PascalCase for classes)
+- Use meaningful variable and function names
+- Add JSDoc comments for public functions
+- Explain WHY, not WHAT in comments
+- Handle all promise rejections
+- Provide meaningful error messages
+
+✅ **Security Standards**
+- No hardcoded secrets, tokens, or API keys
+- Always use parameterized queries (prevent SQL injection)
+- Validate user input before use
+- Never log sensitive data
+- Use environment variables for configuration
+- Pass security scanning (Gitleaks)
+
+✅ **Code Patterns**
+- Follow Discord.js best practices (slash commands, defer replies, embeds)
+- Use consistent error handling patterns
+- Log operations for auditing
+- No commented-out code (use git history instead)
+
+### 2. Testing Requirements
+
+Every contribution must include appropriate testing:
+
+✅ **Unit Tests**
+- Add tests for new functions and classes
+- Add tests for bug fixes (regression tests)
+- Tests must pass (`mise run test`)
+- Aim for adequate coverage of changed code
+- Tests must be maintainable and clear
+
+✅ **Integration Tests** (if applicable)
+- For features affecting external APIs (Idle Champions API, Discord)
+- Test with real API responses
+- Test error cases and edge cases
+- Document test setup in PR description
+
+✅ **Manual Testing**
+- Test in development environment (`mise run dev`)
+- Test in Discord server before submitting
+- Include testing steps in PR description
+- For database changes: verify data integrity
+- For command changes: test command in Discord
+
+✅ **Test Quality**
+- Tests must be deterministic (no flaky tests)
+- Tests must be isolated (no test dependencies)
+- Clear test names describing what is tested
+- Both happy path and error cases covered
+
+### 3. Documentation Requirements
+
+Every contribution must include appropriate documentation:
+
+✅ **Code Documentation**
+- Public functions/classes have JSDoc comments
+- Complex logic has inline comments
+- Comments explain WHY, not WHAT
+
+✅ **CHANGELOG.md Update** (MANDATORY)
+- Every code change updates [CHANGELOG.md](CHANGELOG.md)
+- Add to [Unreleased] section
+- Use appropriate category (Added, Changed, Fixed, Security)
+- Clear, user-facing language
+
+✅ **User Documentation**
+- New commands documented in relevant docs
+- API changes documented
+- Configuration changes documented
+- Breaking changes clearly noted
+
+✅ **Commit Messages**
+- Use Conventional Commits format (`type(scope): description`)
+- Clear and descriptive
+- Reference related issues (#123)
+- Passed by commitlint hook
+
+### 4. Submission Guidelines
+
+Every pull request must:
+
+✅ **PR Description**
+- Clear title in Conventional Commits format
+- Describe what changes and why
+- Link to related issues
+- Explain testing approach
+- Include screenshots if UI changes
+
+✅ **PR Checklist**
+- Code builds successfully (`mise run build`)
+- Passes linting (`mise run lint`)
+- Passes security scans (Gitleaks)
+- Tests pass and are included
+- CHANGELOG.md updated
+- Documentation updated
+- Tested locally or in Discord
+- PR description complete
+
+✅ **Automatic Checks**
+- GitHub Actions CI/CD passes
+- ESLint checks pass
+- Prettier formatting passes
+- Commitlint validates commits
+- Dependency scans pass (no vulnerabilities)
+- Test coverage maintained or improved
+
+### 5. Code Review Criteria
+
+Maintainers use these criteria when reviewing contributions:
+
+✅ **Does it work?**
+- Tests pass
+- No runtime errors
+- Solves the stated problem
+
+✅ **Is it secure?**
+- No secrets in code
+- Proper error handling
+- Input validation present
+- SQL injection prevention (parameterized queries)
+- No privilege escalation
+
+✅ **Is it maintainable?**
+- Code is readable and clear
+- Follows project standards
+- No technical debt introduced
+- Documented appropriately
+
+✅ **Is it correct?**
+- Correct algorithm/logic
+- Handles edge cases
+- Follows TypeScript best practices
+- No type errors
+
+✅ **Does it fit the project?**
+- Aligns with project scope
+- Doesn't break existing functionality
+- Documentation is complete
+- No unnecessary dependencies added
+
+### 6. Acceptance Criteria Summary
+
+A contribution is ready to merge when it meets ALL of the following:
+
+| Criterion | Required | Status |
+|-----------|----------|--------|
+| **Code Quality** | ✅ | Linting passes, TypeScript strict, patterns followed |
+| **Security** | ✅ | No secrets, SQL injection prevention, Gitleaks passes |
+| **Tests** | ✅ | Unit + integration tests pass, adequate coverage |
+| **Documentation** | ✅ | CHANGELOG updated, comments present, docs updated |
+| **Review** | ✅ | At least one maintainer approval |
+| **CI/CD** | ✅ | All automated checks pass |
+| **Builds** | ✅ | `mise run build` succeeds |
+| **Tested** | ✅ | Verified to work locally |
+
+**If ANY criterion is not met, the PR cannot be merged.** Requesters must address feedback before re-review.
 
 ## How to Contribute
 

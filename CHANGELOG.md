@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Contributor Requirements & Guidelines [OSPS-GV-03.02]** - Comprehensive guide for acceptable contributions
+  - NEW: Enhanced [CONTRIBUTING.md](CONTRIBUTING.md) with detailed acceptance criteria
+  - Requirements for code quality (linting, TypeScript strict mode, security)
+  - Requirements for testing (unit, integration, manual, quality)
+  - Requirements for documentation (code docs, CHANGELOG, user docs, commit messages)
+  - Requirements for submission (PR description, checklist, automated checks)
+  - Code review criteria for maintainers (functionality, security, maintainability, correctness, alignment)
+  - Acceptance criteria summary table with required vs optional items
+  - Source of truth for both contributors and code reviewers
+
 - **Project Governance & Members [OSPS-GV-01.01, OSPS-GV-01.02]** - Documented project members, roles, and access to sensitive resources
   - NEW: [GOVERNANCE.md](GOVERNANCE.md) - Complete governance documentation
   - Lists active maintainers (@BigMichi1 as lead maintainer)
