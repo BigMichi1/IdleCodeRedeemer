@@ -8,6 +8,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Coordinated Vulnerability Disclosure Policy [OSPS-VM-01.01]** - Security vulnerability handling
+  - NEW: Comprehensive CVD policy added to [SECURITY.md](SECURITY.md)
+  - Clear response timeframes documented:
+    - Initial response: 1 business day
+    - Patch development: 5-14 business days
+    - Public disclosure: 30 days after patch release
+  - CRITICAL/HIGH vulnerabilities: 1-2 days response, 5 days patch target
+  - MEDIUM vulnerabilities: 2-3 days response, 10 days patch target
+  - LOW vulnerabilities: 3-5 days response, 14 days patch target
+  - Vulnerability severity assessment using CVSS v3.1 scoring
+  - Reporting methods: GitHub Security Advisory (preferred) + email
+  - Supported versions for patches: Last 3 released versions
+  - Security researcher recognition program implemented
+  - Good faith Safe Harbor principles outlined
+  - Incident response and escalation procedures
+  - Step-by-step vulnerability reporting process
+  - Security advisory format examples provided
+  - Out-of-scope vulnerability definitions
+  - Monitoring and vulnerability prevention mechanisms
+  - Timeline examples for CRITICAL and MEDIUM vulnerabilities
+  - Expectations and commitments documented
+  - Public disclosure guidelines
+  - [OSPS-VM-01.01] compliance
+
 - **Security Assessment & Threat Analysis [OSPS-SA-03.01]** - Comprehensive security assessment
   - NEW: [docs/security-assessment.md](docs/security-assessment.md) - Complete security assessment documentation
   - Threat Model documented: 7 major threat areas identified

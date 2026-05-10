@@ -1,6 +1,269 @@
 # Security Policy
 
-This document describes how to report security vulnerabilities and provides contact information for the Idle Champions Code Redeemer Bot project.
+This document describes how to report security vulnerabilities and provides contact information for the Idle Champions Code Redeemer Bot project. It outlines the project's **Coordinated Vulnerability Disclosure (CVD)** policy with clear timeframes for response and expectations for how the project will address reported security issues.
+
+## Coordinated Vulnerability Disclosure Policy [OSPS-VM-01.01]
+
+This project follows industry best practices for coordinated vulnerability disclosure. This policy ensures that security vulnerabilities are addressed responsibly with adequate time for patches before public disclosure.
+
+### Policy Goals
+
+The Idle Champions Code Redeemer Bot project is committed to:
+
+1. **Responsible Disclosure** - All reported vulnerabilities are addressed responsibly and promptly
+2. **User Protection** - Users are given adequate time to apply patches before vulnerabilities are publicly disclosed
+3. **Transparency** - Clear communication about the vulnerability status and timeline
+4. **Collaboration** - Work constructively with security researchers to resolve issues
+
+### Vulnerability Response Timeline [OSPS-VM-01.01]
+
+This project commits to the following response timeframes for security vulnerabilities:
+
+| Phase | Timeframe | Description |
+|-------|-----------|-------------|
+| **Initial Response** | **1 business day** | Acknowledgment of vulnerability report; triage and severity assessment |
+| **Investigation** | **2-5 business days** | Analysis of vulnerability; determination of affected versions and components |
+| **Development** | **5-14 business days** | Creation and testing of security fix; verification that patch resolves issue |
+| **Release** | **7-21 business days (total)** | Security patch released on main branch; all supported versions updated |
+| **Disclosure** | **30 days after release** | Public disclosure in security advisory after users have time to patch |
+
+**Critical/High Severity Vulnerabilities** (≥7.0 CVSS): 
+- Target response: Within 1-2 business days
+- Target patch: Within 5 business days
+- Expedited release process (emergency releases permitted)
+
+**Medium Severity Vulnerabilities** (4.0-6.9 CVSS):
+- Target response: Within 2-3 business days
+- Target patch: Within 10 business days
+- Standard release process
+
+**Low Severity Vulnerabilities** (<4.0 CVSS):
+- Target response: Within 3-5 business days
+- Target patch: Within 14 business days (can be bundled with next regular release)
+
+### Reporting Process
+
+**Step 1: Submit Vulnerability Report**
+- Use GitHub's private vulnerability reporting (preferred)
+- Or contact maintainer via email
+- Do NOT open public GitHub issues for security vulnerabilities
+
+**Step 2: Receive Acknowledgment**
+- Project maintainer will acknowledge receipt within 1 business day
+- You will receive a tracking ID for the vulnerability
+- Estimated timeline for assessment provided
+
+**Step 3: Assessment & Analysis**
+- Vulnerability severity assessed using CVSS v3.1 scoring
+- Affected versions and components identified
+- Impact on users determined
+- Mitigation options evaluated
+
+**Step 4: Fix Development**
+- Patch developed for all affected versions
+- Patch tested thoroughly
+- Verification that exploit is fixed
+
+**Step 5: Patch Release**
+- Emergency release created if severity warrants expedited timeline
+- Security advisory drafted with CVE ID (if applicable)
+- Users notified via GitHub security advisory
+- Deployment guidance provided
+
+**Step 6: Public Disclosure**
+- Security advisory published after 30 days (minimum)
+- Sufficient time given for users to apply patches
+- Credit given to reporter (if desired)
+- Post-incident analysis conducted
+
+### Expectations & Commitments
+
+#### What Reporters Can Expect
+
+✅ **Prompt Response**: Initial acknowledgment within 1 business day
+✅ **Professional Treatment**: Respectful, confidential handling of report
+✅ **Clear Timeline**: Regular updates on status and estimated resolution
+✅ **Credit**: Recognition in security advisory (if desired)
+✅ **Safe Harbor**: Good faith disclosures are protected from legal action
+✅ **Good Faith**: Commitment to timely patch development and release
+
+#### What the Project Commits to
+
+✅ **Serious Treatment**: All reports reviewed thoroughly regardless of perceived severity
+✅ **Confidentiality**: Details kept confidential until 30 days after patch release
+✅ **No Delays**: Patches released on schedule without unnecessary delays
+✅ **Transparency**: Clear communication about status and timeline
+✅ **Patching**: All supported versions updated (last 3 releases minimum)
+✅ **Testing**: Security patches thoroughly tested before release
+✅ **Documentation**: Security advisory includes clear explanation and mitigation steps
+✅ **Monitoring**: Monitoring for public disclosure of unreported vulnerabilities
+
+### Supported Versions for Security Updates
+
+Security patches are provided for:
+
+- **Current stable version** - Latest release on main branch
+- **Previous minor versions** - Last 3 released versions receive security patches
+
+**Example**:
+- Version 2.5 (latest) - ✅ Receives patches
+- Version 2.4 - ✅ Receives patches
+- Version 2.3 - ✅ Receives patches
+- Version 2.2 - ❌ No longer supported (upgrade to 2.3 or later)
+- Version 1.x - ❌ No longer supported (upgrade to 2.x)
+
+### Out-of-Scope Issues
+
+The following are **not** considered security vulnerabilities and should be reported as regular bug reports:
+
+- Social engineering issues (education/awareness)
+- Documentation or configuration problems
+- Application-specific issues (game-specific edge cases)
+- Features requests or design improvements
+- User error or misuse of the application
+- Third-party service vulnerabilities (report to service provider)
+- Already-known public vulnerabilities
+
+### Security Researcher Recognition
+
+This project recognizes and appreciates the work of security researchers. Reporters can request:
+
+- ✅ Recognition in security advisory
+- ✅ Credit in CHANGELOG.md
+- ✅ Link to researcher's website/profile
+- ✅ Public or anonymous disclosure (your choice)
+
+**To Opt In**: Mention your preference in the initial vulnerability report.
+
+### Contact Information for Security Issues
+
+**Preferred Method**: GitHub Security Advisory
+- Go to [Security](https://github.com/BigMichi1/idle-code-redeemer/security) tab
+- Click **"Report a vulnerability"**
+- Fill in vulnerability details
+- Submit report (ensures direct maintainer contact)
+
+**Alternative Method**: Email
+- Email security reports to maintainer (check SECURITY_CONTACTS.md)
+- Use clear subject: `[SECURITY] Vulnerability Report - {brief description}`
+- Include all information from "What to Include in a Report" section
+- Response time: Within 1 business day
+
+### Vulnerability Disclosure Examples
+
+#### Example 1: Critical SQL Injection
+
+```
+Timeline:
+- Day 1 (Monday): Vulnerability reported via GitHub Security Advisory
+- Day 1 (Monday): Acknowledgment sent; assessed as CRITICAL (CVSS 9.8)
+- Day 2-3: Investigation completed; vulnerability confirmed in version 2.4
+- Day 4: Patch developed and tested
+- Day 5 (Friday): Emergency release 2.4.1 published with patch
+- Day 6+: Users apply patch (30 days to patch)
+- Day 36 (Tuesday): Public disclosure in security advisory
+```
+
+#### Example 2: Medium Severity API Issue
+
+```
+Timeline:
+- Day 2 (Tuesday): Vulnerability reported via email
+- Day 3 (Wednesday): Acknowledgment sent; assessed as MEDIUM (CVSS 5.5)
+- Day 4-5: Investigation; affects versions 2.2, 2.3, 2.4
+- Day 6-9: Patch developed and tested for all versions
+- Day 10 (Thursday): Release 2.4.1 published with patch; 2.3.2, 2.2.4 updated
+- Day 11+: Users apply patch (30 days to patch)
+- Day 40: Public disclosure in security advisory
+```
+
+### Incident Response & Escalation
+
+**If Vulnerability Is Publicly Disclosed**:
+
+If a vulnerability is publicly disclosed before the 30-day disclosure period:
+
+1. Patch release immediately accelerated (emergency release)
+2. Users notified of urgent security update
+3. Public advisory released immediately
+4. Incident post-mortem conducted
+5. Process improvements implemented to prevent future issues
+
+**Critical Issues**:
+
+For critical vulnerabilities (CVSS ≥ 9.0):
+
+- Maintainer notified immediately upon report
+- Response prioritized above all other work
+- Expedited review and patching process
+- Users proactively notified
+- Public disclosure may be accelerated if needed for user safety
+
+### Security Advisory Format
+
+Each security advisory includes:
+
+```
+Title: [Security Advisory] {Vulnerability Title} [CVE-XXXX-XXXXX]
+Severity: CRITICAL/HIGH/MEDIUM/LOW (CVSS Score)
+
+Description:
+- What is the vulnerability?
+- Why is it important?
+- Who is affected?
+
+Affected Versions:
+- 2.4.0 and earlier
+
+Patched Versions:
+- 2.4.1 (latest)
+- 2.3.2
+- 2.2.4
+
+Workaround (if available):
+- Interim mitigation steps
+
+Fix Instructions:
+- How to apply the patch
+- Where to find security update
+
+Impact:
+- Potential attack scenarios
+- User data at risk
+- System compromise potential
+
+Timeline:
+- Reported: [Date]
+- Assessed: [Date]
+- Patched: [Date]
+- Disclosed: [Date]
+
+Credit:
+- Reporter name (if desired)
+- Organization (if applicable)
+```
+
+### Monitoring & Vulnerability Prevention
+
+This project actively monitors for security issues:
+
+✅ **Automated Scanning**:
+- Gitleaks - Secrets detection in code
+- GitHub dependency scanning - Vulnerable dependencies
+- CodeQL - Security code analysis
+- SBOM verification - Software bill of materials
+
+✅ **Manual Review**:
+- Code review process (CODEOWNERS requirement)
+- Security architecture review
+- Threat assessment for new features
+- Dependency selection criteria
+
+✅ **Public Vulnerability Tracking**:
+- Monitor CVE databases for dependencies
+- Subscribe to security mailing lists
+- Track GitHub security advisories
+- Review Common Weakness Enumeration (CWE) list
 
 ## Reporting Security Vulnerabilities
 
@@ -23,8 +286,8 @@ Use GitHub's private vulnerability reporting feature:
 
 For issues you cannot report via GitHub, contact the maintainer directly:
 
-- **Email**: [Check repository contact methods]
-- **Response time**: Security issues will be reviewed within 3 business days
+- **Email**: [Check repository contact methods in SECURITY_CONTACTS.md]
+- **Response time**: Security issues will be reviewed within 1 business day per CVD Policy
 
 ## What to Include in a Report
 
