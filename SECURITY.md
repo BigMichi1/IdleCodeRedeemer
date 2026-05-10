@@ -265,6 +265,25 @@ This project actively monitors for security issues:
 - Track GitHub security advisories
 - Review Common Weakness Enumeration (CWE) list
 
+## Public Vulnerability Disclosures [OSPS-VM-04.01]
+
+The project publicly discloses known vulnerabilities and security advisories in a predictable, accessible location for user awareness and transparency.
+
+See [SECURITY_ADVISORIES.md](SECURITY_ADVISORIES.md) for:
+
+- **Active Security Advisories** - Current vulnerabilities and their status
+- **Known Security Issues** - Documented limitations and workarounds
+- **Fixed Vulnerabilities** - Historical CVE information and remediation
+- **Vulnerability Timeline** - Chronological history of security issues
+- **CVE Information** - CVE IDs, CVSS scores, CWE classifications
+- **Detection Instructions** - How to determine if you are vulnerable
+- **Mitigation Strategies** - Workarounds and temporary fixes
+- **Remediation Steps** - Step-by-step fixing procedures
+- **Advisory Format** - Standard format for all future advisories
+- **Subscription Information** - How to receive notifications
+
+For private vulnerability reporting (not for public advisories), see [SECURITY_CONTACTS.md](SECURITY_CONTACTS.md).
+
 ## Reporting Security Vulnerabilities
 
 **Please do NOT open a public GitHub issue for security vulnerabilities.** This puts all users at risk until the vulnerability is fixed.

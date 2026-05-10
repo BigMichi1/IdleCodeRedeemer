@@ -8,6 +8,76 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Public Vulnerability Disclosures [OSPS-VM-04.01]** - Security advisor publication
+  - NEW: [SECURITY_ADVISORIES.md](SECURITY_ADVISORIES.md) - Public vulnerability advisories
+  - **Active Advisories**:
+    - 0 active critical security advisories
+    - Known issues documented and mitigated
+  - **Known Issues Documentation**:
+    - Idle Champions API SSL Certificate (MEDIUM severity, CVSS 5.5)
+    - Issue description and technical details
+    - Root cause analysis (external service limitation)
+    - Impact assessment and who is affected
+    - Vulnerability determination procedure
+      - Network security checklist
+      - Risk assessment tools
+      - Diagnostic commands
+    - Mitigation strategies (5 options ranked by effectiveness)
+      - VPN usage (recommended)
+      - Private network infrastructure
+      - DNS over HTTPS (DoH)
+      - Network monitoring
+      - Regular updates
+    - Remediation instructions for users and maintainers
+    - Timeline history (v2.0 discovery through v2.3 documentation)
+    - Workarounds (temporary and application-level solutions)
+  - **Vulnerability Timeline**:
+    - Chronological listing of all issues
+    - Severity levels (CRITICAL/HIGH/MEDIUM/LOW/KNOWN ISSUE)
+    - Status indicators
+    - 2026 timeline table
+  - **CVE Information**:
+    - CVE authority references
+    - CVE database links (MITRE, NVD)
+    - CVE search instructions
+    - CVE subscription methods
+    - NVD mailing list information
+    - GitHub security alerts
+    - RSS feed for notifications
+  - **Vulnerability Detection**:
+    - How consumers determine if vulnerable
+    - Shell commands for checking vulnerability
+    - Configuration verification
+    - Network diagnostic scripts
+    - Risk assessment checklist
+  - **Mitigation and Remediation**:
+    - General remediation process
+    - Specific instructions for known issues
+    - Step-by-step fix procedures
+    - Testing and verification
+    - Monitoring after patching
+  - **Advisory Format**:
+    - Standard format for all future advisories
+    - Sections and required information
+    - Severity and CVSS scoring
+    - Affected and patched versions
+    - CWE classification
+  - **Subscription and Notifications**:
+    - GitHub Security Advisories
+    - GitHub Releases
+    - Email notifications
+    - RSS feed
+  - **Compliance**:
+    - CVSS v3.1 compliance
+    - CWE enumeration
+    - CVE standards
+    - OpenSSF Best Practices (OSPS-VM-04.01)
+  - **Related Documentation**:
+    - Links to SECURITY.md, SECURITY_CONTACTS.md, security-assessment.md
+    - Threat model references
+    - Vulnerability reporting process
+  - [OSPS-VM-04.01] compliance
+
 - **Private Vulnerability Reporting Channels [OSPS-VM-03.01]** - Security contact methods
   - NEW: [SECURITY_CONTACTS.md](SECURITY_CONTACTS.md) - Complete vulnerability reporting documentation
   - **Primary Reporting Methods**:
