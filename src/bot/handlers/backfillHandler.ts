@@ -162,9 +162,15 @@ export async function backfillChannelHistory(
 
         // Try to redeem each code for this user
         for (const code of Array.from(allCodes)) {
-          // Skip if already redeemed
-          const isRedeemed = await codeManager.isCodeRedeemed(code);
-          if (isRedeemed) {
+          // Skip if the code is expired
+          const isExpired = await codeManager.isCodeExpired(code);
+          if (isExpired) {
+            continue;
+          }
+
+          // Skip if this user has already redeemed this code
+          const alreadyRedeemed = await codeManager.isCodeRedeemedByUser(code, user.discordId);
+          if (alreadyRedeemed) {
             continue;
           }
 
@@ -201,7 +207,7 @@ export async function backfillChannelHistory(
               await codeManager.addRedeemedCode(
                 code,
                 user.discordId,
-                codeResponse.codeStatus.toString(),
+                codeResponse.codeStatus,
                 codeResponse.lootDetail
               );
               stats.codesRedeemed++;
