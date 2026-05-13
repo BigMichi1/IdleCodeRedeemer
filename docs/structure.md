@@ -113,7 +113,7 @@ idle-code-redeemer/
 ### Configuration
 
 - **[.env.example](../.env.example)** - Template for environment variables
-- **[.mise.toml](../.mise.toml)** - Task definitions and tool versions (Bun 1.3.13, Gitleaks)
+- **[.mise.toml](../.mise.toml)** - Task definitions and tool versions (Bun 1.3.14, Gitleaks)
 - **[bunfig.toml](../bunfig.toml)** - Bun configuration (test preload, registered via `[test].preload`)
 - **[package.json](../package.json)** - Bun scripts & dependencies
 - **[tsconfig.bot.json](../tsconfig.bot.json)** - TypeScript compiler options (`noEmit: true` — type-check only)
@@ -142,7 +142,7 @@ idle-code-redeemer/
 
 **Runtime (managed by Mise)**
 
-- `bun` 1.3.13 - JavaScript runtime, package manager, and bundler
+- `bun` 1.3.14 - JavaScript runtime, package manager, and bundler
 
 ## Removed (Cleanup)
 

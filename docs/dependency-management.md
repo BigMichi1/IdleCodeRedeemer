@@ -186,7 +186,7 @@ mise run update       # Wrapper for: bun update
     "winston": "3.19.0"
   },
   "devDependencies": {
-    "@types/bun": "1.3.13",
+    "@types/bun": "1.3.14",
     "@typescript-eslint/eslint-plugin": "8.59.2",
     "drizzle-kit": "0.31.10",
     "eslint": "10.3.0",

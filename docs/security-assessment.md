@@ -291,7 +291,7 @@ The project assumes the risk and implements verification through other means.
 | ----------- | -------- | ------- | ---------------------------- |
 | discord.js  | 14.26.4  | Current | LOW                          |
 | TypeScript  | 6.0.3    | Current | LOW                          |
-| Bun         | 1.3.13   | Current | LOW                          |
+| Bun         | 1.3.14   | Current | LOW                          |
 | drizzle-orm | 0.45.2   | Current | LOW - ORM, parameterized queries |
 | bun:sqlite  | built-in | Current | LOW - First-party SQLite module |
 | ESLint      | Latest   | Current | LOW - Dev dependency         |
