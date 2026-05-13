@@ -74,7 +74,7 @@ src/test/
 ## Key Technologies
 
 - **Mise** - Task runner and tool version manager (MANDATORY)
-- **Bun 1.3.13** - JavaScript runtime (3-4x faster than Node.js; also used as package manager)
+- **Bun 1.3.14** - JavaScript runtime (3-4x faster than Node.js; also used as package manager)
 - **discord.js 14.26** - Discord bot framework
 - **bun:sqlite** - Built-in SQLite module (replaces `sqlite3`)
 - **Drizzle ORM** - Type-safe query builder and schema manager
