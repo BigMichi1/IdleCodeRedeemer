@@ -17,7 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write # needed to post/delete coverage comments on PRs
+      actions: read # pento/lcov-coverage-check: list workflow runs and download baseline artifact
+      pull-requests: write # pento/lcov-coverage-check: post/update coverage comment on PRs
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -40,43 +41,10 @@ jobs:
       - name: Run tests with coverage
         run: ./bin/mise exec -- bun test --coverage --coverage-reporter=lcov
 
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        if: always()
+      # Stores lcov-baseline artifact on main; retrieves it and posts a coverage
+      # diff comment on PRs. Falls back to summary-only on first run or fork PRs.
+      - name: Report coverage
+        uses: pento/lcov-coverage-check@v3.1.0
         with:
-          name: coverage
-          path: coverage/lcov.info
-          retention-days: 90
-
-      # Download the most recent coverage artifact from the base branch (main).
-      # Used for the per-PR coverage diff comment below.
-      # continue-on-error so the job does not fail when no artifact exists yet
-      # (e.g. the very first push to main, or a fork PR).
-      - name: Download base branch coverage
-        if: github.event_name == 'pull_request'
-        id: base-coverage
-        uses: dawidd6/action-download-artifact@v9
-        continue-on-error: true
-        with:
-          branch: ${{ github.base_ref }}
-          name: coverage
-          path: coverage-base
-          workflow: test.yml
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Post coverage diff comment (base available)
-        if: github.event_name == 'pull_request' && steps.base-coverage.outcome == 'success'
-        uses: romeovs/lcov-reporter-action@v0.4.3
-        with:
+          path: "src/"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          lcov-file: ./coverage/lcov.info
-          lcov-base: ./coverage-base/lcov.info
-          delete-old-comments: true
-
-      - name: Post coverage comment (no base available)
-        if: github.event_name == 'pull_request' && steps.base-coverage.outcome != 'success'
-        uses: romeovs/lcov-reporter-action@v0.4.3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          lcov-file: ./coverage/lcov.info
-          delete-old-comments: true
