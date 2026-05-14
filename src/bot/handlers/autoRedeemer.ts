@@ -15,23 +15,23 @@ function randomDelay(): Promise<void> {
 
 /**
  * Attempts to redeem a single code for a single user.
- * Returns true if the redemption was attempted (regardless of outcome), false if skipped.
+ * Skips silently if the code was already redeemed or is known-expired.
  */
-async function redeemCodeForUser(code: string, credentials: UserCredentials): Promise<boolean> {
+async function redeemCodeForUser(code: string, credentials: UserCredentials): Promise<void> {
   const { discordId } = credentials;
 
   // Skip if already redeemed by this user
   const alreadyRedeemed = await codeManager.isCodeRedeemedByUser(code, discordId);
   if (alreadyRedeemed) {
     logger.debug(`[AUTO REDEEMER] Code ${code} already redeemed by ${discordId}, skipping`);
-    return false;
+    return;
   }
 
   // Skip if code is known-expired
   const isExpired = await codeManager.isCodeExpired(code);
   if (isExpired) {
     logger.debug(`[AUTO REDEEMER] Code ${code} is expired, skipping user ${discordId}`);
-    return false;
+    return;
   }
 
   let server = credentials.server;
@@ -39,7 +39,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
     server = await IdleChampionsApi.getServer();
     if (!server) {
       logger.error(`[AUTO REDEEMER] Could not determine server for user ${discordId}`);
-      return true;
+      return;
     }
     await userManager.updateServer(discordId, server);
   }
@@ -60,7 +60,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
     const newServer = (userResult as any).newServer;
     if (!newServer) {
       logger.error(`[AUTO REDEEMER] Server switch failed for user ${discordId}`);
-      return true;
+      return;
     }
     server = newServer;
     await userManager.updateServer(discordId, server);
@@ -74,13 +74,13 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
   const userData = userResult as any;
   if (!userData?.details) {
     logger.error(`[AUTO REDEEMER] Could not retrieve user data for ${discordId}`);
-    return true;
+    return;
   }
 
   const instanceId = userData.details.instance_id || '0';
   if (!instanceId || instanceId === '0') {
     logger.error(`[AUTO REDEEMER] Invalid instance_id for user ${discordId}`);
-    return true;
+    return;
   }
 
   const response = await IdleChampionsApi.submitCode({
@@ -93,7 +93,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
 
   if (!(response instanceof Object && 'codeStatus' in response)) {
     logger.error(`[AUTO REDEEMER] Unexpected response for code ${code}, user ${discordId}`);
-    return true;
+    return;
   }
 
   const codeResponse = response as any;
@@ -139,8 +139,6 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
       source: 'auto',
     });
   }
-
-  return true;
 }
 
 /**
