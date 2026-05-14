@@ -4,7 +4,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ## Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/deleteaccount`, `/help`
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
 - 🤖 **Auto-Redeem Toggle** - Enable or disable automatic code redemption per user (`/autoredeem`)
 - ⏮️ **Message History Backfill** - Recover missed codes from message history (protected with rate limiting)
@@ -13,6 +13,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 - ⚒️ **Blacksmith** - Upgrade heroes with contracts
 - 📊 **Inventory** - View gold, rubies, equipment, and progress
 - 💾 **Secure Storage** - SQLite database keeps credentials safe and local
+- 🗑️ **Account Deletion** - GDPR-friendly self-service removal of all stored data (`/deleteaccount`)
 - 👥 **Multi-User** - Each user manages their own account
 - ⚡ **Fast** - Built on Bun for 3-4x performance vs Node.js
 
@@ -71,6 +72,7 @@ brew install mise
 | `/codes [count:<count>]`                                      | Show your redeemed codes history (last 10)            |
 | `/makepublic code:<code>`                                     | Share one of your redeemed codes with other users     |
 | `/backfill [channel:<channel>]`                               | Recover missed codes from message history             |
+| `/deleteaccount`                                              | Permanently delete all your stored data (GDPR)        |
 | `/help`                                                       | Show all commands                                     |
 
 ### Setup & Authentication
@@ -201,6 +203,21 @@ Toggle whether the bot automatically redeems new codes when they are detected in
 - **Behaviour when enabled:** Any code detected by the scanner is immediately submitted to the Idle Champions API on your behalf
 - **Behaviour when disabled:** Codes are still detected and stored, but you must use `/redeem` or `/catchup` to claim them manually
 - **Example:** `/autoredeem enabled:off`
+
+### Account Management
+
+#### `/deleteaccount`
+
+Permanently and irreversibly delete all data the bot holds about you. Requires an explicit confirmation step to prevent accidents.
+
+- **No parameters required**
+- **What is deleted:**
+  - Your Idle Champions credentials (user ID + hash)
+  - Your full code redemption history
+  - Your audit log entries
+- **Confirmation:** A Yes / Cancel button prompt appears with a 30-second timeout — no action is taken unless you click **Yes, delete everything**
+- **After deletion:** You will need to run `/setup` again to use the bot
+- **Example:** `/deleteaccount`
 
 ### Help
 
