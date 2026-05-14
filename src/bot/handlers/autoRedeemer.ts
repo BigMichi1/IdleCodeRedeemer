@@ -182,6 +182,10 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
         await randomDelay();
       }
     }
+
+    // Code has been processed for all users — remove from pending_codes so it
+    // no longer shows up in /catchup (redeemed_codes now tracks it instead).
+    await codeManager.removePendingCode(code);
   }
 
   logger.info(`[AUTO REDEEMER] Finished auto-redeem for ${codes.length} code(s)`);
