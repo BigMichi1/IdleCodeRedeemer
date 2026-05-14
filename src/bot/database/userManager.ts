@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from './db';
 import { users } from './schema/index';
 
-interface UserCredentials {
+export interface UserCredentials {
   discordId: string;
   userId: string;
   userHash: string;

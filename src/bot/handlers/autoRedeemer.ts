@@ -1,4 +1,4 @@
-import { userManager } from '../database/userManager';
+import { userManager, type UserCredentials } from '../database/userManager';
 import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
@@ -17,7 +17,9 @@ function randomDelay(): Promise<void> {
  * Attempts to redeem a single code for a single user.
  * Returns true if the redemption was attempted (regardless of outcome), false if skipped.
  */
-async function redeemCodeForUser(code: string, discordId: string): Promise<boolean> {
+async function redeemCodeForUser(code: string, credentials: UserCredentials): Promise<boolean> {
+  const { discordId } = credentials;
+
   // Skip if already redeemed by this user
   const alreadyRedeemed = await codeManager.isCodeRedeemedByUser(code, discordId);
   if (alreadyRedeemed) {
@@ -29,11 +31,6 @@ async function redeemCodeForUser(code: string, discordId: string): Promise<boole
   const isExpired = await codeManager.isCodeExpired(code);
   if (isExpired) {
     logger.debug(`[AUTO REDEEMER] Code ${code} is expired, skipping user ${discordId}`);
-    return false;
-  }
-
-  const credentials = await userManager.getCredentials(discordId);
-  if (!credentials) {
     return false;
   }
 
@@ -169,7 +166,7 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
     for (let i = 0; i < allUsers.length; i++) {
       const user = allUsers[i];
       try {
-        await redeemCodeForUser(code, user.discordId);
+        await redeemCodeForUser(code, user);
       } catch (error) {
         logger.error(
           `[AUTO REDEEMER] Error redeeming code ${code} for user ${user.discordId}:`,
