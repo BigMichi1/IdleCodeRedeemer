@@ -280,6 +280,13 @@ describe('pending codes', () => {
     expect(codes).toContain('PEND1234ABCD');
   });
 
+  test('addPendingCode ignores duplicate code inserts', async () => {
+    await codeManager.addPendingCode('PEND1234ABCD', USER_A);
+    await codeManager.addPendingCode('PEND1234ABCD', USER_A); // duplicate — should not throw or create two rows
+    const codes = await codeManager.getPendingCodes();
+    expect(codes.filter((c) => c === 'PEND1234ABCD')).toHaveLength(1);
+  });
+
   test('getPendingCodes filtered by discordId', async () => {
     await codeManager.addPendingCode('PEND1234ABCD', USER_A);
     await codeManager.addPendingCode('PEND5678EFGH', USER_B);

@@ -4,7 +4,7 @@ import { users } from './users';
 
 export const pendingCodes = sqliteTable('pending_codes', {
   id: integer().primaryKey({ autoIncrement: true }),
-  code: text().notNull(),
+  code: text().notNull().unique(),
   discordId: text().references(() => users.discordId),
   foundAt: text().default(sql`CURRENT_TIMESTAMP`),
 });

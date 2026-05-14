@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `pending_codes_code_unique` ON `pending_codes` (`code`);
