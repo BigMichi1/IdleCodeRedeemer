@@ -29,6 +29,13 @@
       "when": 1778745298460,
       "tag": "0003_daffy_oracle",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1778747899562,
+      "tag": "0004_curious_living_lightning",
+      "breakpoints": true
     }
   ]
 }

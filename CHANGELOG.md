@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`/catchup` command** - Redeem all known valid codes in one step
+  - Collects every code the bot has seen (successful redeems from any user + pending codes)
+  - Skips codes already redeemed by the requesting user and codes marked as expired
+  - Refreshes `instance_id` every 10 API calls to prevent staleness errors
+  - Adds a 150 ms delay between calls to avoid Idle Champions API rate limits
+  - Available to all users — no special permissions required
+
+- **`/autoredeem` command** - Per-user toggle for automatic code redemption
+  - `enabled:on` (default) — new codes detected in the channel are automatically submitted to the game API for this user
+  - `enabled:off` — codes are still detected and stored, but this user must claim manually via `/redeem` or `/catchup`
+  - Setting persisted in the `users` table (`autoRedeem` boolean column, default `true`)
+
+- **Auto-Redeem handler (`autoRedeemer.ts`)** - Background redemption for all eligible users
+  - Triggered whenever the code scanner detects new codes in the channel
+  - Skips users with `autoRedeem = false`, codes already redeemed, and known-expired codes
+  - Uses a random 2–5 second delay between users to stay within API rate limits
+
 - **Public Vulnerability Disclosures [OSPS-VM-04.01]** - Security advisor publication
   - NEW: [SECURITY_ADVISORIES.md](SECURITY_ADVISORIES.md) - Public vulnerability advisories
   - **Active Advisories**:
@@ -330,9 +347,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - **Complete rewrite as Discord.js bot** - Migrated from browser extension to Discord bot for better accessibility
 - **Code Redemption System** - `/redeem <code>` command to redeem game codes
-- **User Statistics** - `/stats` command to view personal redemption statistics
 - **Code History Tracking** - `/codes [count]` command to view history of redeemed codes
-- **Admin Commands** - `/admin status` and `/admin refresh` for bot management
 - **Message History Backfill** - `/backfill` command to recover missed codes from channel history
 - **SQLite Database** - Local data persistence with automatic backups
 - **Docker Deployment** - Containerized bot ready for production deployment

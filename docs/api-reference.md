@@ -29,6 +29,8 @@ The Discord bot responds to slash commands in Discord channels. All commands ret
 
 **Response Format**: Discord Embeds (rich message format) or Ephemeral Text
 
+**Total commands**: 11 (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`)
+
 ---
 
 ## Command Reference
@@ -589,7 +591,124 @@ Already Used: 1 code
 
 ---
 
-### 9. `/help`
+### 9. `/catchup`
+
+Redeem all known valid codes that the user has not yet claimed.
+
+**Invocation**:
+```
+/catchup
+```
+
+**Parameters**: None
+
+**Response Format** (Ephemeral Embed):
+
+**Success Response**:
+```
+┌──────────────────────────────────┐
+│ ✅ Catch-Up Complete             │
+│                                  │
+│ Newly Redeemed: 5                │
+│ Already Had: 3                   │
+│ Expired: 1                       │
+│ Failed: 0                        │
+└──────────────────────────────────┘
+```
+
+**Empty Response**:
+```
+┌──────────────────────────────────┐
+│ ℹ️ No Codes Available            │
+│ There are no known valid codes   │
+│ to redeem at this time.          │
+└──────────────────────────────────┘
+```
+
+**Error Responses**:
+
+| Error | Cause | Resolution |
+|-------|-------|-----------|
+| `NO_CREDENTIALS` | User hasn't run `/setup` | Run `/setup` first |
+| `SERVER_ERROR` | Could not resolve game server | Retry in a moment |
+
+**Behaviour**:
+- Collects all codes: successful redeems from any user + pending codes
+- Skips codes already redeemed by this user
+- Skips codes marked as expired
+- Refreshes `instance_id` every 10 API calls to prevent staleness
+- Adds 150ms delay between API calls to avoid rate limiting
+
+**Example**:
+```
+User: /catchup
+Bot (ephemeral): ✅ Catch-Up Complete — Newly Redeemed: 5, Already Had: 3, Expired: 1
+```
+
+---
+
+### 10. `/autoredeem`
+
+Toggle automatic redemption of new codes when they appear in the monitored channel.
+
+**Invocation**:
+```
+/autoredeem enabled:<on|off>
+```
+
+**Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `enabled` | enum | Yes | `on` to enable automatic redemption, `off` to disable |
+
+**Default**: Auto-redeem is **enabled** for all users after `/setup`.
+
+**Response Format** (Ephemeral Embed):
+
+**Enabled**:
+```
+┌──────────────────────────────────────────────────┐
+│ ✅ Auto-Redeem Enabled                           │
+│ New codes posted in the channel will be          │
+│ automatically redeemed for you.                  │
+└──────────────────────────────────────────────────┘
+```
+
+**Disabled**:
+```
+┌──────────────────────────────────────────────────┐
+│ ⏸️ Auto-Redeem Disabled                          │
+│ New codes will not be automatically redeemed.    │
+│ Use /redeem or /catchup to redeem manually.      │
+└──────────────────────────────────────────────────┘
+```
+
+**Error Responses**:
+
+| Error | Cause | Resolution |
+|-------|-------|-----------|
+| `NO_CREDENTIALS` | User hasn't run `/setup` | Run `/setup` first |
+
+**Behaviour When Enabled**:
+- Any code detected by the code scanner is submitted to the Idle Champions API automatically
+- Respects 2–5 second random delay between users to avoid API rate limits
+- Skips codes already redeemed by the user and codes known to be expired
+
+**Behaviour When Disabled**:
+- Codes are still detected and stored in the pending codes table
+- No automatic API calls are made for this user
+- User can still claim codes manually via `/redeem` or `/catchup`
+
+**Example**:
+```
+User: /autoredeem enabled:off
+Bot (ephemeral): ⏸️ Auto-Redeem Disabled
+```
+
+---
+
+### 11. `/help`
 
 Display command reference and usage instructions.
 
@@ -613,6 +732,8 @@ Display command reference and usage instructions.
 │ **Redemption**                               │
 │ /redeem code:<code>                         │
 │   Redeem a single code manually              │
+│ /catchup                                     │
+│   Redeem all known codes you haven't claimed │
 │ /codes [count:<num>]                        │
 │   Show your redeemed code history            │
 │ /makepublic code:<code>                     │
@@ -627,7 +748,9 @@ Display command reference and usage instructions.
 │   Upgrade your heroes                        │
 │                                              │
 │ **Utilities**                                │
-│ /backfill [days:<num>]                      │
+│ /autoredeem enabled:<on|off>                │
+│   Toggle automatic code redemption           │
+│ /backfill [channel:<channel>]               │
 │   Recover codes from message history         │
 │ /help                                        │
 │   Show this message                          │
@@ -635,9 +758,8 @@ Display command reference and usage instructions.
 │ **Auto Features**                            │
 │ The bot automatically:                       │
 │ • Scans messages for codes (detects pattern)│
-│ • Redeems codes for your account             │
+│ • Redeems codes for users with auto-redeem  │
 │ • Tracks code history                        │
-│ • Updates every 5 minutes                    │
 │                                              │
 │ Questions? See /help for details             │
 └──────────────────────────────────────────────┘
@@ -1073,7 +1195,7 @@ Bot (embed):
 ## OSPS-SA-02.01 Compliance
 
 ✅ **Software Interfaces Documented**:
-- 9 slash commands with parameters, responses, error codes
+- 11 slash commands with parameters, responses, error codes
 - Message event detection with pattern matching
 - Response formats and data structures
 - Error handling and recovery procedures

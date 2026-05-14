@@ -38,6 +38,7 @@ src/bot/
 │   ├── setup.ts                # Save user credentials
 │   ├── redeem.ts               # Manual code redemption
 │   ├── catchup.ts              # Redeem all known codes the user hasn't claimed
+│   ├── autoredeem.ts           # Toggle automatic redemption per user
 │   ├── inventory.ts            # Show account info
 │   ├── open.ts                 # Open chests
 │   ├── blacksmith.ts           # Upgrade heroes
@@ -61,6 +62,7 @@ src/bot/
 │   └── migrations/             # Auto-generated SQL migrations (drizzle-kit)
 ├── handlers/
 │   ├── codeScanner.ts          # Message code detection
+│   ├── autoRedeemer.ts         # Auto-redeem detected codes for all eligible users
 │   └── backfillHandler.ts      # Message history scanning & redemption
 └── utils/
     ├── logger.ts               # Winston logger (file + console output)
