@@ -1,8 +1,19 @@
+import type { Client } from 'discord.js';
 import { userManager, type UserCredentials } from '../database/userManager';
 import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
 import logger from '../utils/logger';
+
+let discordClient: Client | null = null;
+
+/**
+ * Provide the Discord client so auto-redeemer can send DM notifications.
+ * Call this once from bot.ts after the client is created.
+ */
+export function setDiscordClient(client: Client): void {
+  discordClient = client;
+}
 
 const MIN_DELAY_MS = 2_000;
 const MAX_DELAY_MS = 5_000;
@@ -194,6 +205,15 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
       codeResponse.lootDetail,
       shouldBePublic
     );
+
+    if (isSuccess && discordClient) {
+      discordClient.users
+        .fetch(discordId)
+        .then((user) => user.send(`✅ Code \`${code}\` redeemed successfully!`))
+        .catch(() => {
+          // DM delivery failure is non-critical — user may have DMs disabled
+        });
+    }
 
     await auditManager.logAction(discordId, 'CODE_REDEEMED', {
       code,

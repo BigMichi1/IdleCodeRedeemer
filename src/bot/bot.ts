@@ -2,7 +2,7 @@ import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'dis
 import { initializeDatabase, closeDatabase } from './database/db';
 import { scanMessageForCodes } from './handlers/codeScanner';
 import { backfillChannelHistory } from './handlers/backfillHandler';
-import { enqueueAutoRedeem } from './handlers/autoRedeemer';
+import { enqueueAutoRedeem, setDiscordClient } from './handlers/autoRedeemer';
 import { codeManager } from './database/codeManager';
 import { backfillManager } from './database/backfillManager';
 import { initDebugLogger } from './utils/debugLogger';
@@ -41,6 +41,7 @@ const client = new Client({
     GatewayIntentBits.DirectMessages,
   ],
 });
+setDiscordClient(client);
 
 // Initialize command collection
 (client as any).commands = new Collection();
