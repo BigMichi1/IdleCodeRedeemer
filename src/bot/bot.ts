@@ -3,6 +3,7 @@ import { initializeDatabase, closeDatabase } from './database/db';
 import { scanMessageForCodes } from './handlers/codeScanner';
 import { backfillChannelHistory } from './handlers/backfillHandler';
 import { autoRedeemForAllUsers } from './handlers/autoRedeemer';
+import { codeManager } from './database/codeManager';
 import { backfillManager } from './database/backfillManager';
 import { initDebugLogger } from './utils/debugLogger';
 import logger from './utils/logger';
@@ -185,6 +186,12 @@ client.on(Events.MessageCreate, async (message) => {
 
     if (foundCodes.length > 0) {
       logger.info(`Found ${foundCodes.length} codes in message from ${message.author.tag}`);
+
+      // Persist all found codes to pending_codes immediately so /catchup can
+      // recover them if auto-redeem has no enabled users or the API fails.
+      for (const code of foundCodes) {
+        await codeManager.addPendingCode(code);
+      }
 
       // Auto-redeem found codes for all registered users sequentially
       autoRedeemForAllUsers(foundCodes).catch((error) => {
