@@ -212,7 +212,7 @@ class CodeManager {
   }
 
   async addPendingCode(code: string, discordId?: string): Promise<void> {
-    db.insert(pendingCodes).values({ code, discordId: discordId ?? null }).run();
+    db.insert(pendingCodes).values({ code, discordId: discordId ?? null }).onConflictDoNothing().run();
   }
 
   async getPendingCodes(discordId?: string): Promise<string[]> {

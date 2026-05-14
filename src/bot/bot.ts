@@ -187,15 +187,18 @@ client.on(Events.MessageCreate, async (message) => {
     if (foundCodes.length > 0) {
       logger.info(`Found ${foundCodes.length} codes in message from ${message.author.tag}`);
 
+      // Deduplicate in case the same code appears multiple times in one message.
+      const uniqueCodes = [...new Set(foundCodes)];
+
       // Persist all found codes to pending_codes immediately so /catchup can
       // recover them if auto-redeem has no enabled users or the API fails.
-      for (const code of foundCodes) {
+      for (const code of uniqueCodes) {
         await codeManager.addPendingCode(code);
       }
 
       // Enqueue auto-redeem — serialized so overlapping MessageCreate events
       // never start concurrent redemption runs or bypass the throttle delay.
-      enqueueAutoRedeem(foundCodes);
+      enqueueAutoRedeem(uniqueCodes);
     }
   } catch (error) {
     logger.error('Error processing message:', error);
