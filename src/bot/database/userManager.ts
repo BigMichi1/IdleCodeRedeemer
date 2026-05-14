@@ -8,7 +8,7 @@ interface UserCredentials {
   userHash: string;
   server?: string;
   instanceId?: string;
-  autoRedeem: boolean;
+  autoRedeem?: boolean;
 }
 
 function rowToCredentials(user: typeof users.$inferSelect): UserCredentials {
