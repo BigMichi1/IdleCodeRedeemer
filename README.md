@@ -36,7 +36,8 @@ mise run install
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env with your DISCORD_TOKEN and server IDs
+# Edit .env with your DISCORD_TOKEN, server IDs, and generate an encryption key:
+#   openssl rand -hex 32  → paste result as ENCRYPTION_KEY
 
 # 3. Start the bot
 mise run dev
@@ -60,8 +61,12 @@ Deploy the bot using the pre-built Docker image:
 # 1. Copy the example compose file
 cp docker-compose.example.yml docker-compose.yml
 
-# 2. Set your Discord token
+# 2. Set required environment variables
 export DISCORD_TOKEN=your_bot_token_here
+# Generate ENCRYPTION_KEY once and store it safely (e.g. in a .env file or secret store).
+# ⚠️  Never regenerate this value for an existing database — previously saved credentials
+#     will become unreadable if the key changes.
+export ENCRYPTION_KEY=$(openssl rand -hex 32)
 
 # 3. Start the bot
 docker-compose up -d

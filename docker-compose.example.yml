@@ -39,6 +39,10 @@ services:
       # Find this ID by enabling Developer Mode in Discord → right-click the bot → Copy User ID.
       DISCORD_CODE_AUTHOR_ID: ${DISCORD_CODE_AUTHOR_ID:-}
       
+      # Required: 64-character hex encryption key for credentials stored in the database.
+      # Generate with: openssl rand -hex 32
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      
       # Database location (inside container)
       DB_PATH: /app/data/idle.db
       

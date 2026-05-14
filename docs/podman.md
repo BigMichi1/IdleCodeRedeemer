@@ -52,6 +52,10 @@ sudo pip3 install podman-compose
 # Copy and configure
 cp docker-compose.example.yml docker-compose.yml
 export DISCORD_TOKEN=your_bot_token_here
+# Generate ENCRYPTION_KEY once, then persist the value (e.g. in a .env file).
+# ⚠️  Never regenerate this for an existing database — previously saved credentials
+#     will become unreadable if the key changes.
+export ENCRYPTION_KEY=$(openssl rand -hex 32)
 
 # Start the bot
 podman-compose up -d
@@ -103,6 +107,10 @@ export DISCORD_TOKEN=your_bot_token_here
 export DISCORD_GUILD_ID=optional_guild_id
 export DISCORD_CHANNEL_ID=optional_channel_id
 export DISCORD_CODE_AUTHOR_ID=optional_code_author_bot_id
+# Generate ENCRYPTION_KEY once and persist it (e.g. in a .env file or secret store).
+# ⚠️  Never regenerate this for an existing database — previously saved credentials
+#     will become unreadable if the key changes.
+export ENCRYPTION_KEY=$(openssl rand -hex 32)
 ```
 
 Or add them to your `docker-compose.yml` (or `.env` file if using podman-compose).

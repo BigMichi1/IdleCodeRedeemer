@@ -7,3 +7,5 @@ import path from 'path';
 
 process.env.DB_PATH = ':memory:';
 process.env.MIGRATIONS_PATH = path.join(process.cwd(), 'src/bot/database/migrations');
+// Fixed test key: 'deadbeef' repeated — obviously non-secret, 64 hex chars (32 bytes for AES-256).
+process.env.ENCRYPTION_KEY = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
