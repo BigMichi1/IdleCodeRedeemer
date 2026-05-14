@@ -211,8 +211,10 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
 }
 
 /**
- * Redeems a list of codes for every registered user, sequentially,
- * with a random delay between each redemption attempt and between codes.
+ * Redeems a list of codes for every registered user, sequentially.
+ * All codes are redeemed for one user before moving to the next user,
+ * with a single random delay between users. This keeps total throttle
+ * delays at N-1 (users) rather than M×(N-1) (codes × users).
  */
 export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
   if (codes.length === 0) return;
@@ -227,12 +229,11 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
     `[AUTO REDEEMER] Starting auto-redeem of ${codes.length} code(s) for ${allUsers.length} user(s)`
   );
 
-  for (let c = 0; c < codes.length; c++) {
-    const code = codes[c];
-    logger.info(`[AUTO REDEEMER] Processing code: ${code}`);
+  for (let i = 0; i < allUsers.length; i++) {
+    const user = allUsers[i];
+    logger.info(`[AUTO REDEEMER] Processing user ${user.discordId}`);
 
-    for (let i = 0; i < allUsers.length; i++) {
-      const user = allUsers[i];
+    for (const code of codes) {
       try {
         await redeemCodeForUser(code, user);
       } catch (error) {
@@ -241,17 +242,18 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
           error
         );
       }
-
-      // Wait between users (but not after the last user of the last code)
-      if (i < allUsers.length - 1 || c < codes.length - 1) {
-        await randomDelay();
-      }
     }
 
-    // Code has been processed for all users — only remove from pending_codes
-    // once at least one Success or Code Expired record has been persisted.
-    // If every attempt failed (API down, bad credentials, unexpected response),
-    // leave the code pending so /catchup can retry it later.
+    // Single delay per user transition, not per code
+    if (i < allUsers.length - 1) {
+      await randomDelay();
+    }
+  }
+
+  // After all users are done, remove codes that were successfully persisted.
+  // If every attempt failed (API down, bad credentials, unexpected response),
+  // leave the code pending so /catchup can retry it later.
+  for (const code of codes) {
     if (await codeManager.isCodeRedeemed(code)) {
       await codeManager.removePendingCode(code);
     }
