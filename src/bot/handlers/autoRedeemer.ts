@@ -29,7 +29,7 @@ let redeemQueue: Promise<void> = Promise.resolve();
 export function enqueueAutoRedeem(codes: string[]): void {
   redeemQueue = redeemQueue
     .then(() => autoRedeemForAllUsers(codes))
-    .catch((error) => logger.error('[AUTO REDEEMER] Unhandled error during auto-redeem:', error));
+    .catch((error) => { logger.error('[AUTO REDEEMER] Unhandled error during auto-redeem:', error); });
 }
 
 function randomDelay(): Promise<void> {
@@ -87,7 +87,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
       logger.error(`[AUTO REDEEMER] Server switch failed for user ${discordId}`);
       return;
     }
-    server = newServer;
+    server = newServer as string;
     await userManager.updateServer(discordId, server);
     userResult = await IdleChampionsApi.getUserDetails({
       server,
@@ -124,7 +124,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
 
     if (generic.status === 4 && generic.newServer) {
       // Server switched mid-session
-      server = generic.newServer;
+      server = generic.newServer as string;
       await userManager.updateServer(discordId, server);
       logger.info(`[AUTO REDEEMER] Server switched for user ${discordId}, retrying submitCode`);
       submitResponse = await IdleChampionsApi.submitCode({
@@ -250,7 +250,7 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
   );
 
   for (let i = 0; i < allUsers.length; i++) {
-    const user = allUsers[i];
+    const user = allUsers[i]!;
     logger.info(`[AUTO REDEEMER] Processing user ${user.discordId}`);
 
     for (const code of codes) {

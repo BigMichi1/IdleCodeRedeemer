@@ -49,10 +49,12 @@ let setTimeoutSpy: ReturnType<typeof spyOn>;
 beforeAll(() => {
   initializeDatabase();
   // Make randomDelay a no-op so tests don't wait 2–5 s per transition.
-  setTimeoutSpy = spyOn(globalThis, 'setTimeout').mockImplementation((fn: TimerHandler) => {
-    if (typeof fn === 'function') fn();
-    return 0 as unknown as ReturnType<typeof setTimeout>;
-  });
+  setTimeoutSpy = spyOn(globalThis, 'setTimeout').mockImplementation(
+    ((fn: (...args: unknown[]) => void) => {
+      if (typeof fn === 'function') fn();
+      return 0 as unknown as ReturnType<typeof setTimeout>;
+    }) as unknown as typeof setTimeout
+  );
 });
 
 beforeEach(() => {
@@ -312,7 +314,7 @@ describe('autoRedeemForAllUsers – OutdatedInstanceId retry', () => {
     expect(getUserDetailsSpy).toHaveBeenCalledTimes(2);
     expect(submitCodeSpy).toHaveBeenCalledTimes(2);
     // Second submitCode call must use the fresh instance_id
-    expect(submitCodeSpy.mock.calls[1][0]).toMatchObject({ instanceId: freshInstanceId });
+    expect(submitCodeSpy.mock.calls[1]![0]).toMatchObject({ instanceId: freshInstanceId });
     expect(await codeManager.isCodeRedeemedByUser(CODE, USER_A)).toBe(true);
   });
 

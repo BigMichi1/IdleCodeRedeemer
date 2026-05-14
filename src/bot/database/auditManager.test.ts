@@ -33,22 +33,22 @@ describe('logAction', () => {
     await auditManager.logAction(USER_A, 'TEST_ACTION');
     const rows = db.select().from(auditLog).all();
     expect(rows).toHaveLength(1);
-    expect(rows[0].discordId).toBe(USER_A);
-    expect(rows[0].action).toBe('TEST_ACTION');
-    expect(rows[0].details).toBeNull();
+    expect(rows[0]!.discordId).toBe(USER_A);
+    expect(rows[0]!.action).toBe('TEST_ACTION');
+    expect(rows[0]!.details).toBeNull();
   });
 
   test('stores JSON-serialised details', async () => {
     await auditManager.logAction(USER_A, 'REDEEM', { code: 'ABCD1234EFGH', status: 'Success' });
     const rows = db.select().from(auditLog).all();
-    expect(rows[0].details).toBe(JSON.stringify({ code: 'ABCD1234EFGH', status: 'Success' }));
+    expect(rows[0]!.details).toBe(JSON.stringify({ code: 'ABCD1234EFGH', status: 'Success' }));
   });
 
   test('accepts null discordId for system-level actions', async () => {
     await auditManager.logAction(null, 'SYSTEM_START');
     const rows = db.select().from(auditLog).all();
-    expect(rows[0].discordId).toBeNull();
-    expect(rows[0].action).toBe('SYSTEM_START');
+    expect(rows[0]!.discordId).toBeNull();
+    expect(rows[0]!.action).toBe('SYSTEM_START');
   });
 
   test('inserts multiple entries independently', async () => {
@@ -72,7 +72,7 @@ describe('getUserAuditLog', () => {
     await auditManager.logAction(USER_B, 'ACTION_B');
     const log = await auditManager.getUserAuditLog(USER_A);
     expect(log).toHaveLength(1);
-    expect(log[0].action).toBe('ACTION_A');
+    expect(log[0]!.action).toBe('ACTION_A');
   });
 
   test('respects the limit parameter', async () => {
@@ -131,7 +131,7 @@ describe('getAuditLogSince', () => {
     await auditManager.logAction(USER_A, 'RECENT_ACTION');
     const log = await auditManager.getAuditLogSince('2000-01-01 00:00:00');
     expect(log).toHaveLength(1);
-    expect(log[0].action).toBe('RECENT_ACTION');
+    expect(log[0]!.action).toBe('RECENT_ACTION');
   });
 
   test('excludes entries before the given timestamp', async () => {
@@ -199,7 +199,7 @@ describe('deleteUserAuditLog', () => {
     await auditManager.deleteUserAuditLog(USER_A);
     const remaining = db.select().from(auditLog).all();
     expect(remaining).toHaveLength(1);
-    expect(remaining[0].discordId).toBe(USER_B);
+    expect(remaining[0]!.discordId).toBe(USER_B);
   });
 
   test('does not delete system-level (null discordId) entries', async () => {
@@ -208,7 +208,7 @@ describe('deleteUserAuditLog', () => {
     await auditManager.deleteUserAuditLog(USER_A);
     const remaining = db.select().from(auditLog).all();
     expect(remaining).toHaveLength(1);
-    expect(remaining[0].discordId).toBeNull();
+    expect(remaining[0]!.discordId).toBeNull();
   });
 
   test('after deletion getUserAuditLog returns empty for that user', async () => {
