@@ -22,6 +22,13 @@
       "when": 1778698878176,
       "tag": "0002_foamy_maelstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1778745298460,
+      "tag": "0003_daffy_oracle",
+      "breakpoints": true
     }
   ]
 }

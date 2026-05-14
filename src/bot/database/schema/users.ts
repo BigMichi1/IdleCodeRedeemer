@@ -1,4 +1,4 @@
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const users = sqliteTable('users', {
@@ -7,6 +7,7 @@ export const users = sqliteTable('users', {
   userHash: text().notNull(),
   server: text(),
   instanceId: text(),
+  autoRedeem: integer({ mode: 'boolean' }).notNull().default(true),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text().default(sql`CURRENT_TIMESTAMP`),
 });
