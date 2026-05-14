@@ -47,7 +47,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       .setDescription(
         enabled
           ? 'New codes posted in the channel will be automatically redeemed for you.'
-          : 'New codes will **not** be automatically redeemed. Use `/redeem` or the backfill mechanism to redeem codes manually.'
+          : 'New codes will **not** be automatically redeemed. Use `/redeem <code>` to claim a specific code or `/catchup` to claim all known codes at once.'
       );
 
     await interaction.editReply({ embeds: [embed] });
