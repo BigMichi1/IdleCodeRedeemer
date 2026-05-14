@@ -5,6 +5,7 @@ import { backfillChannelHistory } from './handlers/backfillHandler';
 import { enqueueAutoRedeem, setDiscordClient } from './handlers/autoRedeemer';
 import { codeManager } from './database/codeManager';
 import { backfillManager } from './database/backfillManager';
+import { userManager } from './database/userManager';
 import { initDebugLogger } from './utils/debugLogger';
 import logger from './utils/logger';
 import { apiRequestLogger } from './utils/apiRequestLogger';
@@ -78,6 +79,7 @@ client.on(Events.ClientReady, async () => {
 
   try {
     initializeDatabase();
+    await userManager.migratePlaintextCredentials();
 
     // Check if startup backfill should run
     const shouldBackfill = await backfillManager.shouldRunStartupBackfill();

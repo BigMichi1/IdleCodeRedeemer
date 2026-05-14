@@ -46,6 +46,8 @@ DISCORD_TOKEN=your_discord_bot_token_here
 DISCORD_GUILD_ID=your_guild_id_here
 DISCORD_CHANNEL_ID=your_channel_id_here
 DISCORD_CODE_AUTHOR_ID=your_code_author_bot_id_here
+# Required: generate with: openssl rand -hex 32
+ENCRYPTION_KEY=your_64_char_hex_key_here
 DB_PATH=/app/data/idle.db
 NODE_ENV=development
 ```

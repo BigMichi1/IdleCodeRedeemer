@@ -302,6 +302,10 @@ DISCORD_TOKEN      # Bot token from Discord Developer Portal
 DISCORD_GUILD_ID   # Server ID (for guild-specific commands)
 DISCORD_CHANNEL_ID # Channel ID (for auto code scanning)
 DISCORD_CODE_AUTHOR_ID # User/bot ID that posts promo codes (filters backfill to that author only)
+ENCRYPTION_KEY     # Required — 64-char hex key (32 bytes) for AES-256-GCM credential encryption
+                   # Generate: openssl rand -hex 32
+                   # Note: users.user_id and users.user_hash are stored as AES-256-GCM
+                   # ciphertext (enc1:<iv>:<authTag>:<ct>), not as raw int/token values.
 DB_PATH            # Database file path (default: ./data/idle.db)
 NODE_ENV           # development or production
 ```

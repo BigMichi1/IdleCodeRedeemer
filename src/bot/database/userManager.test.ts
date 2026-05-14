@@ -2,6 +2,7 @@ import { describe, test, expect, beforeAll, beforeEach } from 'bun:test';
 import { db, initializeDatabase } from './db';
 import { userManager } from './userManager';
 import { users, redeemedCodes, pendingCodes } from './schema/index';
+import { isEncrypted, encrypt } from '../utils/crypto';
 
 beforeAll(() => {
   initializeDatabase();
@@ -25,8 +26,13 @@ describe('saveCredentials', () => {
     const rows = db.select().from(users).all();
     expect(rows).toHaveLength(1);
     expect(rows[0].discordId).toBe('user-1');
-    expect(rows[0].userId).toBe('111');
-    expect(rows[0].userHash).toBe('hash-a');
+    // Credentials are encrypted at rest — raw DB values must not be plaintext
+    expect(rows[0].userId).not.toBe('111');
+    expect(rows[0].userHash).not.toBe('hash-a');
+    // Decrypted values match originals
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.userId).toBe('111');
+    expect(creds?.userHash).toBe('hash-a');
   });
 
   test('upserts existing user credentials', async () => {
@@ -34,8 +40,10 @@ describe('saveCredentials', () => {
     await userManager.saveCredentials({ discordId: 'user-1', userId: '222', userHash: 'hash-b' });
     const rows = db.select().from(users).all();
     expect(rows).toHaveLength(1);
-    expect(rows[0].userId).toBe('222');
-    expect(rows[0].userHash).toBe('hash-b');
+    // Decrypted values reflect the latest upsert
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.userId).toBe('222');
+    expect(creds?.userHash).toBe('hash-b');
   });
 
   test('stores optional server field', async () => {
@@ -213,5 +221,82 @@ describe('getAllUsersWithAutoRedeem', () => {
     await userManager.setAutoRedeem('user-1', false);
     await userManager.setAutoRedeem('user-2', false);
     expect(await userManager.getAllUsersWithAutoRedeem()).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// migratePlaintextCredentials
+// ---------------------------------------------------------------------------
+describe('migratePlaintextCredentials', () => {
+  test('is a no-op when the table is empty', async () => {
+    await userManager.migratePlaintextCredentials();
+    expect(db.select().from(users).all()).toHaveLength(0);
+  });
+
+  test('encrypts plaintext userId and userHash, preserving decrypted values', async () => {
+    // Seed a row with plaintext credentials directly (bypassing saveCredentials)
+    db.insert(users).values({ discordId: 'user-1', userId: '111', userHash: 'hash-a' }).run();
+
+    await userManager.migratePlaintextCredentials();
+
+    const row = db.select().from(users).get();
+    // Both fields must now be in encrypted format
+    expect(isEncrypted(row!.userId)).toBe(true);
+    expect(isEncrypted(row!.userHash)).toBe(true);
+    // Decrypted values must match the original plaintext
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.userId).toBe('111');
+    expect(creds?.userHash).toBe('hash-a');
+  });
+
+  test('migrates multiple plaintext rows independently', async () => {
+    db.insert(users).values([
+      { discordId: 'user-1', userId: '111', userHash: 'hash-a' },
+      { discordId: 'user-2', userId: '222', userHash: 'hash-b' },
+    ]).run();
+
+    await userManager.migratePlaintextCredentials();
+
+    const creds1 = await userManager.getCredentials('user-1');
+    const creds2 = await userManager.getCredentials('user-2');
+    expect(creds1?.userId).toBe('111');
+    expect(creds1?.userHash).toBe('hash-a');
+    expect(creds2?.userId).toBe('222');
+    expect(creds2?.userHash).toBe('hash-b');
+  });
+
+  test('leaves already-encrypted rows unchanged (no double-encryption)', async () => {
+    // Seed via saveCredentials so the row is already encrypted
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    const before = db.select().from(users).get();
+
+    await userManager.migratePlaintextCredentials();
+
+    const after = db.select().from(users).get();
+    // Raw stored values must be identical — no re-encryption occurred
+    expect(after!.userId).toBe(before!.userId);
+    expect(after!.userHash).toBe(before!.userHash);
+    // Decrypted values still correct
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.userId).toBe('111');
+    expect(creds?.userHash).toBe('hash-a');
+  });
+
+  test('encrypts only the plaintext field in a mixed-state row', async () => {
+    // Seed a row where userId is already encrypted but userHash is still plaintext
+    const encryptedUserId = encrypt('111');
+    db.insert(users).values({ discordId: 'user-1', userId: encryptedUserId, userHash: 'hash-a' }).run();
+
+    await userManager.migratePlaintextCredentials();
+
+    const row = db.select().from(users).get();
+    // userId must be the same encrypted value (not double-encrypted)
+    expect(row!.userId).toBe(encryptedUserId);
+    // userHash must now be encrypted
+    expect(isEncrypted(row!.userHash)).toBe(true);
+    // Both decrypt correctly
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.userId).toBe('111');
+    expect(creds?.userHash).toBe('hash-a');
   });
 });

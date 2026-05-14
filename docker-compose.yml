@@ -11,6 +11,7 @@ services:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
       DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-357247482247380994}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       DB_PATH: /app/data/idle.db
       NODE_ENV: production
     volumes:
