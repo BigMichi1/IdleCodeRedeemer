@@ -146,3 +146,72 @@ describe('getAllUsers', () => {
     expect(ids).toContain('user-2');
   });
 });
+
+// ---------------------------------------------------------------------------
+// autoRedeem default
+// ---------------------------------------------------------------------------
+describe('autoRedeem default', () => {
+  test('is true after saveCredentials without explicit value', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.autoRedeem).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setAutoRedeem
+// ---------------------------------------------------------------------------
+describe('setAutoRedeem', () => {
+  test('disables auto-redeem for a user', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.setAutoRedeem('user-1', false);
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.autoRedeem).toBe(false);
+  });
+
+  test('re-enables auto-redeem after disabling', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.setAutoRedeem('user-1', false);
+    await userManager.setAutoRedeem('user-1', true);
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.autoRedeem).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getAllUsersWithAutoRedeem
+// ---------------------------------------------------------------------------
+describe('getAllUsersWithAutoRedeem', () => {
+  test('returns empty array when no users exist', async () => {
+    expect(await userManager.getAllUsersWithAutoRedeem()).toEqual([]);
+  });
+
+  test('returns only users with auto-redeem enabled', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.saveCredentials({ discordId: 'user-2', userId: '222', userHash: 'hash-b' });
+    await userManager.saveCredentials({ discordId: 'user-3', userId: '333', userHash: 'hash-c' });
+    await userManager.setAutoRedeem('user-2', false);
+
+    const enabled = await userManager.getAllUsersWithAutoRedeem();
+    expect(enabled).toHaveLength(2);
+    const ids = enabled.map((u) => u.discordId);
+    expect(ids).toContain('user-1');
+    expect(ids).toContain('user-3');
+    expect(ids).not.toContain('user-2');
+  });
+
+  test('returns all users when none have disabled auto-redeem', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.saveCredentials({ discordId: 'user-2', userId: '222', userHash: 'hash-b' });
+    const enabled = await userManager.getAllUsersWithAutoRedeem();
+    expect(enabled).toHaveLength(2);
+  });
+
+  test('returns empty when all users have disabled auto-redeem', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.saveCredentials({ discordId: 'user-2', userId: '222', userHash: 'hash-b' });
+    await userManager.setAutoRedeem('user-1', false);
+    await userManager.setAutoRedeem('user-2', false);
+    expect(await userManager.getAllUsersWithAutoRedeem()).toEqual([]);
+  });
+});
