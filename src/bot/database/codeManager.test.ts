@@ -328,3 +328,42 @@ describe('getRedeemedCodeDetails', () => {
     expect(details.every((r) => r.discordId === USER_A)).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// deleteUserRedeemedCodes
+// ---------------------------------------------------------------------------
+describe('deleteUserRedeemedCodes', () => {
+  test('returns 0 and does nothing when user has no codes', async () => {
+    const count = await codeManager.deleteUserRedeemedCodes(USER_A);
+    expect(count).toBe(0);
+    expect(db.select().from(redeemedCodes).all()).toHaveLength(0);
+  });
+
+  test('deletes all redeemed code rows for the user and returns the count', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Code Expired');
+    const count = await codeManager.deleteUserRedeemedCodes(USER_A);
+    expect(count).toBe(2);
+    const remaining = db.select().from(redeemedCodes).all();
+    expect(remaining).toHaveLength(0);
+  });
+
+  test('only deletes rows belonging to the specified user', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Success');
+    const count = await codeManager.deleteUserRedeemedCodes(USER_A);
+    expect(count).toBe(1);
+    const remaining = db.select().from(redeemedCodes).all();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].discordId).toBe(USER_B);
+  });
+
+  test('does not affect the other user\'s records when both have redeemed the same code', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_B, 'Success');
+    await codeManager.deleteUserRedeemedCodes(USER_A);
+    const remaining = db.select().from(redeemedCodes).all();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].discordId).toBe(USER_B);
+  });
+});

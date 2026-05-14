@@ -69,6 +69,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           name: '⏮️ Backfill',
           value: '`/backfill [channel:<channel>]`\nRecover missed codes from message history (admin only).',
           inline: false,
+        },
+        {
+          name: '🗑️ Delete Account',
+          value:
+            '`/deleteaccount`\nPermanently delete all your stored data (credentials, code history, audit log). Requires confirmation.',
+          inline: false,
         }
       )
       .addFields(
