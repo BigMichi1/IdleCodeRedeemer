@@ -2,7 +2,7 @@ import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'dis
 import { initializeDatabase, closeDatabase } from './database/db';
 import { scanMessageForCodes } from './handlers/codeScanner';
 import { backfillChannelHistory } from './handlers/backfillHandler';
-import { autoRedeemForAllUsers } from './handlers/autoRedeemer';
+import { enqueueAutoRedeem } from './handlers/autoRedeemer';
 import { codeManager } from './database/codeManager';
 import { backfillManager } from './database/backfillManager';
 import { initDebugLogger } from './utils/debugLogger';
@@ -193,10 +193,9 @@ client.on(Events.MessageCreate, async (message) => {
         await codeManager.addPendingCode(code);
       }
 
-      // Auto-redeem found codes for all registered users sequentially
-      autoRedeemForAllUsers(foundCodes).catch((error) => {
-        logger.error('[AUTO REDEEMER] Unhandled error during auto-redeem:', error);
-      });
+      // Enqueue auto-redeem — serialized so overlapping MessageCreate events
+      // never start concurrent redemption runs or bypass the throttle delay.
+      enqueueAutoRedeem(foundCodes);
     }
   } catch (error) {
     logger.error('Error processing message:', error);
