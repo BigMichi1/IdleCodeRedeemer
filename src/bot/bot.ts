@@ -11,6 +11,7 @@ import logger from './utils/logger';
 import { apiRequestLogger } from './utils/apiRequestLogger';
 import * as backfillCommand from './commands/backfill';
 import * as blacksmithCommand from './commands/blacksmith';
+import * as deleteaccountCommand from './commands/deleteaccount';
 import * as catchupCommand from './commands/catchup';
 import * as codesCommand from './commands/codes';
 import * as autoredeemCommand from './commands/autoredeem';
@@ -54,6 +55,7 @@ const commands = [
   blacksmithCommand,
   catchupCommand,
   codesCommand,
+  deleteaccountCommand,
   helpCommand,
   inventoryCommand,
   makepublicCommand,

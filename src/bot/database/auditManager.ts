@@ -48,6 +48,10 @@ class AuditManager {
       .limit(limit)
       .all();
   }
+
+  async deleteUserAuditLog(discordId: string): Promise<void> {
+    db.delete(auditLog).where(eq(auditLog.discordId, discordId)).run();
+  }
 }
 
 export const auditManager = new AuditManager();

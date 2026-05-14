@@ -233,6 +233,16 @@ class CodeManager {
       db.delete(pendingCodes).run();
     }
   }
+
+  async deleteUserRedeemedCodes(discordId: string): Promise<number> {
+    const before = db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.discordId, discordId))
+      .get();
+    db.delete(redeemedCodes).where(eq(redeemedCodes.discordId, discordId)).run();
+    return before?.count ?? 0;
+  }
 }
 
 export const codeManager = new CodeManager();
