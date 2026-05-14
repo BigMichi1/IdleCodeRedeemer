@@ -92,7 +92,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: End-user interacting with the bot
 
 **Actions**:
-- Submit slash commands (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`)
+- Submit slash commands (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/deleteaccount`, `/help`)
 - Send messages containing promo codes in the monitored channel
 - Receive responses and error messages from the bot
 
@@ -508,6 +508,7 @@ All handlers follow pattern:
 | `/codes` | codes.ts | View code history | Embed |
 | `/makepublic` | makepublic.ts | Share codes with users | Message |
 | `/backfill` | backfill.ts | Scan message history | Embed |
+| `/deleteaccount` | deleteaccount.ts | Delete all user data (GDPR) | Ephemeral |
 | `/help` | help.ts | Command reference | Embed |
 
 ---

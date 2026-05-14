@@ -28,7 +28,7 @@ idle-code-redeemer/
 │   ├── bot/               ← Discord bot (ACTIVE)
 │   │   ├── bot.ts         ← Main Discord client & event handlers
 │   │   ├── api/           ← Game server API client
-│   │   ├── commands/      ← Slash command handlers (11 commands)
+│   │   ├── commands/      ← Slash command handlers (12 commands)
 │   │   ├── database/      ← Database managers & Drizzle schema
 │   │   │   ├── db.ts      ← Drizzle connection & migrate()
 │   │   │   ├── userManager.ts
@@ -73,7 +73,7 @@ idle-code-redeemer/
 - **[src/bot/bot.ts](../src/bot/bot.ts)** - Discord client initialization, event handlers, command routing
 - **[src/bot/api/idleChampionsApi.ts](../src/bot/api/idleChampionsApi.ts)** - Game server API client with query-parameter format
 
-### Commands (11 slash commands)
+### Commands (12 slash commands)
 
 - **[src/bot/commands/setup.ts](../src/bot/commands/setup.ts)** - `/setup user_id:<id> user_hash:<hash>`
 - **[src/bot/commands/redeem.ts](../src/bot/commands/redeem.ts)** - `/redeem code:<code>`
@@ -85,6 +85,7 @@ idle-code-redeemer/
 - **[src/bot/commands/codes.ts](../src/bot/commands/codes.ts)** - `/codes [count:<count>]` (view redeemed codes history)
 - **[src/bot/commands/makepublic.ts](../src/bot/commands/makepublic.ts)** - `/makepublic code:<code>` (share codes with other users)
 - **[src/bot/commands/backfill.ts](../src/bot/commands/backfill.ts)** - `/backfill [channel:<channel>]` (recover missed codes)
+- **[src/bot/commands/deleteaccount.ts](../src/bot/commands/deleteaccount.ts)** - `/deleteaccount` (permanently delete all stored user data, GDPR-friendly)
 - **[src/bot/commands/help.ts](../src/bot/commands/help.ts)** - `/help`
 
 ### Database

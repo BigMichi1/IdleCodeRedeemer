@@ -29,7 +29,7 @@ The Discord bot responds to slash commands in Discord channels. All commands ret
 
 **Response Format**: Discord Embeds (rich message format) or Ephemeral Text
 
-**Total commands**: 11 (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`)
+**Total commands**: 12 (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/deleteaccount`, `/help`)
 
 ---
 
@@ -708,7 +708,50 @@ Bot (ephemeral): ⏸️ Auto-Redeem Disabled
 
 ---
 
-### 11. `/help`
+### 11. `/deleteaccount`
+
+Permanently delete all data the bot holds about the invoking user.
+
+**Invocation**:
+```
+/deleteaccount
+```
+
+**Parameters**: None
+
+**Flow**:
+1. Bot checks whether credentials exist for the user. If none are found, responds with a warning and exits.
+2. Bot sends an ephemeral embed with Yes / Cancel buttons (30-second timeout).
+3. If the user clicks **Yes, delete everything**: credentials, all redeemed code records, and audit log entries are permanently removed. A summary is shown.
+4. If the user clicks **Cancel** or the timeout elapses: no data is changed.
+
+**Data removed on confirmation**:
+- `users` row (credentials, server, autoredeem preference)
+- All `redeemed_codes` rows for the user
+- All `audit_log` rows for the user
+
+**Error Codes**:
+
+| Code | Meaning | Resolution |
+|------|---------|------------|
+| `NO_ACCOUNT` | No credentials stored for this user | Nothing to delete |
+
+**Example**:
+```
+User: /deleteaccount
+Bot (ephemeral): ⚠️ Delete Account — Are you sure?
+                 [Yes, delete everything] [Cancel]
+
+User: clicks Yes
+Bot (ephemeral): ✅ Account Deleted
+                 • Credentials deleted
+                 • 42 code record(s) deleted
+                 • Audit log entries deleted
+```
+
+---
+
+### 12. `/help`
 
 Display command reference and usage instructions.
 
@@ -752,6 +795,8 @@ Display command reference and usage instructions.
 │   Toggle automatic code redemption           │
 │ /backfill [channel:<channel>]               │
 │   Recover codes from message history         │
+│ /deleteaccount                               │
+│   Permanently delete all your stored data    │
 │ /help                                        │
 │   Show this message                          │
 │                                              │
@@ -948,6 +993,7 @@ The bot implements request throttling:
 | `/open` | 1 per 3 seconds | Per user |
 | `/blacksmith` | 1 per 3 seconds | Per user |
 | `/backfill` | 1 concurrent | Per guild |
+| `/deleteaccount` | Unlimited | Per user |
 | Code detection | Per message | Automatic |
 
 ---
@@ -1195,7 +1241,7 @@ Bot (embed):
 ## OSPS-SA-02.01 Compliance
 
 ✅ **Software Interfaces Documented**:
-- 11 slash commands with parameters, responses, error codes
+- 12 slash commands with parameters, responses, error codes
 - Message event detection with pattern matching
 - Response formats and data structures
 - Error handling and recovery procedures
