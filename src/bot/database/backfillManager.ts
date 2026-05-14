@@ -98,6 +98,31 @@ class BackfillManager {
       .where(eq(backfillOperations.id, operationId))
       .get() as BackfillOperation | undefined;
   }
+
+  async hasUserBackfillOperations(discordId: string): Promise<boolean> {
+    const row = db
+      .select({ id: backfillOperations.id })
+      .from(backfillOperations)
+      .where(eq(backfillOperations.initiatedBy, discordId))
+      .limit(1)
+      .get();
+    return row !== undefined;
+  }
+
+  async deleteUserBackfillOperations(discordId: string): Promise<number> {
+    const rows = db
+      .select({ id: backfillOperations.id })
+      .from(backfillOperations)
+      .where(eq(backfillOperations.initiatedBy, discordId))
+      .all();
+    const total = rows.length;
+    if (total > 0) {
+      db.delete(backfillOperations)
+        .where(eq(backfillOperations.initiatedBy, discordId))
+        .run();
+    }
+    return total;
+  }
 }
 
 export const backfillManager = new BackfillManager();
