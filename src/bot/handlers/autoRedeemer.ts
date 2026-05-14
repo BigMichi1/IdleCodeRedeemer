@@ -248,9 +248,13 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
       }
     }
 
-    // Code has been processed for all users — remove from pending_codes so it
-    // no longer shows up in /catchup (redeemed_codes now tracks it instead).
-    await codeManager.removePendingCode(code);
+    // Code has been processed for all users — only remove from pending_codes
+    // once at least one Success or Code Expired record has been persisted.
+    // If every attempt failed (API down, bad credentials, unexpected response),
+    // leave the code pending so /catchup can retry it later.
+    if (await codeManager.isCodeRedeemed(code)) {
+      await codeManager.removePendingCode(code);
+    }
   }
 
   logger.info(`[AUTO REDEEMER] Finished auto-redeem for ${codes.length} code(s)`);
