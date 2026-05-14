@@ -2,10 +2,8 @@ import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'dis
 import { initializeDatabase, closeDatabase } from './database/db';
 import { scanMessageForCodes } from './handlers/codeScanner';
 import { backfillChannelHistory } from './handlers/backfillHandler';
-import { codeManager } from './database/codeManager';
-import { userManager } from './database/userManager';
+import { autoRedeemForAllUsers } from './handlers/autoRedeemer';
 import { backfillManager } from './database/backfillManager';
-import IdleChampionsApi from './api/idleChampionsApi';
 import { initDebugLogger } from './utils/debugLogger';
 import logger from './utils/logger';
 import { apiRequestLogger } from './utils/apiRequestLogger';
@@ -13,6 +11,7 @@ import * as backfillCommand from './commands/backfill';
 import * as blacksmithCommand from './commands/blacksmith';
 import * as catchupCommand from './commands/catchup';
 import * as codesCommand from './commands/codes';
+import * as autoredeemCommand from './commands/autoredeem';
 import * as helpCommand from './commands/help';
 import * as inventoryCommand from './commands/inventory';
 import * as makepublicCommand from './commands/makepublic';
@@ -47,6 +46,7 @@ const client = new Client({
 
 // Load commands statically (required for bundled production builds)
 const commands = [
+  autoredeemCommand,
   backfillCommand,
   blacksmithCommand,
   catchupCommand,
@@ -186,62 +186,10 @@ client.on(Events.MessageCreate, async (message) => {
     if (foundCodes.length > 0) {
       logger.info(`Found ${foundCodes.length} codes in message from ${message.author.tag}`);
 
-      for (const code of foundCodes) {
-        // Try to redeem automatically if user is known
-        const author = message.author;
-        const hasCredentials = await userManager.hasCredentials(author.id);
-
-        if (hasCredentials) {
-          try {
-            const credentials = await userManager.getCredentials(author.id);
-            if (credentials) {
-              let server = credentials.server;
-              if (!server) {
-                server = await IdleChampionsApi.getServer();
-                if (!server) {
-                  logger.error('Could not determine game server');
-                  return;
-                }
-                await userManager.updateServer(author.id, server);
-              }
-
-              const response = await IdleChampionsApi.submitCode({
-                server,
-                code,
-                user_id: credentials.userId,
-                hash: credentials.userHash,
-                instanceId: credentials.instanceId || '',
-              });
-
-              // Type guard: check if response has codeStatus (CodeSubmitResponse)
-              if (response instanceof Object && 'codeStatus' in response) {
-                const codeResponse = response as any;
-                await codeManager.addRedeemedCode(
-                  code,
-                  author.id,
-                  codeResponse.codeStatus,
-                  codeResponse.lootDetail
-                );
-
-                logger.info(`Auto-redeemed code ${code} for ${author.tag}`);
-
-                // Send DM notification
-                if (codeResponse.codeStatus === 0) {
-                  // Success
-                  await author.send(`✅ Code \`${code}\` redeemed successfully!`).catch(() => {});
-                }
-              }
-            }
-          } catch (error) {
-            logger.error(`Error auto-redeeming code ${code}:`, error);
-            await codeManager.addPendingCode(code);
-          }
-        } else {
-          // Store as pending code
-          await codeManager.addPendingCode(code);
-          logger.debug(`Stored pending code: ${code}`);
-        }
-      }
+      // Auto-redeem found codes for all registered users sequentially
+      autoRedeemForAllUsers(foundCodes).catch((error) => {
+        logger.error('[AUTO REDEEMER] Unhandled error during auto-redeem:', error);
+      });
     }
   } catch (error) {
     logger.error('Error processing message:', error);

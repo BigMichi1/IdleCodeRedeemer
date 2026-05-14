@@ -8,6 +8,7 @@ interface UserCredentials {
   userHash: string;
   server?: string;
   instanceId?: string;
+  autoRedeem: boolean;
 }
 
 function rowToCredentials(user: typeof users.$inferSelect): UserCredentials {
@@ -17,6 +18,7 @@ function rowToCredentials(user: typeof users.$inferSelect): UserCredentials {
     userHash: user.userHash,
     server: user.server ?? undefined,
     instanceId: user.instanceId ?? undefined,
+    autoRedeem: user.autoRedeem ?? true,
   };
 }
 
@@ -65,6 +67,18 @@ class UserManager {
       .set({ instanceId, updatedAt: sql`CURRENT_TIMESTAMP` })
       .where(eq(users.discordId, discordId))
       .run();
+  }
+
+  async setAutoRedeem(discordId: string, enabled: boolean): Promise<void> {
+    db.update(users)
+      .set({ autoRedeem: enabled, updatedAt: sql`CURRENT_TIMESTAMP` })
+      .where(eq(users.discordId, discordId))
+      .run();
+  }
+
+  async getAllUsersWithAutoRedeem(): Promise<UserCredentials[]> {
+    const rows = db.select().from(users).where(eq(users.autoRedeem, true)).orderBy(sql`${users.createdAt} DESC`).all();
+    return rows.map(rowToCredentials);
   }
 
   async getAllUsers(): Promise<UserCredentials[]> {
