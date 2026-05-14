@@ -161,11 +161,18 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
   const codeResponse = submitResponse as any;
   const statusName = normalizeCodeStatus(codeResponse.codeStatus);
   const isSuccess = codeResponse.codeStatus === 0;
+  const isAlreadyRedeemed = codeResponse.codeStatus === 1;
   const isExpiredStatus = codeResponse.codeStatus === 4;
 
   logger.info(
     `[AUTO REDEEMER] Code ${code} → ${statusName} for user ${discordId}`
   );
+
+  if (isAlreadyRedeemed) {
+    // Persist so isCodeRedeemedByUser() short-circuits on future runs
+    await codeManager.addRedeemedCode(code, discordId, statusName);
+    return;
+  }
 
   if (isSuccess || isExpiredStatus) {
     let shouldBePublic = false;
