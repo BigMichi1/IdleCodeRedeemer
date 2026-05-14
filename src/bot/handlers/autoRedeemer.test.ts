@@ -44,10 +44,12 @@ const submitCodeSpy = spyOn(IdleChampionsApi, 'submitCode');
 // Setup
 // ---------------------------------------------------------------------------
 
+let setTimeoutSpy: ReturnType<typeof spyOn>;
+
 beforeAll(() => {
   initializeDatabase();
   // Make randomDelay a no-op so tests don't wait 2–5 s per transition.
-  spyOn(globalThis, 'setTimeout').mockImplementation((fn: TimerHandler) => {
+  setTimeoutSpy = spyOn(globalThis, 'setTimeout').mockImplementation((fn: TimerHandler) => {
     if (typeof fn === 'function') fn();
     return 0 as unknown as ReturnType<typeof setTimeout>;
   });
@@ -68,6 +70,8 @@ beforeEach(() => {
 });
 
 afterAll(() => {
+  // Restore real setTimeout so subsequent test files aren't affected.
+  setTimeoutSpy.mockRestore();
   // Ensure the DB is clean for subsequent test files (codeManager, userManager, etc.)
   // that delete users without first deleting auditLog rows.
   db.delete(auditLog).run();

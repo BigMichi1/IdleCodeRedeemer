@@ -4,4 +4,5 @@ WHERE rowid NOT IN (
     FROM `pending_codes`
     GROUP BY `code`
 );
+--> statement-breakpoint
 CREATE UNIQUE INDEX `pending_codes_code_unique` ON `pending_codes` (`code`);
