@@ -106,14 +106,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    // Perform deletion
+    // Perform deletion — order matters for FK constraints:
+    // pending_codes.discord_id → users.discord_id (no cascade), so clear it first
+    await codeManager.clearPendingCodes(interaction.user.id);
     const deletedCodesCount = await codeManager.deleteUserRedeemedCodes(interaction.user.id);
     await auditManager.deleteUserAuditLog(interaction.user.id);
     await userManager.deleteCredentials(interaction.user.id);
 
+    // Log a non-identifying event — the user's credentials and ID are now gone
     logger.info(
-      `[DELETE ACCOUNT] User ${interaction.user.tag} (${interaction.user.id}) deleted their account. ` +
-        `Removed ${deletedCodesCount} redeemed code record(s).`
+      `[DELETE ACCOUNT] Account deletion completed. Removed ${deletedCodesCount} redeemed code record(s).`
     );
 
     await interaction.editReply({
