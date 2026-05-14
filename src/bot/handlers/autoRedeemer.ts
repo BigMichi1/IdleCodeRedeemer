@@ -7,6 +7,20 @@ import logger from '../utils/logger';
 const MIN_DELAY_MS = 2_000;
 const MAX_DELAY_MS = 5_000;
 
+// Serial queue: ensures only one auto-redeem run executes at a time.
+// Each enqueued job is chained onto the tail so runs never overlap.
+let redeemQueue: Promise<void> = Promise.resolve();
+
+/**
+ * Enqueue a set of codes for auto-redemption. Runs are serialized —
+ * the new job starts only after any currently running job finishes.
+ */
+export function enqueueAutoRedeem(codes: string[]): void {
+  redeemQueue = redeemQueue
+    .then(() => autoRedeemForAllUsers(codes))
+    .catch((error) => logger.error('[AUTO REDEEMER] Unhandled error during auto-redeem:', error));
+}
+
 function randomDelay(): Promise<void> {
   const ms = MIN_DELAY_MS + Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS + 1));
   logger.debug(`[AUTO REDEEMER] Waiting ${ms}ms before next user`);
