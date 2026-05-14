@@ -212,7 +212,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
 
 /**
  * Redeems a list of codes for every registered user, sequentially,
- * with a random delay between each redemption attempt.
+ * with a random delay between each redemption attempt and between codes.
  */
 export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
   if (codes.length === 0) return;
@@ -227,7 +227,8 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
     `[AUTO REDEEMER] Starting auto-redeem of ${codes.length} code(s) for ${allUsers.length} user(s)`
   );
 
-  for (const code of codes) {
+  for (let c = 0; c < codes.length; c++) {
+    const code = codes[c];
     logger.info(`[AUTO REDEEMER] Processing code: ${code}`);
 
     for (let i = 0; i < allUsers.length; i++) {
@@ -241,8 +242,8 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
         );
       }
 
-      // Wait between users (but not after the last one)
-      if (i < allUsers.length - 1) {
+      // Wait between users (but not after the last user of the last code)
+      if (i < allUsers.length - 1 || c < codes.length - 1) {
         await randomDelay();
       }
     }
