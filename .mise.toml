@@ -30,6 +30,14 @@ run = "bun run build"
 description = "Type-check TypeScript source without emitting files"
 run = "bun run typecheck"
 
+[tasks.test]
+description = "Run all tests"
+run = "bun test"
+
+[tasks."test:coverage"]
+description = "Run all tests with LCOV coverage report (output: coverage/lcov.info)"
+run = "bun test --coverage --coverage-reporter=lcov"
+
 [tasks."prod:build"]
 description = "Build minified production executable"
 run = "bun run build"
