@@ -91,13 +91,13 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
     return;
   }
 
-  const instanceId = userData.details.instance_id || '0';
+  let instanceId = userData.details.instance_id || '0';
   if (!instanceId || instanceId === '0') {
     logger.error(`[AUTO REDEEMER] Invalid instance_id for user ${discordId}`);
     return;
   }
 
-  const response = await IdleChampionsApi.submitCode({
+  let submitResponse = await IdleChampionsApi.submitCode({
     server,
     code,
     user_id: credentials.userId,
@@ -105,12 +105,60 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
     instanceId,
   });
 
-  if (!(response instanceof Object && 'codeStatus' in response)) {
+  // Handle GenericResponse from submitCode:
+  //   status 4 = SwitchServer  → update server and retry once
+  //   status 1 = OutdatedInstanceId → refresh instance_id and retry once
+  if (submitResponse instanceof Object && 'status' in submitResponse) {
+    const generic = submitResponse as any;
+
+    if (generic.status === 4 && generic.newServer) {
+      // Server switched mid-session
+      server = generic.newServer;
+      await userManager.updateServer(discordId, server);
+      logger.info(`[AUTO REDEEMER] Server switched for user ${discordId}, retrying submitCode`);
+      submitResponse = await IdleChampionsApi.submitCode({
+        server,
+        code,
+        user_id: credentials.userId,
+        hash: credentials.userHash,
+        instanceId,
+      });
+    } else if (generic.status === 1) {
+      // Stale instance_id — fetch fresh user details to get current one
+      logger.info(`[AUTO REDEEMER] Outdated instance_id for user ${discordId}, refreshing`);
+      const refreshResult = await IdleChampionsApi.getUserDetails({
+        server,
+        user_id: credentials.userId,
+        hash: credentials.userHash,
+      });
+      const refreshed = refreshResult as any;
+      const refreshedInstanceId = refreshed?.details?.instance_id || '0';
+      if (!refreshedInstanceId || refreshedInstanceId === '0') {
+        logger.error(`[AUTO REDEEMER] Could not refresh instance_id for user ${discordId}`);
+        return;
+      }
+      instanceId = refreshedInstanceId;
+      submitResponse = await IdleChampionsApi.submitCode({
+        server,
+        code,
+        user_id: credentials.userId,
+        hash: credentials.userHash,
+        instanceId,
+      });
+    } else {
+      logger.error(
+        `[AUTO REDEEMER] submitCode returned GenericResponse status=${generic.status} for code ${code}, user ${discordId}`
+      );
+      return;
+    }
+  }
+
+  if (!(submitResponse instanceof Object && 'codeStatus' in submitResponse)) {
     logger.error(`[AUTO REDEEMER] Unexpected response for code ${code}, user ${discordId}`);
     return;
   }
 
-  const codeResponse = response as any;
+  const codeResponse = submitResponse as any;
   const statusName = normalizeCodeStatus(codeResponse.codeStatus);
   const isSuccess = codeResponse.codeStatus === 0;
   const isExpiredStatus = codeResponse.codeStatus === 4;
