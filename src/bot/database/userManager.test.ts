@@ -25,10 +25,10 @@ describe('saveCredentials', () => {
     await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
     const rows = db.select().from(users).all();
     expect(rows).toHaveLength(1);
-    expect(rows[0].discordId).toBe('user-1');
+    expect(rows[0]!.discordId).toBe('user-1');
     // Credentials are encrypted at rest — raw DB values must not be plaintext
-    expect(rows[0].userId).not.toBe('111');
-    expect(rows[0].userHash).not.toBe('hash-a');
+    expect(rows[0]!.userId).not.toBe('111');
+    expect(rows[0]!.userHash).not.toBe('hash-a');
     // Decrypted values match originals
     const creds = await userManager.getCredentials('user-1');
     expect(creds?.userId).toBe('111');
@@ -54,7 +54,7 @@ describe('saveCredentials', () => {
       server: 'server1',
     });
     const rows = db.select().from(users).all();
-    expect(rows[0].server).toBe('server1');
+    expect(rows[0]!.server).toBe('server1');
   });
 });
 

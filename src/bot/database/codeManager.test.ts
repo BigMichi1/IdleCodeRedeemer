@@ -68,23 +68,23 @@ describe('addRedeemedCode', () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
     const rows = db.select().from(redeemedCodes).all();
     expect(rows).toHaveLength(1);
-    expect(rows[0].code).toBe('CODE1234ABCD');
-    expect(rows[0].status).toBe('Success');
-    expect(rows[0].discordId).toBe(USER_A);
-    expect(rows[0].isPublic).toBe(0);
+    expect(rows[0]!.code).toBe('CODE1234ABCD');
+    expect(rows[0]!.status).toBe('Success');
+    expect(rows[0]!.discordId).toBe(USER_A);
+    expect(rows[0]!.isPublic).toBe(0);
   });
 
   test('normalizes numeric status 0 to Success', async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 0);
     const rows = db.select().from(redeemedCodes).all();
-    expect(rows[0].status).toBe('Success');
+    expect(rows[0]!.status).toBe('Success');
     expect(await codeManager.isCodeRedeemedByUser('CODE1234ABCD', USER_A)).toBe(true);
   });
 
   test('normalizes numeric string status "0" to Success', async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, '0');
     const rows = db.select().from(redeemedCodes).all();
-    expect(rows[0].status).toBe('Success');
+    expect(rows[0]!.status).toBe('Success');
     expect(await codeManager.isCodeRedeemedByUser('CODE1234ABCD', USER_A)).toBe(true);
   });
 
@@ -100,7 +100,7 @@ describe('addRedeemedCode', () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Code Expired');
     const rows = db.select().from(redeemedCodes).all();
     expect(rows).toHaveLength(1);
-    expect(rows[0].status).toBe('Code Expired');
+    expect(rows[0]!.status).toBe('Code Expired');
   });
 
   test('propagates isPublic=true to all existing rows for the code', async () => {
@@ -355,7 +355,7 @@ describe('deleteUserRedeemedCodes', () => {
     expect(count).toBe(1);
     const remaining = db.select().from(redeemedCodes).all();
     expect(remaining).toHaveLength(1);
-    expect(remaining[0].discordId).toBe(USER_B);
+    expect(remaining[0]!.discordId).toBe(USER_B);
   });
 
   test('does not affect the other user\'s records when both have redeemed the same code', async () => {
@@ -364,6 +364,6 @@ describe('deleteUserRedeemedCodes', () => {
     await codeManager.deleteUserRedeemedCodes(USER_A);
     const remaining = db.select().from(redeemedCodes).all();
     expect(remaining).toHaveLength(1);
-    expect(remaining[0].discordId).toBe(USER_B);
+    expect(remaining[0]!.discordId).toBe(USER_B);
   });
 });
