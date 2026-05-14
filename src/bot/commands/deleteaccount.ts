@@ -11,6 +11,7 @@ import {
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
+import { backfillManager } from '../database/backfillManager';
 import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
@@ -22,8 +23,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const hasCredentials = await userManager.hasCredentials(interaction.user.id);
+    const hasBackfillOps = await backfillManager.hasUserBackfillOperations(interaction.user.id);
 
-    if (!hasCredentials) {
+    if (!hasCredentials && !hasBackfillOps) {
       const embed = new EmbedBuilder()
         .setColor(0xffaa00)
         .setTitle('⚠️ No Account Found')
@@ -40,7 +42,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         'This will **permanently and irreversibly** delete all of your data:\n\n' +
           '• Your Idle Champions credentials\n' +
           '• Your full code redemption history\n' +
-          '• Your audit log entries\n\n' +
+          '• Your audit log entries\n' +
+          '• Your backfill operation history\n\n' +
           'You will need to run `/setup` again to use the bot after this.'
       )
       .setFooter({ text: 'This action cannot be undone. Confirmation expires in 30 seconds.' });
@@ -111,11 +114,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await codeManager.clearPendingCodes(interaction.user.id);
     const deletedCodesCount = await codeManager.deleteUserRedeemedCodes(interaction.user.id);
     await auditManager.deleteUserAuditLog(interaction.user.id);
+    const deletedBackfillCount = await backfillManager.deleteUserBackfillOperations(interaction.user.id);
     await userManager.deleteCredentials(interaction.user.id);
 
     // Log a non-identifying event — the user's credentials and ID are now gone
     logger.info(
-      `[DELETE ACCOUNT] Account deletion completed. Removed ${deletedCodesCount} redeemed code record(s).`
+      `[DELETE ACCOUNT] Account deletion completed. Removed ${deletedCodesCount} redeemed code record(s) and ${deletedBackfillCount} backfill operation record(s).`
     );
 
     await interaction.editReply({
@@ -127,7 +131,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             'All your data has been permanently removed:\n\n' +
               `• Credentials deleted\n` +
               `• ${deletedCodesCount} code record(s) deleted\n` +
-              '• Audit log entries deleted\n\n' +
+              '• Audit log entries deleted\n' +
+              `• ${deletedBackfillCount} backfill operation record(s) deleted\n\n` +
               'If you want to use the bot again in the future, simply run `/setup`.'
           ),
       ],
