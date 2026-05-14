@@ -81,6 +81,10 @@ run = "gitleaks detect --source . --verbose"
 description = "Audit dependencies for vulnerabilities"
 run = "bun audit"
 
+[tasks.outdated]
+description = "Check for outdated dependencies"
+run = "bun outdated"
+
 [tasks.update]
 description = "Update all dependencies"
 run = "bun update"

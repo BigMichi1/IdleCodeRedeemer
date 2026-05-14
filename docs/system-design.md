@@ -92,7 +92,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: End-user interacting with the bot
 
 **Actions**:
-- Submit slash commands (`/setup`, `/redeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`)
+- Submit slash commands (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`)
 - Send messages containing promo codes in the monitored channel
 - Receive responses and error messages from the bot
 
@@ -129,6 +129,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Subsystems**:
 - **Command Handler** - Routes slash commands to handlers
 - **Code Scanner** - Detects promo codes in messages
+- **Auto Redeemer** - Automatically redeems detected codes for all users with auto-redeem enabled
 - **Backfill Handler** - Scans message history
 - **API Client** - Communicates with Idle Champions API
 - **Database Managers** - Persistence layer (users, codes, backfill state)
@@ -905,8 +906,9 @@ This document is updated when:
 - SQLite Database (persistent storage)
 
 ✅ **Actions Documented**:
-- 9 slash commands with full flows
+- 11 slash commands with full flows
 - Message scanner code detection
+- Auto-redeemer (per-user toggle)
 - Backfill history scanning
 - API request/response handling
 - Database persistence

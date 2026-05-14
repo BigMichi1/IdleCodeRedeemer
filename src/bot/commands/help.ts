@@ -35,6 +35,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           inline: false,
         },
         {
+          name: '🤖 Auto-Redeem',
+          value: '`/autoredeem enabled:<on|off>`\nToggle automatic redemption of new codes when they appear in the channel.',
+          inline: false,
+        },
+        {
+          name: '📋 Code History',
+          value: '`/codes [count:<count>]`\nView your redeemed codes history (last 10 by default).',
+          inline: false,
+        },
+        {
+          name: '💎 Share Code',
+          value: '`/makepublic code:<code>`\nShare one of your redeemed codes with other users.',
+          inline: false,
+        },
+        {
           name: '📦 Check Inventory',
           value: '`/inventory`\nView your chests, hero unlocks, and contracts.',
           inline: false,
@@ -49,13 +64,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           value:
             '`/blacksmith contract_type:<type> hero_id:<id> count:<count>`\nUpgrade your heroes using contracts.',
           inline: false,
+        },
+        {
+          name: '⏮️ Backfill',
+          value: '`/backfill [channel:<channel>]`\nRecover missed codes from message history (admin only).',
+          inline: false,
         }
       )
       .addFields(
         {
           name: '🤖 Automatic Code Detection',
           value:
-            'The bot automatically scans the #combinations channel for new codes and redeems them for you (if you have set up credentials).',
+            'The bot automatically scans the #combinations channel for new codes and redeems them for you (if you have set up credentials and auto-redeem is enabled).',
           inline: false,
         },
         {
@@ -67,7 +87,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         {
           name: '📚 Getting Started',
           value:
-            '1. Use `/setup` to save your credentials\n2. The bot will automatically redeem codes found in the channel\n3. Use other commands to manage your inventory',
+            '1. Use `/setup` to save your credentials\n2. The bot will automatically redeem codes found in the channel\n3. Use `/catchup` to claim any codes you missed\n4. Use other commands to manage your inventory',
           inline: false,
         }
       )

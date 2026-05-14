@@ -4,8 +4,9 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ## Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/catchup`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/help`
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
+- 🤖 **Auto-Redeem Toggle** - Enable or disable automatic code redemption per user (`/autoredeem`)
 - ⏮️ **Message History Backfill** - Recover missed codes from message history (protected with rate limiting)
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
@@ -60,6 +61,7 @@ brew install mise
 | `/setup user_id:<id> user_hash:<hash>`                        | Save your Idle Champions credentials                  |
 | `/redeem code:<code>`                                         | Manually redeem a code                                |
 | `/catchup`                                                    | Redeem all known valid codes you haven't claimed yet  |
+| `/autoredeem enabled:<on\|off>`                               | Toggle automatic redemption of new codes for your account |
 | `/inventory`                                                  | View your account (gold, rubies, equipment, progress) |
 | `/open chest_type:<type> count:<count>`                       | Open chests (Gold, Sapphire, etc.)                    |
 | `/blacksmith contract_type:<type> hero_id:<id> count:<count>` | Upgrade heroes                                        |
@@ -184,6 +186,19 @@ Recover missed codes from Discord message history. Scans the entire message hist
 - Helps catch codes that appeared while the bot was offline
 - No manual action needed
 
+### Auto-Redeem Settings
+
+#### `/autoredeem enabled:<on|off>`
+
+Toggle whether the bot automatically redeems new codes when they are detected in the monitored channel.
+
+- **Required parameters:**
+  - `enabled` - `on` to enable, `off` to disable automatic redemption
+- **Default:** Auto-redeem is **enabled** for all users after `/setup`
+- **Behaviour when enabled:** Any code detected by the scanner is immediately submitted to the Idle Champions API on your behalf
+- **Behaviour when disabled:** Codes are still detected and stored, but you must use `/redeem` or `/catchup` to claim them manually
+- **Example:** `/autoredeem enabled:off`
+
 ### Help
 
 #### `/help`
@@ -200,7 +215,7 @@ src/bot/
 ├── bot.ts                     # Main Discord client & event handlers
 ├── api/
 │   └── idleChampionsApi.ts    # Game server API client
-├── commands/              # Slash command handlers (10 commands)
+├── commands/              # Slash command handlers (11 commands)
 ├── database/              # Database layer (Drizzle ORM)
 │   ├── db.ts              # Drizzle connection & migrate() on startup
 │   ├── userManager.ts     # User credentials
