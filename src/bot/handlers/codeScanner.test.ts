@@ -32,6 +32,23 @@ describe('extractCodesFromText', () => {
     });
   });
 
+  describe('URL stripping', () => {
+    test('does not extract Twitch username as code', () => {
+      const text = 'LATU-EGIS-TOCK\n\nhttps://www.twitch.tv/dungeonscrawlers\n1x Electrum Chest';
+      expect(extractCodesFromText(text)).toEqual(['LATUEGISTOCK']);
+    });
+
+    test('does not extract long URL path segments as codes', () => {
+      const text = 'GOEL-ARNA-VIDS\nhttps://www.twitch.tv/jasoncharlesmiller\n1x Electrum Chest';
+      expect(extractCodesFromText(text)).toEqual(['GOELARNAVIDS']);
+    });
+
+    test('strips http URLs as well as https', () => {
+      const text = 'ABCD1234EFGH http://example.com/SOMETHINGLONG123456';
+      expect(extractCodesFromText(text)).toEqual(['ABCD1234EFGH']);
+    });
+  });
+
   describe('Discord emoji stripping', () => {
     test('strips static emoji tags before matching', () => {
       const text = 'Redeem <:gem:123456789012345678> this: ABCD1234EFGH';
