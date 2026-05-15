@@ -10,11 +10,16 @@ function stripDiscordEmojis(text: string): string {
   return text.replace(/<a?:[^:]+:\d+>/g, '');
 }
 
+// Strip URLs before scanning to avoid false positives from URL paths/usernames.
+function stripUrls(text: string): string {
+  return text.replace(/https?:\/\/\S+/gi, '');
+}
+
 export async function scanMessageForCodes(message: Message): Promise<string[]> {
   try {
 
-    // Strip emoji tags then uppercase for matching
-    const messageText = stripDiscordEmojis(message.content).toUpperCase();
+    // Strip URLs and emoji tags, then uppercase for matching
+    const messageText = stripUrls(stripDiscordEmojis(message.content)).toUpperCase();
 
     const codeMatches = messageText.match(CODE_REGEX) || [];
     const codes: string[] = [];
@@ -40,6 +45,6 @@ export async function scanMessageForCodes(message: Message): Promise<string[]> {
 }
 
 export function extractCodesFromText(text: string): string[] {
-  const codeMatches = stripDiscordEmojis(text).toUpperCase().match(CODE_REGEX) || [];
+  const codeMatches = stripUrls(stripDiscordEmojis(text)).toUpperCase().match(CODE_REGEX) || [];
   return codeMatches.map((code) => code.replaceAll('-', ''));
 }
