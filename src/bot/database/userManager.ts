@@ -11,6 +11,15 @@ export interface UserCredentials {
   server?: string;
   instanceId?: string;
   autoRedeem?: boolean;
+  dmOnCode?: boolean;
+  dmOnSuccess?: boolean;
+  dmOnFailure?: boolean;
+}
+
+export interface NotificationPreferences {
+  dmOnCode: boolean;
+  dmOnSuccess: boolean;
+  dmOnFailure: boolean;
 }
 
 function decryptField(value: string): string {
@@ -25,6 +34,9 @@ function rowToCredentials(user: typeof users.$inferSelect): UserCredentials {
     server: user.server ?? undefined,
     instanceId: user.instanceId ?? undefined,
     autoRedeem: user.autoRedeem ?? true,
+    dmOnCode: user.dmOnCode ?? false,
+    dmOnSuccess: user.dmOnSuccess ?? true,
+    dmOnFailure: user.dmOnFailure ?? false,
   };
 }
 
@@ -96,6 +108,35 @@ class UserManager {
   async getAllUsersWithAutoRedeem(): Promise<UserCredentials[]> {
     const rows = db.select().from(users).where(eq(users.autoRedeem, true)).orderBy(sql`${users.createdAt} DESC`).all();
     return rows.map(rowToCredentials);
+  }
+
+  /**
+   * Returns only the Discord IDs of users who have opted into code-detection DMs.
+   */
+  async getDiscordIdsWithDmOnCode(): Promise<string[]> {
+    const rows = db.select({ discordId: users.discordId }).from(users).where(eq(users.dmOnCode, true)).all();
+    return rows.map((r) => r.discordId);
+  }
+
+  /**
+   * Update notification preferences for a user.
+   *
+   * Note: this is a silent no-op when `discordId` does not exist in the
+   * database. The `/notifications` command guards against this by requiring
+   * `getCredentials` to succeed first. Direct callers must do the same.
+   */
+  async setNotificationPreferences(discordId: string, prefs: Partial<NotificationPreferences>): Promise<boolean> {
+    const update: Partial<{ dmOnCode: boolean; dmOnSuccess: boolean; dmOnFailure: boolean }> = {};
+    if (prefs.dmOnCode !== undefined) update.dmOnCode = prefs.dmOnCode;
+    if (prefs.dmOnSuccess !== undefined) update.dmOnSuccess = prefs.dmOnSuccess;
+    if (prefs.dmOnFailure !== undefined) update.dmOnFailure = prefs.dmOnFailure;
+    if (Object.keys(update).length === 0) return false;
+    const rows = db.update(users)
+      .set({ ...update, updatedAt: sql`CURRENT_TIMESTAMP` })
+      .where(eq(users.discordId, discordId))
+      .returning({ discordId: users.discordId })
+      .all();
+    return rows.length > 0;
   }
 
   async getAllUsers(): Promise<UserCredentials[]> {

@@ -10,8 +10,9 @@ let discordClient: Client | null = null;
 /**
  * Provide the Discord client so auto-redeemer can send DM notifications.
  * Call this once from bot.ts after the client is created.
+ * Pass `null` to clear the client.
  */
-export function setDiscordClient(client: Client): void {
+export function setDiscordClient(client: Client | null): void {
   discordClient = client;
 }
 
@@ -30,6 +31,20 @@ export function enqueueAutoRedeem(codes: string[]): void {
   redeemQueue = redeemQueue
     .then(() => autoRedeemForAllUsers(codes))
     .catch((error) => { logger.error('[AUTO REDEEMER] Unhandled error during auto-redeem:', error); });
+}
+
+/**
+ * Fire-and-forget DM to notify a user that a code could not be redeemed.
+ * Called from the GenericResponse failure path, the unexpected-shape guard, and
+ * the codeStatus else-branch (non-success, non-already-redeemed, non-expired statuses).
+ * Infrastructure failures (no server, invalid instance_id, etc.) do not trigger this.
+ */
+function sendFailureDm(discordId: string, code: string, reason: string): void {
+  if (!discordClient) return;
+  discordClient.users
+    .fetch(discordId)
+    .then((user) => user.send(`❌ Code \`${code}\` could not be redeemed: ${reason}.`))
+    .catch(() => {});
 }
 
 function randomDelay(): Promise<void> {
@@ -160,12 +175,14 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
       logger.error(
         `[AUTO REDEEMER] submitCode returned GenericResponse status=${generic.status} for code ${code}, user ${discordId}`
       );
+      if (credentials.dmOnFailure) sendFailureDm(discordId, code, `Server Error (status ${generic.status})`);
       return;
     }
   }
 
   if (!(submitResponse instanceof Object && 'codeStatus' in submitResponse)) {
     logger.error(`[AUTO REDEEMER] Unexpected response for code ${code}, user ${discordId}`);
+    if (credentials.dmOnFailure) sendFailureDm(discordId, code, 'Unexpected API Response');
     return;
   }
 
@@ -206,7 +223,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
       shouldBePublic
     );
 
-    if (isSuccess && discordClient) {
+    if (isSuccess && discordClient && credentials.dmOnSuccess) {
       discordClient.users
         .fetch(discordId)
         .then((user) => user.send(`✅ Code \`${code}\` redeemed successfully!`))
@@ -222,6 +239,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
       autoPublic: shouldBePublic,
     });
   } else {
+    if (credentials.dmOnFailure) sendFailureDm(discordId, code, statusName);
     await auditManager.logAction(discordId, 'CODE_REDEEM_FAILED', {
       code,
       reason: statusName,

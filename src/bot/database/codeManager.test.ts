@@ -313,6 +313,24 @@ describe('pending codes', () => {
     await codeManager.clearPendingCodes(USER_A);
     expect(await codeManager.getPendingCodes()).toEqual(['PEND5678EFGH']);
   });
+
+  test('addNewPendingCodes returns only newly inserted codes', async () => {
+    const result = await codeManager.addNewPendingCodes(['CODE1111AAAA', 'CODE2222BBBB']);
+    expect(result).toContain('CODE1111AAAA');
+    expect(result).toContain('CODE2222BBBB');
+  });
+
+  test('addNewPendingCodes skips already-present codes', async () => {
+    await codeManager.addPendingCode('CODE1111AAAA');
+    const result = await codeManager.addNewPendingCodes(['CODE1111AAAA', 'CODE2222BBBB']);
+    expect(result).not.toContain('CODE1111AAAA');
+    expect(result).toContain('CODE2222BBBB');
+  });
+
+  test('addNewPendingCodes returns empty array for empty input', async () => {
+    const result = await codeManager.addNewPendingCodes([]);
+    expect(result).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -365,5 +383,64 @@ describe('deleteUserRedeemedCodes', () => {
     const remaining = db.select().from(redeemedCodes).all();
     expect(remaining).toHaveLength(1);
     expect(remaining[0]!.discordId).toBe(USER_B);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getRedeemedCodesByUsers
+// ---------------------------------------------------------------------------
+describe('getRedeemedCodesByUsers', () => {
+  test('returns empty map when codes list is empty', async () => {
+    const result = await codeManager.getRedeemedCodesByUsers([], [USER_A]);
+    expect(result.size).toBe(0);
+  });
+
+  test('returns empty map when discordIds list is empty', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    const result = await codeManager.getRedeemedCodesByUsers(['CODE1234ABCD'], []);
+    expect(result.size).toBe(0);
+  });
+
+  test('returns redeemed codes per user for Success status', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    const result = await codeManager.getRedeemedCodesByUsers(['CODE1234ABCD'], [USER_A, USER_B]);
+    expect(result.get(USER_A)?.has('CODE1234ABCD')).toBe(true);
+    expect(result.has(USER_B)).toBe(false);
+  });
+
+  test('includes Already Redeemed and Code Expired statuses', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Already Redeemed');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Code Expired');
+    const result = await codeManager.getRedeemedCodesByUsers(
+      ['CODE1111AAAA', 'CODE2222BBBB'],
+      [USER_A, USER_B]
+    );
+    expect(result.get(USER_A)?.has('CODE1111AAAA')).toBe(true);
+    expect(result.get(USER_B)?.has('CODE2222BBBB')).toBe(true);
+  });
+
+  test('excludes non-qualifying statuses like Invalid Parameters', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Invalid Parameters');
+    const result = await codeManager.getRedeemedCodesByUsers(['CODE1234ABCD'], [USER_A]);
+    expect(result.has(USER_A)).toBe(false);
+  });
+
+  test('only returns codes that are in the requested codes list', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Success');
+    const result = await codeManager.getRedeemedCodesByUsers(['CODE1111AAAA'], [USER_A]);
+    expect(result.get(USER_A)?.has('CODE1111AAAA')).toBe(true);
+    expect(result.get(USER_A)?.has('CODE2222BBBB')).toBe(false);
+  });
+
+  test('handles multiple codes per user correctly', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Already Redeemed');
+    const result = await codeManager.getRedeemedCodesByUsers(
+      ['CODE1111AAAA', 'CODE2222BBBB'],
+      [USER_A]
+    );
+    expect(result.get(USER_A)?.has('CODE1111AAAA')).toBe(true);
+    expect(result.get(USER_A)?.has('CODE2222BBBB')).toBe(true);
   });
 });
