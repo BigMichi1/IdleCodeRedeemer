@@ -300,3 +300,102 @@ describe('migratePlaintextCredentials', () => {
     expect(creds?.userHash).toBe('hash-a');
   });
 });
+
+// ---------------------------------------------------------------------------
+// notification preference defaults
+// ---------------------------------------------------------------------------
+describe('notification preference defaults', () => {
+  test('dmOnCode defaults to false after saveCredentials', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.dmOnCode).toBe(false);
+  });
+
+  test('dmOnSuccess defaults to true after saveCredentials', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.dmOnSuccess).toBe(true);
+  });
+
+  test('dmOnFailure defaults to false after saveCredentials', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.dmOnFailure).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setNotificationPreferences
+// ---------------------------------------------------------------------------
+describe('setNotificationPreferences', () => {
+  test('enables dmOnCode', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.setNotificationPreferences('user-1', { dmOnCode: true });
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.dmOnCode).toBe(true);
+  });
+
+  test('disables dmOnSuccess', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.setNotificationPreferences('user-1', { dmOnSuccess: false });
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.dmOnSuccess).toBe(false);
+  });
+
+  test('enables dmOnFailure', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.setNotificationPreferences('user-1', { dmOnFailure: true });
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.dmOnFailure).toBe(true);
+  });
+
+  test('updates multiple prefs at once', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.setNotificationPreferences('user-1', {
+      dmOnCode: true,
+      dmOnSuccess: false,
+      dmOnFailure: true,
+    });
+    const creds = await userManager.getCredentials('user-1');
+    expect(creds?.dmOnCode).toBe(true);
+    expect(creds?.dmOnSuccess).toBe(false);
+    expect(creds?.dmOnFailure).toBe(true);
+  });
+
+  test('does not affect unspecified prefs', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.setNotificationPreferences('user-1', { dmOnCode: true });
+    const creds = await userManager.getCredentials('user-1');
+    // dmOnSuccess and dmOnFailure must remain at their defaults
+    expect(creds?.dmOnSuccess).toBe(true);
+    expect(creds?.dmOnFailure).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getDiscordIdsWithDmOnCode
+// ---------------------------------------------------------------------------
+describe('getDiscordIdsWithDmOnCode', () => {
+  test('returns empty array when no users exist', async () => {
+    expect(await userManager.getDiscordIdsWithDmOnCode()).toEqual([]);
+  });
+
+  test('returns only discord IDs of users with dmOnCode enabled', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.saveCredentials({ discordId: 'user-2', userId: '222', userHash: 'hash-b' });
+    await userManager.saveCredentials({ discordId: 'user-3', userId: '333', userHash: 'hash-c' });
+    await userManager.setNotificationPreferences('user-1', { dmOnCode: true });
+    await userManager.setNotificationPreferences('user-3', { dmOnCode: true });
+
+    const ids = await userManager.getDiscordIdsWithDmOnCode();
+    expect(ids).toHaveLength(2);
+    expect(ids).toContain('user-1');
+    expect(ids).toContain('user-3');
+    expect(ids).not.toContain('user-2');
+  });
+
+  test('returns empty when no users have dmOnCode enabled', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    expect(await userManager.getDiscordIdsWithDmOnCode()).toEqual([]);
+  });
+});

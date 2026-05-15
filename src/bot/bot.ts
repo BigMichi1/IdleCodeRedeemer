@@ -18,6 +18,7 @@ import * as autoredeemCommand from './commands/autoredeem';
 import * as helpCommand from './commands/help';
 import * as inventoryCommand from './commands/inventory';
 import * as makepublicCommand from './commands/makepublic';
+import * as notificationsCommand from './commands/notifications';
 import * as openCommand from './commands/open';
 import * as redeemCommand from './commands/redeem';
 import * as setupCommand from './commands/setup';
@@ -59,6 +60,7 @@ const commands = [
   helpCommand,
   inventoryCommand,
   makepublicCommand,
+  notificationsCommand,
   openCommand,
   redeemCommand,
   setupCommand,
@@ -195,10 +197,47 @@ client.on(Events.MessageCreate, async (message) => {
       // Deduplicate in case the same code appears multiple times in one message.
       const uniqueCodes = [...new Set(foundCodes)];
 
-      // Persist all found codes to pending_codes immediately so /catchup can
-      // recover them if auto-redeem has no enabled users or the API fails.
-      for (const code of uniqueCodes) {
-        await codeManager.addPendingCode(code);
+      // Persist all found codes to pending_codes in a single batch INSERT.
+      // onConflictDoNothing gives at-most-once insert semantics and eliminates
+      // the TOCTOU race of a pre-read snapshot under concurrent MessageCreate events.
+      // Only newly inserted codes trigger DM notifications.
+      const newCodes = await codeManager.addNewPendingCodes(uniqueCodes);
+
+      // DM users who opted in for code-detection notifications (independent of autoredeem).
+      // A single bulk query resolves per-recipient redeemed status, then a short delay
+      // between sends avoids bursting Discord DM rate limits. The message author is
+      // excluded since they can already see the code in the channel.
+      // Note: users who have both dmOnCode and dmOnSuccess enabled will receive two
+      // DMs per code — one here and one from autoRedeemer on successful redemption.
+      if (newCodes.length > 0) {
+        const dmIds = await userManager.getDiscordIdsWithDmOnCode();
+        const recipientIds = dmIds.filter((id) => id !== message.author.id);
+        if (recipientIds.length > 0) {
+          void (async () => {
+            try {
+              const redeemedMap = await codeManager.getRedeemedCodesByUsers(newCodes, recipientIds);
+              for (let i = 0; i < recipientIds.length; i++) {
+                const id = recipientIds[i]!;
+                try {
+                  const alreadyRedeemed = redeemedMap.get(id) ?? new Set<string>();
+                  const unredeemedCodes = newCodes.filter((c) => !alreadyRedeemed.has(c));
+                  if (unredeemedCodes.length === 0) continue;
+                  const codeList = unredeemedCodes.map((c) => `\`${c}\``).join(', ');
+                  const label = `New code${unredeemedCodes.length > 1 ? 's' : ''} detected: ${codeList}`;
+                  const u = await client.users.fetch(id);
+                  await u.send(`🔔 ${label}`);
+                } catch { /* DM delivery failure is non-critical */ }
+                finally {
+                  if (i < recipientIds.length - 1) {
+                    await new Promise<void>((resolve) => setTimeout(resolve, 500));
+                  }
+                }
+              }
+            } catch (err) {
+              logger.error('Unexpected error in code-detection DM fan-out:', err);
+            }
+          })();
+        }
       }
 
       // Enqueue auto-redeem — serialized so overlapping MessageCreate events

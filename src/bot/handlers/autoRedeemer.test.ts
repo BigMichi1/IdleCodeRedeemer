@@ -1,10 +1,10 @@
-import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from 'bun:test';
+import { describe, test, expect, beforeAll, beforeEach, afterEach, afterAll, spyOn } from 'bun:test';
 import { db, initializeDatabase } from '../database/db';
 import { users, redeemedCodes, pendingCodes, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
-import { autoRedeemForAllUsers } from './autoRedeemer';
+import { autoRedeemForAllUsers, setDiscordClient } from './autoRedeemer';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -351,5 +351,86 @@ describe('autoRedeemForAllUsers – getUserDetails SwitchServer', () => {
     expect(await codeManager.isCodeRedeemedByUser(CODE, USER_A)).toBe(true);
     const creds = await userManager.getCredentials(USER_A);
     expect(creds?.server).toBe(newServer);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DM notifications
+// ---------------------------------------------------------------------------
+
+/** Build a minimal mock Discord client with a tracked send spy. */
+function makeMockClient() {
+  const sendSpy = spyOn({ send: async (_msg: string) => {} }, 'send');
+  const mockUser = { send: sendSpy };
+  const mockClient = {
+    users: {
+      fetch: async (_id: string) => mockUser,
+    },
+  } as any;
+  return { mockClient, sendSpy };
+}
+
+describe('autoRedeemForAllUsers – dmOnSuccess', () => {
+  afterEach(() => { setDiscordClient(null); });
+
+  test('sends DM on success when dmOnSuccess is true (default)', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await codeManager.addPendingCode(CODE);
+    submitCodeSpy.mockResolvedValue(makeSubmitResponse(0) as any);
+
+    await autoRedeemForAllUsers([CODE]);
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy.mock.calls[0]![0]).toContain(CODE);
+  });
+
+  test('does not send DM on success when dmOnSuccess is false', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnSuccess: false });
+    await codeManager.addPendingCode(CODE);
+    submitCodeSpy.mockResolvedValue(makeSubmitResponse(0) as any);
+
+    await autoRedeemForAllUsers([CODE]);
+
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('autoRedeemForAllUsers – dmOnFailure', () => {
+  afterEach(() => { setDiscordClient(null); });
+
+  test('sends failure DM when dmOnFailure is true', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+    await codeManager.addPendingCode(CODE);
+    // codeStatus 2 = InvalidParameters — not persisted, triggers failure branch
+    submitCodeSpy.mockResolvedValue(makeSubmitResponse(2) as any);
+
+    await autoRedeemForAllUsers([CODE]);
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy.mock.calls[0]![0]).toContain(CODE);
+  });
+
+  test('does not send failure DM when dmOnFailure is false (default)', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await codeManager.addPendingCode(CODE);
+    submitCodeSpy.mockResolvedValue(makeSubmitResponse(2) as any);
+
+    await autoRedeemForAllUsers([CODE]);
+
+    expect(sendSpy).not.toHaveBeenCalled();
   });
 });

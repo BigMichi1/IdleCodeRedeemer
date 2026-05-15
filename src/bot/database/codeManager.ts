@@ -1,4 +1,4 @@
-import { eq, ne, and, or, isNull, gt, sql, max } from 'drizzle-orm';
+import { eq, ne, and, or, isNull, gt, sql, max, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { redeemedCodes, pendingCodes } from './schema/index';
 
@@ -72,6 +72,51 @@ class CodeManager {
       .where(and(eq(redeemedCodes.code, code), or(eq(redeemedCodes.status, 'Success'), eq(redeemedCodes.status, 'Code Expired'))))
       .get();
     return result !== undefined;
+  }
+
+  /**
+   * Batch variant of isCodeRedeemedByUser. Returns a map of discordId → set of codes
+   * that user has already redeemed (Success / Already Redeemed / Code Expired).
+   * Chunks discordIds to stay within SQLite's SQLITE_LIMIT_VARIABLE_NUMBER (default 999).
+   */
+  async getRedeemedCodesByUsers(codes: string[], discordIds: string[]): Promise<Map<string, Set<string>>> {
+    if (codes.length === 0 || discordIds.length === 0) return new Map();
+    // Budget per query: codes.length (inArray) + 3 (status OR literals) + chunk size (discordIds inArray).
+    const SQLITE_MAX_PARAMS = 999;
+    const STATUS_PARAM_COUNT = 3;
+    const MIN_DISCORD_ID_CHUNK_SIZE = 1;
+    const maxCodesPerQuery = SQLITE_MAX_PARAMS - STATUS_PARAM_COUNT - MIN_DISCORD_ID_CHUNK_SIZE;
+    if (codes.length > maxCodesPerQuery) {
+      throw new Error(
+        `Too many codes provided to getRedeemedCodesByUsers: ${codes.length}. ` +
+          `This query supports at most ${maxCodesPerQuery} codes per call within SQLite's parameter limit of ${SQLITE_MAX_PARAMS}.`
+      );
+    }
+    const chunkSize = SQLITE_MAX_PARAMS - codes.length - STATUS_PARAM_COUNT;
+    const result = new Map<string, Set<string>>();
+    for (let i = 0; i < discordIds.length; i += chunkSize) {
+      const chunk = discordIds.slice(i, i + chunkSize);
+      const rows = db
+        .select({ code: redeemedCodes.code, discordId: redeemedCodes.discordId })
+        .from(redeemedCodes)
+        .where(
+          and(
+            inArray(redeemedCodes.code, codes),
+            inArray(redeemedCodes.discordId, chunk),
+            or(
+              eq(redeemedCodes.status, 'Success'),
+              eq(redeemedCodes.status, 'Already Redeemed'),
+              eq(redeemedCodes.status, 'Code Expired')
+            )
+          )
+        )
+        .all();
+      for (const row of rows) {
+        if (!result.has(row.discordId)) result.set(row.discordId, new Set());
+        result.get(row.discordId)!.add(row.code);
+      }
+    }
+    return result;
   }
 
   async isCodeRedeemedByUser(code: string, discordId: string): Promise<boolean> {
@@ -211,8 +256,24 @@ class CodeManager {
     db.update(redeemedCodes).set({ isPublic: 0 }).where(eq(redeemedCodes.code, code)).run();
   }
 
-  async addPendingCode(code: string, discordId?: string): Promise<void> {
-    db.insert(pendingCodes).values({ code, discordId: discordId ?? null }).onConflictDoNothing().run();
+  async addPendingCode(code: string, discordId?: string): Promise<boolean> {
+    const rows = db.insert(pendingCodes).values({ code, discordId: discordId ?? null }).onConflictDoNothing().returning({ code: pendingCodes.code }).all();
+    return rows.length > 0;
+  }
+
+  /**
+   * Batch-insert multiple codes into pending_codes in a single query.
+   * Returns only the codes that were newly inserted (already-present codes are skipped via onConflictDoNothing).
+   */
+  async addNewPendingCodes(codes: string[]): Promise<string[]> {
+    if (codes.length === 0) return [];
+    const rows = db
+      .insert(pendingCodes)
+      .values(codes.map((code) => ({ code, discordId: null })))
+      .onConflictDoNothing()
+      .returning({ code: pendingCodes.code })
+      .all();
+    return rows.map((r) => r.code);
   }
 
   async getPendingCodes(discordId?: string): Promise<string[]> {

@@ -66,6 +66,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           inline: false,
         },
         {
+          name: '🔔 Notifications',
+          value:
+            '`/notifications [dm_on_code:<true|false>] [dm_on_success:<true|false>] [dm_on_failure:<true|false>]`\nConfigure DM notifications: get alerted when codes are detected, redeemed, or fail.',
+          inline: false,
+        },
+        {
           name: '⏮️ Backfill',
           value: '`/backfill [channel:<channel>]`\nRecover missed codes from message history (admin only).',
           inline: false,
