@@ -109,6 +109,21 @@ class BackfillManager {
     return row !== undefined;
   }
 
+  async hasUserActiveBackfill(discordId: string): Promise<boolean> {
+    const row = db
+      .select({ id: backfillOperations.id })
+      .from(backfillOperations)
+      .where(
+        and(
+          eq(backfillOperations.initiatedBy, discordId),
+          eq(backfillOperations.status, 'in_progress')
+        )
+      )
+      .limit(1)
+      .get();
+    return row !== undefined;
+  }
+
   async deleteUserBackfillOperations(discordId: string): Promise<number> {
     const rows = db
       .select({ id: backfillOperations.id })

@@ -109,6 +109,24 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
+    // Refuse deletion if the user has an active backfill — completing it would
+    // try to write to rows that no longer exist after account deletion.
+    if (await backfillManager.hasUserActiveBackfill(interaction.user.id)) {
+      await interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xffaa00)
+            .setTitle('⚠️ Backfill In Progress')
+            .setDescription(
+              'A backfill operation you initiated is currently running. ' +
+                'Please wait for it to complete before deleting your account.'
+            ),
+        ],
+        components: [],
+      });
+      return;
+    }
+
     // Perform deletion — order matters for FK constraints:
     // pending_codes.discord_id → users.discord_id (no cascade), so clear it first
     await codeManager.clearPendingCodes(interaction.user.id);

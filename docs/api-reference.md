@@ -720,21 +720,24 @@ Permanently delete all data the bot holds about the invoking user.
 **Parameters**: None
 
 **Flow**:
-1. Bot checks whether credentials exist for the user. If none are found, responds with a warning and exits.
-2. Bot sends an ephemeral embed with Yes / Cancel buttons (30-second timeout).
-3. If the user clicks **Yes, delete everything**: credentials, all redeemed code records, and audit log entries are permanently removed. A summary is shown.
-4. If the user clicks **Cancel** or the timeout elapses: no data is changed.
+1. Bot checks whether credentials or backfill history exist for the user. If none are found, responds with a warning and exits.
+2. Bot checks whether a backfill the user initiated is currently in progress; if so, refuses deletion until it completes.
+3. Bot sends an ephemeral embed with Yes / Cancel buttons (30-second timeout).
+4. If the user clicks **Yes, delete everything**: credentials, all redeemed code records, audit log entries, and backfill operation history are permanently removed. A summary is shown.
+5. If the user clicks **Cancel** or the timeout elapses: no data is changed.
 
 **Data removed on confirmation**:
 - `users` row (credentials, server, autoredeem preference)
 - All `redeemed_codes` rows for the user
 - All `audit_log` rows for the user
+- All `backfill_operations` rows for the user
 
 **Error Codes**:
 
 | Code | Meaning | Resolution |
 |------|---------|------------|
-| `NO_ACCOUNT` | No credentials stored for this user | Nothing to delete |
+| `NO_ACCOUNT` | No credentials or backfill history stored for this user | Nothing to delete |
+| `BACKFILL_IN_PROGRESS` | A backfill the user initiated is still running | Wait for the backfill to complete, then retry |
 
 **Example**:
 ```

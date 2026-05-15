@@ -215,6 +215,7 @@ Permanently and irreversibly delete all data the bot holds about you. Requires a
   - Your Idle Champions credentials (user ID + hash)
   - Your full code redemption history
   - Your audit log entries
+  - Your backfill operation history
 - **Confirmation:** A Yes / Cancel button prompt appears with a 30-second timeout — no action is taken unless you click **Yes, delete everything**
 - **After deletion:** You will need to run `/setup` again to use the bot
 - **Example:** `/deleteaccount`
