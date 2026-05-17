@@ -13,7 +13,7 @@ export default [
       '**/*.js',
       'bun.lock',
       'package-lock.json',
-      'src/lib/**',
+      'src/bot/api/types/**',
     ],
   },
   {

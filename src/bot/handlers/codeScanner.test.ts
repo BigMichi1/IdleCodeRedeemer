@@ -1,5 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { extractCodesFromText } from './codeScanner';
+import { describe, test, expect, beforeAll, beforeEach } from 'bun:test';
+import { extractCodesFromText, scanMessageForCodes } from './codeScanner';
+import { db, initializeDatabase } from '../database/db';
+import { redeemedCodes, pendingCodes, users } from '../database/schema/index';
+import { codeManager } from '../database/codeManager';
+import type { Message } from 'discord.js';
 
 describe('extractCodesFromText', () => {
   describe('12-character codes', () => {
@@ -80,6 +84,64 @@ describe('extractCodesFromText', () => {
     test('strings shorter than 12 characters are not matched', () => {
       expect(extractCodesFromText('ABCD1234')).toEqual([]);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// scanMessageForCodes — integration tests (uses DB)
+// ---------------------------------------------------------------------------
+
+const USER = 'discord-scanner-user';
+
+/** Build a minimal Discord Message-like object with just a content string. */
+function fakeMessage(content: string): Message {
+  return { content } as unknown as Message;
+}
+
+beforeAll(() => {
+  initializeDatabase();
+});
+
+beforeEach(() => {
+  db.delete(pendingCodes).run();
+  db.delete(redeemedCodes).run();
+  db.delete(users).run();
+});
+
+describe('scanMessageForCodes', () => {
+  test('returns new codes not yet in the database', async () => {
+    const codes = await scanMessageForCodes(fakeMessage('ABCD1234EFGH'));
+    expect(codes).toEqual(['ABCD1234EFGH']);
+  });
+
+  test('returns empty array when the code is already redeemed', async () => {
+    db.insert(users).values({ discordId: USER, userId: '111', userHash: 'hash' }).run();
+    await codeManager.addRedeemedCode('ABCD1234EFGH', USER, 'Success');
+    const codes = await scanMessageForCodes(fakeMessage('ABCD1234EFGH'));
+    expect(codes).toEqual([]);
+  });
+
+  test('returns empty array for a message with no codes', async () => {
+    const codes = await scanMessageForCodes(fakeMessage('Hello world!'));
+    expect(codes).toEqual([]);
+  });
+
+  test('returns multiple new codes from one message', async () => {
+    const codes = await scanMessageForCodes(fakeMessage('Code 1: ABCD1234EFGH Code 2: WXYZ5678IJKL'));
+    expect(codes).toHaveLength(2);
+    expect(codes).toContain('ABCD1234EFGH');
+    expect(codes).toContain('WXYZ5678IJKL');
+  });
+
+  test('filters out already-redeemed codes while returning new ones', async () => {
+    db.insert(users).values({ discordId: USER, userId: '111', userHash: 'hash' }).run();
+    await codeManager.addRedeemedCode('ABCD1234EFGH', USER, 'Success');
+    const codes = await scanMessageForCodes(fakeMessage('ABCD1234EFGH WXYZ5678IJKL'));
+    expect(codes).toEqual(['WXYZ5678IJKL']);
+  });
+
+  test('returns empty array on empty message', async () => {
+    expect(await scanMessageForCodes(fakeMessage(''))).toEqual([]);
   });
 });
 

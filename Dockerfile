@@ -37,7 +37,6 @@ RUN bin/mise run install
 # Copy TypeScript source files
 COPY tsconfig.bot.json ./
 COPY src/bot ./src/bot
-COPY src/lib ./src/lib
 
 # Build the production bundle
 RUN bin/mise run prod:build
