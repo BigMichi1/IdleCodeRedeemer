@@ -194,6 +194,12 @@ client.on(Events.MessageCreate, async (message) => {
     if (foundCodes.length > 0) {
       logger.info(`Found ${foundCodes.length} codes in message from ${message.author.tag}`);
 
+      // React to the message to signal the bot detected a code (fire-and-forget
+      // so API latency / rate-limiting does not delay the redemption path).
+      message.react('🎁').catch((err) => {
+        logger.warn('Could not react to message (missing permissions?):', err);
+      });
+
       // Deduplicate in case the same code appears multiple times in one message.
       const uniqueCodes = [...new Set(foundCodes)];
 
