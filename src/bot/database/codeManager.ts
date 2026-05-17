@@ -149,13 +149,23 @@ class CodeManager {
     return results.map((r) => r.code);
   }
 
-  async getRedeemedCodeDetails(discordId: string, limit: number = 10): Promise<RedeemedCodeRow[]> {
+  async getRedeemedCodeCount(discordId: string): Promise<number> {
+    const result = db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.discordId, discordId))
+      .get();
+    return result?.count ?? 0;
+  }
+
+  async getRedeemedCodeDetails(discordId: string, limit: number = 10, offset: number = 0): Promise<RedeemedCodeRow[]> {
     return db
       .select()
       .from(redeemedCodes)
       .where(eq(redeemedCodes.discordId, discordId))
       .orderBy(sql`${redeemedCodes.redeemedAt} DESC`)
       .limit(limit)
+      .offset(offset)
       .all();
   }
 
