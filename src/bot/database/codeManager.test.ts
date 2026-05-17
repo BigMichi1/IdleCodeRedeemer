@@ -504,3 +504,86 @@ describe('getRedeemedCodesByUsers', () => {
     expect(result.get(USER_A)?.has('CODE2222BBBB')).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// getRedeemedCodes (code-only list, up to 100)
+// ---------------------------------------------------------------------------
+describe('getRedeemedCodes', () => {
+  test('returns empty array when user has no codes', async () => {
+    expect(await codeManager.getRedeemedCodes(USER_A)).toEqual([]);
+  });
+
+  test('returns codes for the specified user', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Code Expired');
+    const codes = await codeManager.getRedeemedCodes(USER_A);
+    expect(codes).toHaveLength(2);
+    expect(codes).toContain('CODE1111AAAA');
+    expect(codes).toContain('CODE2222BBBB');
+  });
+
+  test('does not return codes belonging to another user', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Success');
+    expect(await codeManager.getRedeemedCodes(USER_A)).toEqual(['CODE1111AAAA']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSuccessfulRedeemCount
+// ---------------------------------------------------------------------------
+describe('getSuccessfulRedeemCount', () => {
+  test('returns 0 when no one has redeemed the code', async () => {
+    expect(await codeManager.getSuccessfulRedeemCount('UNKNOWN1ABCD')).toBe(0);
+  });
+
+  test('returns 1 when one user has a Success row', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    expect(await codeManager.getSuccessfulRedeemCount('CODE1234ABCD')).toBe(1);
+  });
+
+  test('returns 2 when two users have Success rows for the same code', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_B, 'Success');
+    expect(await codeManager.getSuccessfulRedeemCount('CODE1234ABCD')).toBe(2);
+  });
+
+  test('does not count Code Expired rows', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Code Expired');
+    expect(await codeManager.getSuccessfulRedeemCount('CODE1234ABCD')).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getPublicUnexpiredCodes
+// ---------------------------------------------------------------------------
+describe('getPublicUnexpiredCodes', () => {
+  test('returns empty array when no public codes exist', async () => {
+    expect(await codeManager.getPublicUnexpiredCodes()).toEqual([]);
+  });
+
+  test('returns public Success codes', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', undefined, true);
+    const rows = await codeManager.getPublicUnexpiredCodes();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.code).toBe('CODE1234ABCD');
+  });
+
+  test('does not return private codes', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', undefined, false);
+    expect(await codeManager.getPublicUnexpiredCodes()).toEqual([]);
+  });
+
+  test('does not return expired public codes', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', undefined, true);
+    await codeManager.markCodeAsExpired('CODE1234ABCD');
+    expect(await codeManager.getPublicUnexpiredCodes()).toEqual([]);
+  });
+
+  test('returns multiple public unexpired codes', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', undefined, true);
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Success', undefined, true);
+    const rows = await codeManager.getPublicUnexpiredCodes();
+    expect(rows).toHaveLength(2);
+  });
+});

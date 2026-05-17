@@ -1,7 +1,7 @@
-/// <reference path="../../lib/player_data.d.ts" />
-/// <reference path="../../lib/redeem_code_response.d.ts" />
-/// <reference path="../../lib/server_definitions.d.ts" />
-/// <reference path="../../lib/blacksmith_response.d.ts" />
+/// <reference path="./types/player_data.d.ts" />
+/// <reference path="./types/redeem_code_response.d.ts" />
+/// <reference path="./types/server_definitions.d.ts" />
+/// <reference path="./types/blacksmith_response.d.ts" />
 
 import logger from '../utils/logger';
 import { apiRequestLogger } from '../utils/apiRequestLogger';
