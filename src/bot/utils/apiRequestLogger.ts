@@ -44,6 +44,9 @@ class ApiRequestLogger {
     response: { status: number; ok: boolean; body?: any; error?: string }
   ): void {
     try {
+      if (!fs.existsSync(API_LOGS_DIR)) {
+        fs.mkdirSync(API_LOGS_DIR, { recursive: true });
+      }
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const userPart = userId ? userId.substring(0, 8) : 'system';
       const filename = `${userPart}_${action}_${timestamp}.json`;
