@@ -345,6 +345,66 @@ describe('getRedeemedCodeDetails', () => {
     expect(details).toHaveLength(2);
     expect(details.every((r) => r.discordId === USER_A)).toBe(true);
   });
+
+  test('respects the limit parameter', async () => {
+    for (let i = 1; i <= 7; i++) {
+      await codeManager.addRedeemedCode(`CODE${String(i).padStart(4, '0')}ZZZZ`, USER_A, 'Success');
+    }
+    const details = await codeManager.getRedeemedCodeDetails(USER_A, 3);
+    expect(details).toHaveLength(3);
+  });
+
+  test('respects the offset parameter for page 2', async () => {
+    // Insert 7 codes — SQLite preserves insertion order for equal timestamps,
+    // but we want deterministic ordering so we verify via set membership.
+    const allCodes = ['AAAAAAAAAAAA', 'BBBBBBBBBBBB', 'CCCCCCCCCCCC', 'DDDDDDDDDDDD', 'EEEEEEEEEEEE', 'FFFFFFFFFFFF', 'GGGGGGGGGGGG'];
+    for (const code of allCodes) {
+      await codeManager.addRedeemedCode(code, USER_A, 'Success');
+    }
+    const page1 = await codeManager.getRedeemedCodeDetails(USER_A, 5, 0);
+    const page2 = await codeManager.getRedeemedCodeDetails(USER_A, 5, 5);
+    expect(page1).toHaveLength(5);
+    expect(page2).toHaveLength(2);
+    // Pages must not overlap
+    const page1Codes = new Set(page1.map((r) => r.code));
+    for (const row of page2) {
+      expect(page1Codes.has(row.code)).toBe(false);
+    }
+  });
+
+  test('returns empty array when offset exceeds total', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    const details = await codeManager.getRedeemedCodeDetails(USER_A, 5, 100);
+    expect(details).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getRedeemedCodeCount
+// ---------------------------------------------------------------------------
+describe('getRedeemedCodeCount', () => {
+  test('returns 0 when user has no codes', async () => {
+    expect(await codeManager.getRedeemedCodeCount(USER_A)).toBe(0);
+  });
+
+  test('returns correct count for a single user', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Code Expired');
+    expect(await codeManager.getRedeemedCodeCount(USER_A)).toBe(2);
+  });
+
+  test('does not count codes belonging to another user', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Success');
+    expect(await codeManager.getRedeemedCodeCount(USER_A)).toBe(1);
+  });
+
+  test('counts all statuses (Success, Code Expired, etc.)', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Code Expired');
+    await codeManager.addRedeemedCode('CODE3333CCCC', USER_A, 'Already Redeemed');
+    expect(await codeManager.getRedeemedCodeCount(USER_A)).toBe(3);
+  });
 });
 
 // ---------------------------------------------------------------------------

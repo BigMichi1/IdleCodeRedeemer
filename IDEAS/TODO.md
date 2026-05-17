@@ -25,7 +25,7 @@ Priority is rated from an end-user perspective:
 - ✅ **DM notifications for new codes** *(implemented)* — Opt-in per user to get a DM when a code is *detected*, independent of whether autoredeem is on. Users who want to redeem manually currently have no way to know a code appeared.
 - ✅ **Notification preferences command** *(implemented)* — Let users configure: DM on success, DM on failure, DM when a code they haven't claimed is about to expire. High value as DM spam is a common complaint with bots.
 - 🔴 **Better blacksmith UX** — `/blacksmith` requires a raw hero ID. Inventory data from `getUserDetails` includes hero names — show a hero picker or list. Current UX is nearly unusable without looking up IDs externally.
-- 🟢 **Paginated `/codes`** — Replace the `count` cap (currently max 20) with Discord prev/next buttons for a cleaner experience.
+- ✅ **Paginated `/codes`** *(implemented)* — Replace the `count` cap (currently max 20) with Discord prev/next buttons for a cleaner experience.
 
 ---
 

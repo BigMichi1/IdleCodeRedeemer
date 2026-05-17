@@ -14,6 +14,7 @@ import * as blacksmithCommand from './commands/blacksmith';
 import * as deleteaccountCommand from './commands/deleteaccount';
 import * as catchupCommand from './commands/catchup';
 import * as codesCommand from './commands/codes';
+import { buildCodesPage } from './commands/codes';
 import * as autoredeemCommand from './commands/autoredeem';
 import * as helpCommand from './commands/help';
 import * as inventoryCommand from './commands/inventory';
@@ -176,6 +177,39 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await interaction.reply({
         content: '❌ There was an error while executing this command!',
         flags: MessageFlags.Ephemeral,
+      });
+    }
+  }
+});
+
+// Event: Button interactions (e.g. /codes pagination)
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  if (interaction.customId.startsWith('codes:')) {
+    const parts = interaction.customId.split(':');
+    const ownerId = parts[1];
+    const page = parseInt(parts[2] ?? '0', 10);
+
+    // Only the user who ran /codes can page through their results
+    if (interaction.user.id !== ownerId) {
+      await interaction.reply({
+        content: '❌ These buttons are not for you.',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    try {
+      await interaction.deferUpdate();
+      const { embeds, components } = await buildCodesPage(ownerId, page);
+      await interaction.editReply({ embeds, components });
+    } catch (error) {
+      logger.error('[CODES] Button pagination error:', error);
+      await interaction.editReply({
+        content: '❌ Failed to load page.',
+        embeds: [],
+        components: [],
       });
     }
   }
