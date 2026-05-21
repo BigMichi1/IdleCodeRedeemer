@@ -84,6 +84,11 @@ class UserManager {
     return user !== undefined;
   }
 
+  async getUserCount(): Promise<number> {
+    const result = db.select({ count: sql<number>`COUNT(*)` }).from(users).get();
+    return result?.count ?? 0;
+  }
+
   async updateServer(discordId: string, server: string): Promise<void> {
     db.update(users)
       .set({ server, updatedAt: sql`CURRENT_TIMESTAMP` })

@@ -81,6 +81,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           value:
             '`/deleteaccount`\nPermanently delete all your stored data (credentials, code history, audit log). Requires confirmation.',
           inline: false,
+        },
+        {
+          name: '📊 Server Stats',
+          value: '`/stats`\nShow server-wide statistics: unique codes successfully redeemed, total redemptions across all users, registered users, and aggregate loot earned.',
+          inline: false,
         }
       )
       .addFields(

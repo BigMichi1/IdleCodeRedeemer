@@ -11,8 +11,8 @@ Priority is rated from an end-user perspective:
 
 ## Code & Redemption
 
-- 🟡 **`/stats` command** — Server-wide stats: total codes found, redemption counts, registered user count, aggregate loot earned. Data already exists in DB.
-- 🟡 **Loot summary in `/codes`** — Show aggregate totals (gold, rubies, equipment) across all redeemed codes. `loot_detail` JSON is already stored per row.
+- ✅ **`/stats` command** *(implemented)* — Server-wide stats: total codes found, redemption counts, registered user count, aggregate loot earned. Data already exists in DB.
+- ✅ **Loot summary in `/codes`** *(implemented)* — Show aggregate totals (gold, rubies, equipment) across all redeemed codes. `loot_detail` JSON is already stored per row.
 - 🟢 **Code source tracking** — Store which channel/message ID a code was found in. Useful for auditing and showing users where codes originated.
 - 🔴 **Multi-channel scanning** — `DISCORD_CHANNEL_ID` is a single channel. Support a comma-separated list or a `/setchannels` admin command. If codes get posted in other channels, users miss them entirely.
 - 🟢 **Auto-purge expired pending codes** — Pending codes that fail globally should be cleaned up automatically; right now they stay in `pending_codes` forever.

@@ -7,7 +7,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from 'discord.js';
-import { codeManager } from '../database/codeManager';
+import { codeManager, CHEST_TYPE_NAMES, type LootSummary } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 
 export const PAGE_SIZE = 5;
@@ -15,6 +15,8 @@ export const PAGE_SIZE = 5;
 export const data = new SlashCommandBuilder()
   .setName('codes')
   .setDescription('Show your redeemed codes history');
+
+const DISCORD_FIELD_MAX = 1024;
 
 export async function buildCodesPage(
   discordId: string,
@@ -33,7 +35,11 @@ export async function buildCodesPage(
     return { embeds: [embed], components: [] };
   }
 
-  const redeemedCodes = await codeManager.getRedeemedCodeDetails(discordId, PAGE_SIZE, offset);
+  // Fetch page data; aggregate loot only on page 0 to avoid repeated O(N) full-table scans during pagination
+  const [redeemedCodes, lootSummary] = await Promise.all([
+    codeManager.getRedeemedCodeDetails(discordId, PAGE_SIZE, offset),
+    safePage === 0 ? codeManager.getAggregateLoot(discordId) : Promise.resolve<LootSummary>({ chests: {}, items: {} }),
+  ]);
 
   const embed = new EmbedBuilder()
     .setColor(0x0099ff)
@@ -67,13 +73,24 @@ export async function buildCodesPage(
     if (codeRow.lootDetail) {
       try {
         const loot = JSON.parse(codeRow.lootDetail);
-        if (loot && typeof loot === 'object') {
-          const lootParts = [];
-          if (loot.gold) lootParts.push(`Gold: ${loot.gold}`);
-          if (loot.rubies) lootParts.push(`Rubies: ${loot.rubies}`);
-          if (loot.equipment) lootParts.push(`Equipment: ${loot.equipment}`);
+        if (Array.isArray(loot) && loot.length > 0) {
+          const lootParts = loot
+            .map((item: any) => {
+              const countVal = Number(item.count);
+              if (!Number.isFinite(countVal) || countVal <= 0) return null;
+              if (item.chest_type_id !== undefined) {
+                const name = CHEST_TYPE_NAMES[item.chest_type_id as number] ?? `Chest ${item.chest_type_id}`;
+                return `${name}: +${countVal}`;
+              } else if (item.loot_item) {
+                return `${(item.loot_item as string).replace(/_/g, ' ')}: x${countVal}`;
+              }
+              return null;
+            })
+            .filter(Boolean);
           if (lootParts.length > 0) {
-            fieldValue += `**Rewards:** ${lootParts.join(', ')}\n`;
+            const rewardsStr = `**Rewards:** ${lootParts.join(', ')}`;
+            const remaining = DISCORD_FIELD_MAX - fieldValue.length - 1;
+            fieldValue += remaining > 0 ? rewardsStr.substring(0, remaining) + '\n' : '';
           }
         }
       } catch {
@@ -87,6 +104,33 @@ export async function buildCodesPage(
       inline: false,
     });
   });
+
+  if (safePage === 0) {
+    const lootParts: string[] = [];
+    for (const [name, count] of Object.entries(lootSummary.chests)) {
+      if (count > 0) lootParts.push(`${name}: ${count.toLocaleString()}`);
+    }
+    for (const [name, count] of Object.entries(lootSummary.items)) {
+      if (count > 0) lootParts.push(`${name}: ${count.toLocaleString()}`);
+    }
+    if (lootParts.length > 0) {
+      let value = lootParts.join(' · ');
+      if (value.length > DISCORD_FIELD_MAX) {
+        let truncated = '';
+        for (const part of lootParts) {
+          const next = truncated ? `${truncated} · ${part}` : part;
+          if (next.length > DISCORD_FIELD_MAX - 4) break;
+          truncated = next;
+        }
+        value = `${truncated} …`;
+      }
+      embed.addFields({
+        name: '📦 Total Loot Earned (All Codes)',
+        value,
+        inline: false,
+      });
+    }
+  }
 
   const prevButton = new ButtonBuilder()
     .setCustomId(`codes:${discordId}:${safePage - 1}`)

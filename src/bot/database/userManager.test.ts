@@ -399,3 +399,36 @@ describe('getDiscordIdsWithDmOnCode', () => {
     expect(await userManager.getDiscordIdsWithDmOnCode()).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// getUserCount
+// ---------------------------------------------------------------------------
+describe('getUserCount', () => {
+  test('returns 0 when no users exist', async () => {
+    expect(await userManager.getUserCount()).toBe(0);
+  });
+
+  test('returns 1 after one user is saved', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    expect(await userManager.getUserCount()).toBe(1);
+  });
+
+  test('counts multiple users', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.saveCredentials({ discordId: 'user-2', userId: '222', userHash: 'hash-b' });
+    expect(await userManager.getUserCount()).toBe(2);
+  });
+
+  test('decreases after a user is deleted', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.saveCredentials({ discordId: 'user-2', userId: '222', userHash: 'hash-b' });
+    await userManager.deleteCredentials('user-1');
+    expect(await userManager.getUserCount()).toBe(1);
+  });
+
+  test('upsert does not increase the count', async () => {
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'hash-a' });
+    await userManager.saveCredentials({ discordId: 'user-1', userId: '222', userHash: 'hash-b' });
+    expect(await userManager.getUserCount()).toBe(1);
+  });
+});
