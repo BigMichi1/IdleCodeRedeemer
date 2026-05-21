@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeAll, beforeEach, afterAll } from 'bun:test';
 import { db, initializeDatabase } from './db';
 import { codeManager, normalizeCodeStatus } from './codeManager';
-import { users, redeemedCodes, pendingCodes } from './schema/index';
+import { users, redeemedCodes, pendingCodes, lootTotals } from './schema/index';
 
 const USER_A = 'discord-user-a';
 const USER_B = 'discord-user-b';
@@ -14,6 +14,7 @@ beforeEach(() => {
   // Clear in FK-safe order
   db.delete(pendingCodes).run();
   db.delete(redeemedCodes).run();
+  db.delete(lootTotals).run();
   db.delete(users).run();
   // Seed test users required by FK on redeemed_codes.discord_id
   db.insert(users)
@@ -503,6 +504,13 @@ describe('getRedeemedCodesByUsers', () => {
     expect(result.get(USER_A)?.has('CODE1111AAAA')).toBe(true);
     expect(result.get(USER_A)?.has('CODE2222BBBB')).toBe(true);
   });
+
+  test('throws when codes array exceeds the SQLite parameter limit', async () => {
+    const codes = Array.from({ length: 996 }, (_, i) => `CODE${String(i).padStart(8, '0')}`);
+    await expect(codeManager.getRedeemedCodesByUsers(codes, [USER_A])).rejects.toThrow(
+      'Too many codes provided to getRedeemedCodesByUsers'
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -585,5 +593,197 @@ describe('getPublicUnexpiredCodes', () => {
     await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Success', undefined, true);
     const rows = await codeManager.getPublicUnexpiredCodes();
     expect(rows).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getServerCodeStats
+// ---------------------------------------------------------------------------
+describe('getServerCodeStats', () => {
+  test('returns zeros when no codes exist', async () => {
+    const stats = await codeManager.getServerCodeStats();
+    expect(stats.totalCodes).toBe(0);
+    expect(stats.totalRedemptions).toBe(0);
+  });
+
+  test('counts distinct codes and total redemptions across users', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_B, 'Success'); // same code, 2nd user
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Success');
+    const stats = await codeManager.getServerCodeStats();
+    expect(stats.totalCodes).toBe(2);       // 2 distinct codes
+    expect(stats.totalRedemptions).toBe(3); // 3 successful rows
+  });
+
+  test('does not count non-Success statuses', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Code Expired');
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Already Redeemed');
+    const stats = await codeManager.getServerCodeStats();
+    expect(stats.totalCodes).toBe(0);
+    expect(stats.totalRedemptions).toBe(0);
+  });
+
+  test('only counts Success rows when mixed statuses exist for a code', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_B, 'Code Expired');
+    const stats = await codeManager.getServerCodeStats();
+    expect(stats.totalCodes).toBe(1);
+    expect(stats.totalRedemptions).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getAggregateLoot
+// ---------------------------------------------------------------------------
+describe('getAggregateLoot', () => {
+  test('returns empty summary when no redeemed codes exist', async () => {
+    const loot = await codeManager.getAggregateLoot();
+    expect(loot.chests).toEqual({});
+    expect(loot.items).toEqual({});
+  });
+
+  test('returns empty summary for a user with no codes', async () => {
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests).toEqual({});
+    expect(loot.items).toEqual({});
+  });
+
+  test('aggregates chest loot from a single redemption', async () => {
+    const lootData = [{ chest_type_id: 1, count: 5 }];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootData as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests['Silver Chest']).toBe(5);
+  });
+
+  test('aggregates named item loot', async () => {
+    const lootData = [{ loot_item: 'ruby_coins', count: 100 }];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootData as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.items['ruby coins']).toBe(100);
+  });
+
+  test('sums chest loot across multiple codes', async () => {
+    const loot1 = [{ chest_type_id: 1, count: 5 }];
+    const loot2 = [{ chest_type_id: 1, count: 3 }];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', loot1 as any);
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Success', loot2 as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests['Silver Chest']).toBe(8);
+  });
+
+  test('sums across multiple chest types in one code', async () => {
+    const lootData = [
+      { chest_type_id: 1, count: 5 },
+      { chest_type_id: 2, count: 2 },
+    ];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootData as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests['Silver Chest']).toBe(5);
+    expect(loot.chests['Gold Chest']).toBe(2);
+  });
+
+  test('server-wide aggregate includes all users', async () => {
+    const lootA = [{ chest_type_id: 1, count: 5 }];
+    const lootB = [{ chest_type_id: 1, count: 3 }];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootA as any);
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Success', lootB as any);
+    const loot = await codeManager.getAggregateLoot();
+    expect(loot.chests['Silver Chest']).toBe(8);
+  });
+
+  test('user-scoped aggregate excludes other users\' loot', async () => {
+    const lootA = [{ chest_type_id: 1, count: 5 }];
+    const lootB = [{ chest_type_id: 2, count: 3 }];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootA as any);
+    await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Success', lootB as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests['Silver Chest']).toBe(5);
+    expect(loot.chests['Gold Chest']).toBeUndefined();
+  });
+
+  test('skips non-Success rows', async () => {
+    const lootData = [{ chest_type_id: 1, count: 5 }];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Code Expired', lootData as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests).toEqual({});
+  });
+
+  test('skips codes with null loot detail', async () => {
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests).toEqual({});
+    expect(loot.items).toEqual({});
+  });
+
+  test('uses "Chest N" fallback for unknown chest type IDs', async () => {
+    const lootData = [{ chest_type_id: 9999, count: 2 }];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootData as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests['Chest 9999']).toBe(2);
+  });
+
+  test('skips items with missing or non-numeric count', async () => {
+    const lootData = [
+      { chest_type_id: 1, count: undefined },
+      { chest_type_id: 2, count: 'bad' },
+      { chest_type_id: 230, count: 3 },
+    ];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootData as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests['Silver Chest']).toBeUndefined();
+    expect(loot.chests['Gold Chest']).toBeUndefined();
+    expect(loot.chests['Modron Chest']).toBe(3);
+  });
+
+  test('skips items with zero or negative count', async () => {
+    const lootData = [
+      { chest_type_id: 1, count: 0 },
+      { chest_type_id: 2, count: -1 },
+      { chest_type_id: 230, count: 1 },
+    ];
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootData as any);
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests['Silver Chest']).toBeUndefined();
+    expect(loot.chests['Gold Chest']).toBeUndefined();
+    expect(loot.chests['Modron Chest']).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// backfillLootTotals
+// ---------------------------------------------------------------------------
+describe('backfillLootTotals', () => {
+  test('populates loot_totals from existing successful redemptions', async () => {
+    // Insert directly into redeemed_codes, bypassing addRedeemedCode so loot_totals stays empty
+    db.insert(redeemedCodes)
+      .values({ code: 'CODE1111AAAA', discordId: USER_A, status: 'Success', lootDetail: JSON.stringify([{ chest_type_id: 1, count: 5 }]) })
+      .run();
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests).toEqual({}); // loot_totals still empty
+    await codeManager.backfillLootTotals();
+    const filled = await codeManager.getAggregateLoot(USER_A);
+    expect(filled.chests['Silver Chest']).toBe(5);
+  });
+
+  test('exits early and skips rows already covered if loot_totals is non-empty', async () => {
+    // Seed via addRedeemedCode (which writes to loot_totals)
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', [{ chest_type_id: 1, count: 5 }] as any);
+    // Insert a second row directly — it should NOT be picked up by backfill since table is non-empty
+    db.insert(redeemedCodes)
+      .values({ code: 'CODE2222BBBB', discordId: USER_A, status: 'Success', lootDetail: JSON.stringify([{ chest_type_id: 1, count: 3 }]) })
+      .run();
+    await codeManager.backfillLootTotals();
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests['Silver Chest']).toBe(5); // Only the original 5, not 5+3=8
+  });
+
+  test('skips rows with null loot detail', async () => {
+    db.insert(redeemedCodes)
+      .values({ code: 'CODE1111AAAA', discordId: USER_A, status: 'Success', lootDetail: null })
+      .run();
+    await codeManager.backfillLootTotals();
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests).toEqual({});
+    expect(loot.items).toEqual({});
   });
 });

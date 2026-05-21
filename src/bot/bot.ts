@@ -23,6 +23,7 @@ import * as notificationsCommand from './commands/notifications';
 import * as openCommand from './commands/open';
 import * as redeemCommand from './commands/redeem';
 import * as setupCommand from './commands/setup';
+import * as statsCommand from './commands/stats';
 
 // CRITICAL: Disable certificate validation for Idle Champions API
 // Their server has an expired certificate - this must be set BEFORE any HTTPS requests
@@ -65,6 +66,7 @@ const commands = [
   openCommand,
   redeemCommand,
   setupCommand,
+  statsCommand,
 ];
 
 for (const command of commands) {
@@ -84,6 +86,7 @@ client.on(Events.ClientReady, async () => {
 
   try {
     initializeDatabase();
+    await codeManager.backfillLootTotals();
     await userManager.migratePlaintextCredentials();
 
     // Check if startup backfill should run

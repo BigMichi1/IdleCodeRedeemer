@@ -12,3 +12,5 @@ export type { AuditLogEntry } from './audit_log';
 
 export { backfillOperations } from './backfill_operations';
 export type { BackfillOperation } from './backfill_operations';
+
+export { lootTotals } from './loot_totals';

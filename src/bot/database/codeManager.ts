@@ -1,6 +1,19 @@
 import { eq, ne, and, or, isNull, gt, sql, max, inArray } from 'drizzle-orm';
 import { db } from './db';
-import { redeemedCodes, pendingCodes } from './schema/index';
+import { redeemedCodes, pendingCodes, lootTotals } from './schema/index';
+import logger from '../utils/logger';
+
+export const CHEST_TYPE_NAMES: Record<number, string> = {
+  1: 'Silver Chest',
+  2: 'Gold Chest',
+  230: 'Modron Chest',
+  282: 'Electrum Chest',
+};
+
+export interface LootSummary {
+  chests: Record<string, number>;
+  items: Record<string, number>;
+}
 
 interface RedeemedCode {
   code: string;
@@ -62,6 +75,50 @@ class CodeManager {
     // If this redemption makes the code public, propagate to ALL rows for this code
     if (isPublic) {
       db.update(redeemedCodes).set({ isPublic: 1 }).where(eq(redeemedCodes.code, code)).run();
+    }
+    // Maintain incremental loot totals for O(1) aggregate queries
+    if (canonicalStatus === 'Success' && lootDetail) {
+      this.updateLootTotals(discordId, lootDetail);
+    }
+  }
+
+  /**
+   * Upsert one loot entry into loot_totals for both the user and server-wide scope.
+   */
+  private upsertLootEntry(scope: string, lootKey: string, lootType: string, count: number): void {
+    db.insert(lootTotals)
+      .values({ lootKey, lootType, scope, totalCount: count })
+      .onConflictDoUpdate({
+        target: [lootTotals.lootKey, lootTotals.scope],
+        set: { totalCount: sql`${lootTotals.totalCount} + ${count}` },
+      })
+      .run();
+  }
+
+  /**
+   * Parse a lootDetail value (array or JSON string) and upsert each entry into
+   * loot_totals for both the given user scope and the server-wide scope.
+   */
+  private updateLootTotals(discordId: string, lootDetail: any): void {
+    let parsed: any[];
+    try {
+      parsed = Array.isArray(lootDetail) ? lootDetail : JSON.parse(lootDetail as string);
+      if (!Array.isArray(parsed)) return;
+    } catch {
+      return;
+    }
+    for (const item of parsed) {
+      const count = Number(item.count);
+      if (!Number.isFinite(count) || count <= 0) continue;
+      if (item.chest_type_id !== undefined) {
+        const lootKey = CHEST_TYPE_NAMES[item.chest_type_id as number] ?? `Chest ${item.chest_type_id}`;
+        this.upsertLootEntry(discordId, lootKey, 'chest', count);
+        this.upsertLootEntry('__server__', lootKey, 'chest', count);
+      } else if (item.loot_item) {
+        const lootKey = (item.loot_item as string).replace(/_/g, ' ');
+        this.upsertLootEntry(discordId, lootKey, 'item', count);
+        this.upsertLootEntry('__server__', lootKey, 'item', count);
+      }
     }
   }
 
@@ -313,6 +370,57 @@ class CodeManager {
       .get();
     db.delete(redeemedCodes).where(eq(redeemedCodes.discordId, discordId)).run();
     return before?.count ?? 0;
+  }
+
+  async getAggregateLoot(discordId?: string): Promise<LootSummary> {
+    const scope = discordId ?? '__server__';
+    const rows = db.select().from(lootTotals).where(eq(lootTotals.scope, scope)).all();
+    const summary: LootSummary = { chests: {}, items: {} };
+    for (const row of rows) {
+      if (row.lootType === 'chest') {
+        summary.chests[row.lootKey] = row.totalCount;
+      } else {
+        summary.items[row.lootKey] = row.totalCount;
+      }
+    }
+    return summary;
+  }
+
+  /**
+   * One-time backfill of loot_totals from existing redeemed_codes rows.
+   * Safe to call on every startup — exits immediately if loot_totals is already populated.
+   */
+  async backfillLootTotals(): Promise<void> {
+    const existing = db.select({ n: sql<number>`COUNT(*)` }).from(lootTotals).get()?.n ?? 0;
+    if (existing > 0) return;
+    const rows = db
+      .select({ lootDetail: redeemedCodes.lootDetail, discordId: redeemedCodes.discordId })
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.status, 'Success'))
+      .all();
+    for (const row of rows) {
+      if (row.lootDetail) {
+        this.updateLootTotals(row.discordId, row.lootDetail);
+      }
+    }
+    if (rows.length > 0) {
+      logger.info(`[CodeManager] Backfilled loot_totals from ${rows.length} successful redemptions`);
+    }
+  }
+
+  async getServerCodeStats(): Promise<{ totalCodes: number; totalRedemptions: number }> {
+    const result = db
+      .select({
+        totalCodes: sql<number>`COUNT(DISTINCT ${redeemedCodes.code})`,
+        totalRedemptions: sql<number>`COUNT(*)`,
+      })
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.status, 'Success'))
+      .get();
+    return {
+      totalCodes: result?.totalCodes ?? 0,
+      totalRedemptions: result?.totalRedemptions ?? 0,
+    };
   }
 }
 
