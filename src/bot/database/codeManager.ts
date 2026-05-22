@@ -1,28 +1,6 @@
-import { eq, ne, and, or, isNull, gt, sql, max, inArray } from 'drizzle-orm';
+import { eq, ne, and, or, isNull, gt, inArray, notInArray, sql } from 'drizzle-orm';
 import { db } from './db';
 import { redeemedCodes, pendingCodes, lootTotals } from './schema/index';
-import logger from '../utils/logger';
-
-export const CHEST_TYPE_NAMES: Record<number, string> = {
-  1: 'Silver Chest',
-  2: 'Gold Chest',
-  230: 'Modron Chest',
-  282: 'Electrum Chest',
-};
-
-export interface LootSummary {
-  chests: Record<string, number>;
-  items: Record<string, number>;
-}
-
-interface RedeemedCode {
-  code: string;
-  discordId?: string;
-  status?: string;
-  lootDetail?: string;
-  isPublic?: boolean;
-  expiresAt?: string;
-}
 
 type RedeemedCodeRow = typeof redeemedCodes.$inferSelect;
 
@@ -36,88 +14,97 @@ const CODE_STATUS_MAP: Record<number, string> = {
 };
 
 /**
- * Converts a numeric codeStatus (from the game API) to its canonical string name.
- * String values that are already canonical are returned unchanged.
+ * Converts a raw codeStatus value (number, numeric string, or canonical string)
+ * to the canonical status string stored in the database.
  */
 export function normalizeCodeStatus(status: number | string): string {
   if (typeof status === 'number') {
     return CODE_STATUS_MAP[status] ?? 'Unknown Status';
   }
-  const asNum = Number(status);
-  if (!Number.isNaN(asNum) && asNum.toString() === status) {
-    return CODE_STATUS_MAP[asNum] ?? 'Unknown Status';
+  if (/^\d+$/.test(status)) {
+    return CODE_STATUS_MAP[Number(status)] ?? 'Unknown Status';
   }
   return status;
+}
+
+export const CHEST_TYPE_NAMES: Record<number, string> = {
+  1: 'Silver Chest',
+  2: 'Gold Chest',
+  230: 'Modron Chest',
+  282: 'Electrum Chest',
+};
+
+export type LootSummary = { chests: Record<string, number>; items: Record<string, number> };
+
+function parseLootEntries(
+  lootStr: string | null
+): Array<{ key: string; type: 'chest' | 'item'; count: number }> {
+  if (!lootStr) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(lootStr);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  const entries: Array<{ key: string; type: 'chest' | 'item'; count: number }> = [];
+  for (const entry of parsed) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const count = typeof e['count'] === 'number' ? e['count'] : undefined;
+    if (count === undefined || !Number.isFinite(count) || count <= 0) continue;
+    if ('chest_type_id' in e && typeof e['chest_type_id'] === 'number') {
+      const name = CHEST_TYPE_NAMES[e['chest_type_id'] as number] ?? `Chest ${e['chest_type_id']}`;
+      entries.push({ key: name, type: 'chest', count });
+    } else if ('loot_item' in e && typeof e['loot_item'] === 'string') {
+      const name = (e['loot_item'] as string).replace(/_/g, ' ').toLowerCase();
+      entries.push({ key: name, type: 'item', count });
+    }
+  }
+  return entries;
 }
 
 class CodeManager {
   async addRedeemedCode(
     code: string,
     discordId: string,
-    status: number | string,
-    lootDetail?: string,
+    status: string | number,
+    lootDetail?: unknown,
     isPublic: boolean = false
   ): Promise<void> {
-    const canonicalStatus = normalizeCodeStatus(status);
+    const normalizedStatus = normalizeCodeStatus(status);
+    const lootStr = lootDetail == null ? null : JSON.stringify(lootDetail);
     db.insert(redeemedCodes)
       .values({
         code,
         discordId,
-        status: canonicalStatus,
-        lootDetail: lootDetail ? JSON.stringify(lootDetail) : null,
+        status: normalizedStatus,
+        lootDetail: lootStr,
         isPublic: isPublic ? 1 : 0,
       })
       .onConflictDoUpdate({
         target: [redeemedCodes.code, redeemedCodes.discordId],
-        set: { status: canonicalStatus, lootDetail: lootDetail ? JSON.stringify(lootDetail) : null },
+        set: { status: normalizedStatus, lootDetail: lootStr, isPublic: isPublic ? 1 : 0 },
       })
       .run();
-    // If this redemption makes the code public, propagate to ALL rows for this code
+    // When a redemption is marked public, propagate to every row for this code
+    // so all users see it as public regardless of who originally redeemed it.
     if (isPublic) {
       db.update(redeemedCodes).set({ isPublic: 1 }).where(eq(redeemedCodes.code, code)).run();
     }
-    // Maintain incremental loot totals for O(1) aggregate queries
-    if (canonicalStatus === 'Success' && lootDetail) {
-      this.updateLootTotals(discordId, lootDetail);
-    }
-  }
-
-  /**
-   * Upsert one loot entry into loot_totals for both the user and server-wide scope.
-   */
-  private upsertLootEntry(scope: string, lootKey: string, lootType: string, count: number): void {
-    db.insert(lootTotals)
-      .values({ lootKey, lootType, scope, totalCount: count })
-      .onConflictDoUpdate({
-        target: [lootTotals.lootKey, lootTotals.scope],
-        set: { totalCount: sql`${lootTotals.totalCount} + ${count}` },
-      })
-      .run();
-  }
-
-  /**
-   * Parse a lootDetail value (array or JSON string) and upsert each entry into
-   * loot_totals for both the given user scope and the server-wide scope.
-   */
-  private updateLootTotals(discordId: string, lootDetail: any): void {
-    let parsed: any[];
-    try {
-      parsed = Array.isArray(lootDetail) ? lootDetail : JSON.parse(lootDetail as string);
-      if (!Array.isArray(parsed)) return;
-    } catch {
-      return;
-    }
-    for (const item of parsed) {
-      const count = Number(item.count);
-      if (!Number.isFinite(count) || count <= 0) continue;
-      if (item.chest_type_id !== undefined) {
-        const lootKey = CHEST_TYPE_NAMES[item.chest_type_id as number] ?? `Chest ${item.chest_type_id}`;
-        this.upsertLootEntry(discordId, lootKey, 'chest', count);
-        this.upsertLootEntry('__server__', lootKey, 'chest', count);
-      } else if (item.loot_item) {
-        const lootKey = (item.loot_item as string).replace(/_/g, ' ');
-        this.upsertLootEntry(discordId, lootKey, 'item', count);
-        this.upsertLootEntry('__server__', lootKey, 'item', count);
+    // Maintain loot_totals for Success redemptions
+    if (normalizedStatus === 'Success' && lootStr) {
+      const entries = parseLootEntries(lootStr);
+      for (const { key, type, count } of entries) {
+        for (const scope of [discordId, '__server__']) {
+          db.insert(lootTotals)
+            .values({ lootKey: key, lootType: type, scope, totalCount: count })
+            .onConflictDoUpdate({
+              target: [lootTotals.lootKey, lootTotals.scope],
+              set: { totalCount: sql`${lootTotals.totalCount} + ${count}` },
+            })
+            .run();
+        }
       }
     }
   }
@@ -131,52 +118,8 @@ class CodeManager {
     return result !== undefined;
   }
 
-  /**
-   * Batch variant of isCodeRedeemedByUser. Returns a map of discordId → set of codes
-   * that user has already redeemed (Success / Already Redeemed / Code Expired).
-   * Chunks discordIds to stay within SQLite's SQLITE_LIMIT_VARIABLE_NUMBER (default 999).
-   */
-  async getRedeemedCodesByUsers(codes: string[], discordIds: string[]): Promise<Map<string, Set<string>>> {
-    if (codes.length === 0 || discordIds.length === 0) return new Map();
-    // Budget per query: codes.length (inArray) + 3 (status OR literals) + chunk size (discordIds inArray).
-    const SQLITE_MAX_PARAMS = 999;
-    const STATUS_PARAM_COUNT = 3;
-    const MIN_DISCORD_ID_CHUNK_SIZE = 1;
-    const maxCodesPerQuery = SQLITE_MAX_PARAMS - STATUS_PARAM_COUNT - MIN_DISCORD_ID_CHUNK_SIZE;
-    if (codes.length > maxCodesPerQuery) {
-      throw new Error(
-        `Too many codes provided to getRedeemedCodesByUsers: ${codes.length}. ` +
-          `This query supports at most ${maxCodesPerQuery} codes per call within SQLite's parameter limit of ${SQLITE_MAX_PARAMS}.`
-      );
-    }
-    const chunkSize = SQLITE_MAX_PARAMS - codes.length - STATUS_PARAM_COUNT;
-    const result = new Map<string, Set<string>>();
-    for (let i = 0; i < discordIds.length; i += chunkSize) {
-      const chunk = discordIds.slice(i, i + chunkSize);
-      const rows = db
-        .select({ code: redeemedCodes.code, discordId: redeemedCodes.discordId })
-        .from(redeemedCodes)
-        .where(
-          and(
-            inArray(redeemedCodes.code, codes),
-            inArray(redeemedCodes.discordId, chunk),
-            or(
-              eq(redeemedCodes.status, 'Success'),
-              eq(redeemedCodes.status, 'Already Redeemed'),
-              eq(redeemedCodes.status, 'Code Expired')
-            )
-          )
-        )
-        .all();
-      for (const row of rows) {
-        if (!result.has(row.discordId)) result.set(row.discordId, new Set());
-        result.get(row.discordId)!.add(row.code);
-      }
-    }
-    return result;
-  }
-
   async isCodeRedeemedByUser(code: string, discordId: string): Promise<boolean> {
+    const qualifyingStatuses = ['Success', 'Already Redeemed', 'Code Expired'] as const;
     const result = db
       .select({ code: redeemedCodes.code })
       .from(redeemedCodes)
@@ -184,11 +127,7 @@ class CodeManager {
         and(
           eq(redeemedCodes.code, code),
           eq(redeemedCodes.discordId, discordId),
-          or(
-            eq(redeemedCodes.status, 'Success'),
-            eq(redeemedCodes.status, 'Already Redeemed'),
-            eq(redeemedCodes.status, 'Code Expired')
-          )
+          inArray(redeemedCodes.status, qualifyingStatuses as unknown as string[])
         )
       )
       .get();
@@ -206,16 +145,11 @@ class CodeManager {
     return results.map((r) => r.code);
   }
 
-  async getRedeemedCodeCount(discordId: string): Promise<number> {
-    const result = db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(redeemedCodes)
-      .where(eq(redeemedCodes.discordId, discordId))
-      .get();
-    return result?.count ?? 0;
-  }
-
-  async getRedeemedCodeDetails(discordId: string, limit: number = 10, offset: number = 0): Promise<RedeemedCodeRow[]> {
+  async getRedeemedCodeDetails(
+    discordId: string,
+    limit: number = 10,
+    offset: number = 0
+  ): Promise<RedeemedCodeRow[]> {
     return db
       .select()
       .from(redeemedCodes)
@@ -226,35 +160,53 @@ class CodeManager {
       .all();
   }
 
+  async getRedeemedCodeCount(discordId: string): Promise<number> {
+    const result = db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.discordId, discordId))
+      .get();
+    return result?.count ?? 0;
+  }
+
   async getPublicUnexpiredCodes(): Promise<RedeemedCodeRow[]> {
-    // Build a subquery: for each code, find the latest redeemedAt among public/success/unexpired rows
-    const publicSuccessWhere = and(
-      eq(redeemedCodes.isPublic, 1),
-      eq(redeemedCodes.status, 'Success'),
-      or(isNull(redeemedCodes.expiresAt), gt(redeemedCodes.expiresAt, sql`CURRENT_TIMESTAMP`))
-    );
-    const latest = db
-      .select({ code: redeemedCodes.code, maxRedeemedAt: max(redeemedCodes.redeemedAt).as('max_redeemed_at') })
+    const rows = db
+      .select()
       .from(redeemedCodes)
-      .where(publicSuccessWhere)
-      .groupBy(redeemedCodes.code)
-      .as('latest');
-    // Join back to get the full row for the latest redeemedAt per code
-    return db
-      .select({
-        id: redeemedCodes.id,
-        code: redeemedCodes.code,
-        discordId: redeemedCodes.discordId,
-        redeemedAt: redeemedCodes.redeemedAt,
-        status: redeemedCodes.status,
-        lootDetail: redeemedCodes.lootDetail,
-        isPublic: redeemedCodes.isPublic,
-        expiresAt: redeemedCodes.expiresAt,
-      })
-      .from(redeemedCodes)
-      .innerJoin(latest, and(eq(redeemedCodes.code, latest.code), eq(redeemedCodes.redeemedAt, latest.maxRedeemedAt)))
+      .where(
+        and(
+          eq(redeemedCodes.isPublic, 1),
+          eq(redeemedCodes.status, 'Success'),
+          or(isNull(redeemedCodes.expiresAt), gt(redeemedCodes.expiresAt, sql`CURRENT_TIMESTAMP`))
+        )
+      )
       .orderBy(sql`${redeemedCodes.redeemedAt} DESC`)
       .all();
+    // Return one row per distinct code (latest first).
+    const seen = new Set<string>();
+    return rows.filter((r) => {
+      if (seen.has(r.code)) return false;
+      seen.add(r.code);
+      return true;
+    });
+  }
+
+  async getAllValidCodes(): Promise<string[]> {
+    const expiredSubquery = db
+      .select({ code: redeemedCodes.code })
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.status, 'Code Expired'));
+    const rows = db
+      .selectDistinct({ code: redeemedCodes.code })
+      .from(redeemedCodes)
+      .where(
+        and(
+          eq(redeemedCodes.status, 'Success'),
+          notInArray(redeemedCodes.code, expiredSubquery)
+        )
+      )
+      .all();
+    return rows.map((r) => r.code);
   }
 
   async getSuccessfulRedeemCount(code: string): Promise<number> {
@@ -293,21 +245,6 @@ class CodeManager {
     return result !== undefined;
   }
 
-  async getAllValidCodes(): Promise<string[]> {
-    // Return distinct codes that have at least one 'Success' row and are not expired
-    const results = db
-      .selectDistinct({ code: redeemedCodes.code })
-      .from(redeemedCodes)
-      .where(
-        and(
-          eq(redeemedCodes.status, 'Success'),
-          sql`${redeemedCodes.code} NOT IN (SELECT code FROM ${redeemedCodes} WHERE status = 'Code Expired')`
-        )
-      )
-      .all();
-    return results.map((r) => r.code);
-  }
-
   async markCodeAsExpired(code: string): Promise<void> {
     db.update(redeemedCodes)
       .set({ status: 'Code Expired', expiresAt: sql`CURRENT_TIMESTAMP` })
@@ -323,24 +260,11 @@ class CodeManager {
     db.update(redeemedCodes).set({ isPublic: 0 }).where(eq(redeemedCodes.code, code)).run();
   }
 
-  async addPendingCode(code: string, discordId?: string): Promise<boolean> {
-    const rows = db.insert(pendingCodes).values({ code, discordId: discordId ?? null }).onConflictDoNothing().returning({ code: pendingCodes.code }).all();
-    return rows.length > 0;
-  }
-
-  /**
-   * Batch-insert multiple codes into pending_codes in a single query.
-   * Returns only the codes that were newly inserted (already-present codes are skipped via onConflictDoNothing).
-   */
-  async addNewPendingCodes(codes: string[]): Promise<string[]> {
-    if (codes.length === 0) return [];
-    const rows = db
-      .insert(pendingCodes)
-      .values(codes.map((code) => ({ code, discordId: null })))
+  async addPendingCode(code: string, discordId?: string): Promise<void> {
+    db.insert(pendingCodes)
+      .values({ code, discordId: discordId ?? null })
       .onConflictDoNothing()
-      .returning({ code: pendingCodes.code })
-      .all();
-    return rows.map((r) => r.code);
+      .run();
   }
 
   async getPendingCodes(discordId?: string): Promise<string[]> {
@@ -362,54 +286,114 @@ class CodeManager {
     }
   }
 
+  /**
+   * Bulk-insert pending codes, skipping any that are already present.
+   * Returns only the codes that were newly inserted.
+   * Uses a single INSERT … ON CONFLICT DO NOTHING RETURNING to avoid N+1
+   * queries and race conditions between pre-read and insert.
+   */
+  async addNewPendingCodes(codes: string[]): Promise<string[]> {
+    if (codes.length === 0) return [];
+    // pendingCodes has 2 columns (code, discordId) → 2 bound params per row.
+    const CHUNK_SIZE = Math.floor(999 / 2); // = 499
+    const result: string[] = [];
+    for (let i = 0; i < codes.length; i += CHUNK_SIZE) {
+      const chunk = codes.slice(i, i + CHUNK_SIZE);
+      const inserted = db
+        .insert(pendingCodes)
+        .values(chunk.map((code) => ({ code, discordId: null })))
+        .onConflictDoNothing()
+        .returning({ code: pendingCodes.code })
+        .all();
+      result.push(...inserted.map((r) => r.code));
+    }
+    return result;
+  }
+
+  /**
+   * Returns the subset of `codes` that already have at least one
+   * Success or Code Expired row in redeemed_codes (i.e. globally redeemed).
+   * Uses a single IN query — suitable for bulk pre-filter before addNewPendingCodes.
+   */
+  async getRedeemedCodesFromList(codes: string[]): Promise<Set<string>> {
+    if (codes.length === 0) return new Set();
+    // WHERE has codes.length + 2 params (IN list + 2 status literals).
+    const CHUNK_SIZE = 999 - 2; // = 997
+    const result = new Set<string>();
+    for (let i = 0; i < codes.length; i += CHUNK_SIZE) {
+      const chunk = codes.slice(i, i + CHUNK_SIZE);
+      const rows = db
+        .select({ code: redeemedCodes.code })
+        .from(redeemedCodes)
+        .where(
+          and(
+            inArray(redeemedCodes.code, chunk),
+            or(eq(redeemedCodes.status, 'Success'), eq(redeemedCodes.status, 'Code Expired'))
+          )
+        )
+        .all();
+      for (const row of rows) result.add(row.code);
+    }
+    return result;
+  }
+
   async deleteUserRedeemedCodes(discordId: string): Promise<number> {
-    const before = db
-      .select({ count: sql<number>`COUNT(*)` })
+    const countRow = db
+      .select({ count: sql<number>`count(*)` })
       .from(redeemedCodes)
       .where(eq(redeemedCodes.discordId, discordId))
       .get();
     db.delete(redeemedCodes).where(eq(redeemedCodes.discordId, discordId)).run();
-    return before?.count ?? 0;
-  }
-
-  async getAggregateLoot(discordId?: string): Promise<LootSummary> {
-    const scope = discordId ?? '__server__';
-    const rows = db.select().from(lootTotals).where(eq(lootTotals.scope, scope)).all();
-    const summary: LootSummary = { chests: {}, items: {} };
-    for (const row of rows) {
-      if (row.lootType === 'chest') {
-        summary.chests[row.lootKey] = row.totalCount;
-      } else {
-        summary.items[row.lootKey] = row.totalCount;
-      }
-    }
-    return summary;
+    return countRow?.count ?? 0;
   }
 
   /**
-   * One-time backfill of loot_totals from existing redeemed_codes rows.
-   * Safe to call on every startup — exits immediately if loot_totals is already populated.
+   * For a given set of codes and Discord user IDs, returns a map of
+   * discordId → Set<code> containing codes that user has any qualifying
+   * redemption record for (Success, Already Redeemed, Code Expired).
+   *
+   * Throws if codes.length would exceed the safe SQLite parameter budget.
+   * Chunks discordIds automatically to stay within the 999-variable limit.
    */
-  async backfillLootTotals(): Promise<void> {
-    const existing = db.select({ n: sql<number>`COUNT(*)` }).from(lootTotals).get()?.n ?? 0;
-    if (existing > 0) return;
-    const rows = db
-      .select({ lootDetail: redeemedCodes.lootDetail, discordId: redeemedCodes.discordId })
-      .from(redeemedCodes)
-      .where(eq(redeemedCodes.status, 'Success'))
-      .all();
-    for (const row of rows) {
-      if (row.lootDetail) {
-        this.updateLootTotals(row.discordId, row.lootDetail);
+  async getRedeemedCodesByUsers(
+    codes: string[],
+    discordIds: string[]
+  ): Promise<Map<string, Set<string>>> {
+    if (codes.length === 0 || discordIds.length === 0) return new Map();
+
+    const SQLITE_PARAM_LIMIT = 999;
+    const STATUS_COUNT = 3; // 'Success', 'Already Redeemed', 'Code Expired'
+    // codes + status params are fixed per query; remaining budget is for discordIds
+    const discordIdChunkSize = SQLITE_PARAM_LIMIT - codes.length - STATUS_COUNT;
+    if (discordIdChunkSize <= 0) {
+      throw new Error('Too many codes provided to getRedeemedCodesByUsers');
+    }
+
+    const result = new Map<string, Set<string>>();
+    const qualifyingStatuses = ['Success', 'Already Redeemed', 'Code Expired'] as const;
+    for (let i = 0; i < discordIds.length; i += discordIdChunkSize) {
+      const chunk = discordIds.slice(i, i + discordIdChunkSize);
+      const rows = db
+        .select({ code: redeemedCodes.code, discordId: redeemedCodes.discordId })
+        .from(redeemedCodes)
+        .where(
+          and(
+            inArray(redeemedCodes.code, codes),
+            inArray(redeemedCodes.discordId, chunk),
+            inArray(redeemedCodes.status, qualifyingStatuses as unknown as string[])
+          )
+        )
+        .all();
+      for (const row of rows) {
+        if (!result.has(row.discordId)) result.set(row.discordId, new Set());
+        result.get(row.discordId)!.add(row.code);
       }
     }
-    if (rows.length > 0) {
-      logger.info(`[CodeManager] Backfilled loot_totals from ${rows.length} successful redemptions`);
-    }
+    return result;
   }
 
   async getServerCodeStats(): Promise<{ totalCodes: number; totalRedemptions: number }> {
-    const result = db
+    const row = db
       .select({
         totalCodes: sql<number>`COUNT(DISTINCT ${redeemedCodes.code})`,
         totalRedemptions: sql<number>`COUNT(*)`,
@@ -417,10 +401,60 @@ class CodeManager {
       .from(redeemedCodes)
       .where(eq(redeemedCodes.status, 'Success'))
       .get();
-    return {
-      totalCodes: result?.totalCodes ?? 0,
-      totalRedemptions: result?.totalRedemptions ?? 0,
-    };
+    return { totalCodes: row?.totalCodes ?? 0, totalRedemptions: row?.totalRedemptions ?? 0 };
+  }
+
+  async getAggregateLoot(
+    discordId?: string
+  ): Promise<{ chests: Record<string, number>; items: Record<string, number> }> {
+    const scope = discordId ?? '__server__';
+    const rows = db
+      .select({
+        lootKey: lootTotals.lootKey,
+        lootType: lootTotals.lootType,
+        totalCount: lootTotals.totalCount,
+      })
+      .from(lootTotals)
+      .where(eq(lootTotals.scope, scope))
+      .all();
+
+    const chests: Record<string, number> = {};
+    const items: Record<string, number> = {};
+    for (const row of rows) {
+      if (row.lootType === 'chest') chests[row.lootKey] = row.totalCount;
+      else if (row.lootType === 'item') items[row.lootKey] = row.totalCount;
+    }
+    return { chests, items };
+  }
+
+  /**
+   * One-time migration: populate loot_totals from existing redeemed_codes rows.
+   * Exits early (no-op) if loot_totals already contains data.
+   */
+  async backfillLootTotals(): Promise<void> {
+    const existing = db.select({ lootKey: lootTotals.lootKey }).from(lootTotals).limit(1).get();
+    if (existing) return; // already seeded
+
+    const rows = db
+      .select({ discordId: redeemedCodes.discordId, lootDetail: redeemedCodes.lootDetail })
+      .from(redeemedCodes)
+      .where(eq(redeemedCodes.status, 'Success'))
+      .all();
+
+    for (const row of rows) {
+      const entries = parseLootEntries(row.lootDetail);
+      for (const { key, type, count } of entries) {
+        for (const scope of [row.discordId, '__server__']) {
+          db.insert(lootTotals)
+            .values({ lootKey: key, lootType: type, scope, totalCount: count })
+            .onConflictDoUpdate({
+              target: [lootTotals.lootKey, lootTotals.scope],
+              set: { totalCount: sql`${lootTotals.totalCount} + ${count}` },
+            })
+            .run();
+        }
+      }
+    }
   }
 }
 
