@@ -59,6 +59,10 @@ describe('normalizeCodeStatus', () => {
   test('normalizes numeric string "4" to Code Expired', () => {
     expect(normalizeCodeStatus('4')).toBe('Code Expired');
   });
+  test('treats partial-numeric strings as canonical (not parsed as int)', () => {
+    expect(normalizeCodeStatus('4foo')).toBe('4foo');
+    expect(normalizeCodeStatus('0bar')).toBe('0bar');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -448,6 +452,61 @@ describe('deleteUserRedeemedCodes', () => {
 });
 
 // ---------------------------------------------------------------------------
+// getRedeemedCodesFromList
+// ---------------------------------------------------------------------------
+describe('getRedeemedCodesFromList', () => {
+  test('returns empty set for empty codes list', async () => {
+    const result = await codeManager.getRedeemedCodesFromList([]);
+    expect(result.size).toBe(0);
+  });
+  test('returns empty set when no codes have been redeemed', async () => {
+    const result = await codeManager.getRedeemedCodesFromList(['CODE1234ABCD']);
+    expect(result.size).toBe(0);
+  });
+  test('returns codes with Success status', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    const result = await codeManager.getRedeemedCodesFromList(['CODE1234ABCD', 'CODE1111AAAA']);
+    expect(result.has('CODE1234ABCD')).toBe(true);
+    expect(result.has('CODE1111AAAA')).toBe(false);
+  });
+  test('returns codes with Code Expired status', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Code Expired');
+    const result = await codeManager.getRedeemedCodesFromList(['CODE1234ABCD']);
+    expect(result.has('CODE1234ABCD')).toBe(true);
+  });
+  test('excludes non-qualifying statuses like Invalid Parameters', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Invalid Parameters');
+    const result = await codeManager.getRedeemedCodesFromList(['CODE1234ABCD']);
+    expect(result.has('CODE1234ABCD')).toBe(false);
+  });
+  test('chunks queries when codes list exceeds 997 (SQLite variable budget)', async () => {
+    // Insert 998 codes — spans 2 chunks (chunk size = 997).
+    const codes = Array.from({ length: 998 }, (_, i) => `CHUNK${String(i).padStart(4, '0')}AAAA`);
+    for (const code of codes) {
+      await codeManager.addRedeemedCode(code, USER_A, 'Success');
+    }
+    const result = await codeManager.getRedeemedCodesFromList(codes);
+    expect(result.size).toBe(998);
+    for (const code of codes) expect(result.has(code)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// addNewPendingCodes chunking
+// ---------------------------------------------------------------------------
+describe('addNewPendingCodes chunking', () => {
+  test('chunks inserts when codes list exceeds 499 (2 params per row)', async () => {
+    // 500 codes — spans 2 chunks (chunk size = 499).
+    const codes = Array.from({ length: 500 }, (_, i) => `PEND${String(i).padStart(4, '0')}AAAA`);
+    const inserted = await codeManager.addNewPendingCodes(codes);
+    expect(inserted).toHaveLength(500);
+    // Second call skips already-present codes across both chunks.
+    const duplicate = await codeManager.addNewPendingCodes(codes);
+    expect(duplicate).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getRedeemedCodesByUsers
 // ---------------------------------------------------------------------------
 describe('getRedeemedCodesByUsers', () => {
@@ -510,6 +569,14 @@ describe('getRedeemedCodesByUsers', () => {
     await expect(codeManager.getRedeemedCodesByUsers(codes, [USER_A])).rejects.toThrow(
       'Too many codes provided to getRedeemedCodesByUsers'
     );
+  });
+
+  test('chunks large discordIds lists to stay within SQLite param limit', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    // With 1 code: chunkSize = 999 - 1 - 3 = 995. 996 ids forces a second chunk iteration.
+    const manyIds = [USER_A, ...Array.from({ length: 995 }, (_, i) => `fake-user-${i}`)];
+    const result = await codeManager.getRedeemedCodesByUsers(['CODE1234ABCD'], manyIds);
+    expect(result.get(USER_A)?.has('CODE1234ABCD')).toBe(true);
   });
 });
 
@@ -593,6 +660,14 @@ describe('getPublicUnexpiredCodes', () => {
     await codeManager.addRedeemedCode('CODE2222BBBB', USER_B, 'Success', undefined, true);
     const rows = await codeManager.getPublicUnexpiredCodes();
     expect(rows).toHaveLength(2);
+  });
+
+  test('returns one row per code when multiple users redeemed the same public code', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', undefined, true);
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_B, 'Success', undefined, true);
+    const rows = await codeManager.getPublicUnexpiredCodes();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.code).toBe('CODE1234ABCD');
   });
 });
 
@@ -786,4 +861,15 @@ describe('backfillLootTotals', () => {
     expect(loot.chests).toEqual({});
     expect(loot.items).toEqual({});
   });
+
+  test('skips rows with malformed JSON loot detail', async () => {
+    db.insert(redeemedCodes)
+      .values({ code: 'CODE1111AAAA', discordId: USER_A, status: 'Success', lootDetail: 'not-valid-json{' })
+      .run();
+    await codeManager.backfillLootTotals();
+    const loot = await codeManager.getAggregateLoot(USER_A);
+    expect(loot.chests).toEqual({});
+    expect(loot.items).toEqual({});
+  });
 });
+

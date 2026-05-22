@@ -182,16 +182,23 @@ export async function backfillChannelHistory(
               hash: user.userHash,
             });
 
-            // Check if response is PlayerData (successful)
-            if (!(userDetailsResponse instanceof Object && 'success' in userDetailsResponse)) {
+            // Check if response is PlayerData (successful) — valid responses
+            // carry a `details` object with the instance_id.
+            const playerData = userDetailsResponse as any;
+            if (!playerData?.details) {
               logger.warn(
                 `[BACKFILL] Failed to get user details for ${user.discordId}: not a valid response`
               );
               continue;
             }
 
-            const playerData = userDetailsResponse as any;
-            const instanceId = playerData.details?.instance_id || '';
+            const instanceId = String(playerData.details?.instance_id ?? '').trim() || '0';
+            if (instanceId === '0') {
+              logger.warn(
+                `[BACKFILL] Skipping code ${code} for user ${user.discordId}: invalid instance_id`
+              );
+              continue;
+            }
 
             const response = await IdleChampionsApi.submitCode({
               server,
@@ -232,14 +239,13 @@ export async function backfillChannelHistory(
       }
     }
 
-    // Store any remaining codes as pending (for users without credentials)
-    for (const code of allCodes) {
-      const isRedeemed = await codeManager.isCodeRedeemed(code);
-      if (!isRedeemed) {
-        // This code wasn't redeemed - it might be a pending code
-        stats.pendingCodes++;
-      }
-    }
+    // Store any remaining codes as pending so /catchup can find them later.
+    // Single query to find already-redeemed codes, then bulk-insert the rest.
+    const allCodesArr = [...allCodes];
+    const redeemedSet = await codeManager.getRedeemedCodesFromList(allCodesArr);
+    const codesToPend = allCodesArr.filter((c) => !redeemedSet.has(c));
+    const inserted = await codeManager.addNewPendingCodes(codesToPend);
+    stats.pendingCodes = inserted.length;
 
     onProgress?.(
       `✅ Backfill complete! Found: ${stats.codesFound}, Redeemed: ${stats.codesRedeemed}, Pending: ${stats.pendingCodes}`
