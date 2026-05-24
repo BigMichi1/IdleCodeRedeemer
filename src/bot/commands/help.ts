@@ -77,6 +77,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           inline: false,
         },
         {
+          name: '📋 Logs',
+          value: '`/logs [lines:<n>]`\nShow the last N lines of the bot log (admin only, default 20, max 100).',
+          inline: false,
+        },
+        {
           name: '🗑️ Delete Account',
           value:
             '`/deleteaccount`\nPermanently delete all your stored data (credentials, code history, audit log). Requires confirmation.',

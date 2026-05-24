@@ -18,6 +18,7 @@ import { buildCodesPage } from './commands/codes';
 import * as autoredeemCommand from './commands/autoredeem';
 import * as helpCommand from './commands/help';
 import * as inventoryCommand from './commands/inventory';
+import * as logsCommand from './commands/logs';
 import * as makepublicCommand from './commands/makepublic';
 import * as notificationsCommand from './commands/notifications';
 import * as openCommand from './commands/open';
@@ -61,6 +62,7 @@ const commands = [
   deleteaccountCommand,
   helpCommand,
   inventoryCommand,
+  logsCommand,
   makepublicCommand,
   notificationsCommand,
   openCommand,
