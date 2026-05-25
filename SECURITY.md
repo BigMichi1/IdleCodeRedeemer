@@ -521,7 +521,7 @@ For complete dependency management details, see [docs/dependency-management.md](
 The project includes comprehensive design documentation describing all actors and actions within the system. See [docs/system-design.md](docs/system-design.md) for:
 
 - **Actors**: Discord users, Discord servers, Discord bot, Idle Champions API, SQLite database
-- **Actions**: 9 slash commands, message scanning, backfill operations, API interactions, database operations
+- **Actions**: 15 slash commands, message scanning, backfill operations, API interactions, database operations
 - **Data Flows**: Complete flow diagrams for each major operation
 - **Architecture**: Component interactions, subsystems, deployment
 - **Data Models**: User credentials, code history, backfill state, API logs
@@ -532,7 +532,7 @@ The project includes comprehensive design documentation describing all actors an
 
 The project includes complete API documentation for all external software interfaces. See [docs/api-reference.md](docs/api-reference.md) for:
 
-- **Discord Bot API**: 9 slash commands with parameters, responses, and error handling
+- **Discord Bot API**: 15 slash commands with parameters, responses, and error handling
 - **Command Parameters**: Detailed description of each parameter and valid values
 - **Response Formats**: Discord embeds, ephemeral responses, data structures
 - **Error Responses**: Error codes, causes, and resolution steps

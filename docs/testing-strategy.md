@@ -173,11 +173,19 @@ bun test --watch
 
 | File | Tests | Coverage |
 |------|-------|----------|
-| `src/bot/handlers/codeScanner.test.ts` | 12 | `extractCodesFromText` — regex patterns, emoji stripping, case normalisation, edge cases |
-| `src/bot/database/codeManager.test.ts` | 32 | All `CodeManager` methods — per-user redemption, public/private codes, pending codes, expiry |
-| `src/bot/database/userManager.test.ts` | 13 | All `UserManager` CRUD operations |
+| `src/bot/handlers/codeScanner.test.ts` | ~12 | `extractCodesFromText` — regex patterns, emoji stripping, case normalisation, edge cases |
+| `src/bot/handlers/autoRedeemer.test.ts` | ~10 | Queue serialization, DM sending, skip logic |
+| `src/bot/handlers/backfillHandler.test.ts` | ~8 | Message history scanning, code extraction, server swap handling |
+| `src/bot/database/codeManager.test.ts` | ~32 | All `CodeManager` methods — per-user redemption, public/private codes, pending codes, expiry, loot totals |
+| `src/bot/database/userManager.test.ts` | ~13 | All `UserManager` CRUD operations, AES-256-GCM encryption/decryption |
+| `src/bot/database/auditManager.test.ts` | ~8 | Audit log operations |
+| `src/bot/database/backfillManager.test.ts` | ~8 | Backfill rate limiting, global lock |
+| `src/bot/commands/notifications.test.ts` | ~6 | `/notifications` command, preference updates |
+| `src/bot/commands/stats.test.ts` | ~5 | `/stats` with empty/populated DB |
+| `src/bot/commands/logs.test.ts` | ~5 | `/logs` command with mocked filesystem |
+| `src/bot/utils/apiRequestLogger.test.ts` | ~6 | API log file cleanup, sensitive param masking |
 
-**Total**: 57 tests across 3 files
+**Total**: 110+ tests across 11 files
 
 **Test Infrastructure**:
 
@@ -188,7 +196,7 @@ bun test --watch
 - Tables are cleared in FK-safe order in `beforeEach` (children before parents)
 - `closeDatabase()` is **never** called in tests — Bun reuses workers between test files
 
-**Pass Criteria**: All 57 tests pass with zero failures
+**Pass Criteria**: All tests pass with zero failures
 
 **Fail Action**: Test run exits with a non-zero code and shows failed assertion details
 

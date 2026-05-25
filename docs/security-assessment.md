@@ -89,29 +89,23 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
 
 **Mitigation Strategies in Place**:
 - ✅ SQLite database encrypted at OS level (file permissions)
+- ✅ User credentials encrypted at rest with AES-256-GCM (key from `ENCRYPTION_KEY` env var)
 - ✅ HTTPS/TLS for all external API communication
 - ✅ Ephemeral responses (only user sees credential confirmation)
 - ✅ Parameterized queries (prevent SQL injection)
 - ✅ Gitleaks scanning in git hooks and CI/CD
 - ✅ Environment variables for sensitive config (bot token)
 - ✅ No credentials in git repository
+- ✅ `/deleteaccount` command for GDPR-compliant self-service data deletion
 
 **Residual Risk**: **MEDIUM**
 
 **Recommended Actions**:
-1. Implement optional application-level encryption for SQLite database
-   - Example: Encrypt specific columns with user's password
-   - Requires password entry on bot startup
-   
-2. Add automatic credential rotation mechanism
+1. Add automatic credential rotation mechanism
    - Require `/setup` update every N days
    - Notify user of stale credentials
 
-3. Add `/unsetup` command to securely delete credentials
-   - Currently: Manual database deletion
-   - Proposed: Discord command for clean removal
-
-4. Implement credential deletion on inactivity (30+ days)
+2. Implement credential deletion on inactivity (30+ days)
    - Reduce window of exposure for abandoned accounts
    - Notify user via DM before deletion
 

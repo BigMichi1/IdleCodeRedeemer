@@ -45,8 +45,7 @@ mise install
 
 This will:
 
-- ✅ Install Bun 1.0
-- ✅ Install Node.js 20 (as fallback)
+- ✅ Install Bun 1.3.14
 - ✅ Set up the environment
 
 ### Step 2: Run Any Task
@@ -143,8 +142,7 @@ Now when you `cd` into the project, tools and environment variables load automat
 
 ```toml
 [tools]
-bun = "1.0" # Latest 1.x version
-node = "20" # Latest 20.x version
+bun = "1.3.14" # Pinned version for reproducibility
 ```
 
 ## Troubleshooting
