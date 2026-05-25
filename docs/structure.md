@@ -28,7 +28,7 @@ idle-code-redeemer/
 │   ├── bot/               ← Discord bot (ACTIVE)
 │   │   ├── bot.ts         ← Main Discord client & event handlers
 │   │   ├── api/           ← Game server API client
-│   │   ├── commands/      ← Slash command handlers (12 commands)
+│   │   ├── commands/      ← Slash command handlers (15 commands)
 │   │   ├── database/      ← Database managers & Drizzle schema
 │   │   │   ├── db.ts      ← Drizzle connection & migrate()
 │   │   │   ├── userManager.ts
@@ -38,14 +38,13 @@ idle-code-redeemer/
 │   │   │   ├── schema/    ← Drizzle table definitions (one file per table)
 │   │   │   └── migrations/ ← Auto-generated SQL migration files
 │   │   ├── handlers/      ← Message scanning for codes
-│   │   └── utils/         ← Utilities (debug logging)
+│   │   └── utils/         ← Utilities (logger, crypto, debug, API request logging)
 │   │
-│   └── lib/               ← Type definitions (from game API)
+│   └── bot/api/types/     ← Type definitions from game API
 │       ├── player_data.d.ts
 │       ├── redeem_code_response.d.ts
 │       ├── blacksmith_response.d.ts
-│       ├── server_definitions.d.ts
-│       └── chrome.d.ts    ← Not used (kept for reference)
+│       └── server_definitions.d.ts
 │
 ├── data/                  ← SQLite database (git-ignored)
 │   └── idle.db
@@ -73,7 +72,7 @@ idle-code-redeemer/
 - **[src/bot/bot.ts](../src/bot/bot.ts)** - Discord client initialization, event handlers, command routing
 - **[src/bot/api/idleChampionsApi.ts](../src/bot/api/idleChampionsApi.ts)** - Game server API client with query-parameter format
 
-### Commands (12 slash commands)
+### Commands (15 slash commands)
 
 - **[src/bot/commands/setup.ts](../src/bot/commands/setup.ts)** - `/setup user_id:<id> user_hash:<hash>`
 - **[src/bot/commands/redeem.ts](../src/bot/commands/redeem.ts)** - `/redeem code:<code>`
@@ -82,9 +81,12 @@ idle-code-redeemer/
 - **[src/bot/commands/inventory.ts](../src/bot/commands/inventory.ts)** - `/inventory` (gold, rubies, equipment, progress)
 - **[src/bot/commands/open.ts](../src/bot/commands/open.ts)** - `/open chest_type:<type> count:<count>`
 - **[src/bot/commands/blacksmith.ts](../src/bot/commands/blacksmith.ts)** - `/blacksmith contract_type:<type> hero_id:<id> count:<count>`
-- **[src/bot/commands/codes.ts](../src/bot/commands/codes.ts)** - `/codes [count:<count>]` (view redeemed codes history)
+- **[src/bot/commands/codes.ts](../src/bot/commands/codes.ts)** - `/codes` (paginated redeemed codes history with loot, 5 per page)
 - **[src/bot/commands/makepublic.ts](../src/bot/commands/makepublic.ts)** - `/makepublic code:<code>` (share codes with other users)
-- **[src/bot/commands/backfill.ts](../src/bot/commands/backfill.ts)** - `/backfill [channel:<channel>]` (recover missed codes)
+- **[src/bot/commands/notifications.ts](../src/bot/commands/notifications.ts)** - `/notifications` (view/update DM preferences: dm_on_code, dm_on_success, dm_on_failure)
+- **[src/bot/commands/stats.ts](../src/bot/commands/stats.ts)** - `/stats` (server-wide stats: unique codes, total redemptions, registered users, aggregate loot)
+- **[src/bot/commands/logs.ts](../src/bot/commands/logs.ts)** - `/logs [lines:<1-100>]` (admin only: show last N lines of combined.log)
+- **[src/bot/commands/backfill.ts](../src/bot/commands/backfill.ts)** - `/backfill [channel:<channel>]` (admin only: recover missed codes)
 - **[src/bot/commands/deleteaccount.ts](../src/bot/commands/deleteaccount.ts)** - `/deleteaccount` (permanently delete all stored user data, GDPR-friendly)
 - **[src/bot/commands/help.ts](../src/bot/commands/help.ts)** - `/help`
 
@@ -95,23 +97,32 @@ idle-code-redeemer/
 - **[src/bot/database/codeManager.ts](../src/bot/database/codeManager.ts)** - Code tracking & history
 - **[src/bot/database/auditManager.ts](../src/bot/database/auditManager.ts)** - Audit log operations
 - **[src/bot/database/backfillManager.ts](../src/bot/database/backfillManager.ts)** - Backfill operations & global lock
-- **[src/bot/database/schema/](../src/bot/database/schema/)** - Drizzle table definitions (one TypeScript file per table)
+- **[src/bot/database/schema/](../src/bot/database/schema/)** - Drizzle table definitions: `users.ts`, `redeemed_codes.ts`, `pending_codes.ts`, `audit_log.ts`, `backfill_operations.ts`, `loot_totals.ts`
 - **[src/bot/database/migrations/](../src/bot/database/migrations/)** - Auto-generated SQL migrations (committed to source)
 
 ### Auto Features
 
 - **[src/bot/handlers/codeScanner.ts](../src/bot/handlers/codeScanner.ts)** - Message scanning for codes (regex pattern)
 - **[src/bot/handlers/autoRedeemer.ts](../src/bot/handlers/autoRedeemer.ts)** - Automatically redeems detected codes for all users with auto-redeem enabled
-- **[src/bot/utils/logger.ts](../src/bot/utils/logger.ts)** - Winston structured logger (file + console)
-- **[src/bot/utils/apiRequestLogger.ts](../src/bot/utils/apiRequestLogger.ts)** - API response logging
-- **[src/bot/utils/debugLogger.ts](../src/bot/utils/debugLogger.ts)** - Debug utilities
+- **[src/bot/utils/logger.ts](../src/bot/utils/logger.ts)** - Winston structured logger (file + console, log rotation)
+- **[src/bot/utils/crypto.ts](../src/bot/utils/crypto.ts)** - AES-256-GCM encryption/decryption for stored credentials
+- **[src/bot/utils/apiRequestLogger.ts](../src/bot/utils/apiRequestLogger.ts)** - API response logging with sanitized URLs and auto-cleanup
+- **[src/bot/utils/debugLogger.ts](../src/bot/utils/debugLogger.ts)** - Debug utilities (auto-cleanup of old debug files)
 
 ### Tests
 
-- **[src/bot/handlers/codeScanner.test.ts](../src/bot/handlers/codeScanner.test.ts)** - Unit tests for code detection regex
-- **[src/bot/database/codeManager.test.ts](../src/bot/database/codeManager.test.ts)** - Unit tests for all CodeManager methods
-- **[src/bot/database/userManager.test.ts](../src/bot/database/userManager.test.ts)** - Unit tests for all UserManager CRUD operations
-- **[src/test/setup.ts](../src/test/setup.ts)** - Bun test preload: sets `DB_PATH=:memory:` before imports
+- **[src/bot/handlers/codeScanner.test.ts](../src/bot/handlers/codeScanner.test.ts)** - Unit tests for code detection regex, emoji stripping
+- **[src/bot/handlers/autoRedeemer.test.ts](../src/bot/handlers/autoRedeemer.test.ts)** - Queue serialization, DM sending
+- **[src/bot/handlers/backfillHandler.test.ts](../src/bot/handlers/backfillHandler.test.ts)** - Message history backfill
+- **[src/bot/database/codeManager.test.ts](../src/bot/database/codeManager.test.ts)** - All CodeManager methods: per-user redemption, public/private codes, pending, expiry, loot totals
+- **[src/bot/database/userManager.test.ts](../src/bot/database/userManager.test.ts)** - All UserManager CRUD operations (with encryption)
+- **[src/bot/database/auditManager.test.ts](../src/bot/database/auditManager.test.ts)** - Audit log operations
+- **[src/bot/database/backfillManager.test.ts](../src/bot/database/backfillManager.test.ts)** - Backfill rate limiting
+- **[src/bot/commands/notifications.test.ts](../src/bot/commands/notifications.test.ts)** - `/notifications` command and preference updates
+- **[src/bot/commands/stats.test.ts](../src/bot/commands/stats.test.ts)** - `/stats` with empty/populated DB
+- **[src/bot/commands/logs.test.ts](../src/bot/commands/logs.test.ts)** - `/logs` command with mocked filesystem
+- **[src/bot/utils/apiRequestLogger.test.ts](../src/bot/utils/apiRequestLogger.test.ts)** - API log file cleanup
+- **[src/test/setup.ts](../src/test/setup.ts)** - Bun test preload: sets `DB_PATH=:memory:` and `MIGRATIONS_PATH` before imports
 
 ### Configuration
 

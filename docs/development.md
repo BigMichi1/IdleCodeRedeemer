@@ -33,7 +33,8 @@ brew install mise
 src/bot/
 ├── bot.ts                      # Main Discord client & events
 ├── api/
-│   └── idleChampionsApi.ts     # Game API client (query-param based)
+│   ├── idleChampionsApi.ts     # Game API client (query-param based)
+│   └── types/                  # Type definitions from game API
 ├── commands/
 │   ├── setup.ts                # Save user credentials
 │   ├── redeem.ts               # Manual code redemption
@@ -42,14 +43,18 @@ src/bot/
 │   ├── inventory.ts            # Show account info
 │   ├── open.ts                 # Open chests
 │   ├── blacksmith.ts           # Upgrade heroes
-│   ├── codes.ts                # Show code history
+│   ├── codes.ts                # Show code history (paginated)
 │   ├── makepublic.ts           # Share codes with other users
-│   ├── backfill.ts             # Recover missed codes from history
+│   ├── notifications.ts        # View/update DM notification preferences
+│   ├── stats.ts                # Server-wide stats and aggregate loot
+│   ├── logs.ts                 # Show last N lines of bot log (admin)
+│   ├── backfill.ts             # Recover missed codes from history (admin)
+│   ├── deleteaccount.ts        # GDPR account deletion
 │   └── help.ts                 # Command help
 ├── database/
 │   ├── db.ts                   # Drizzle database connection & migrate()
-│   ├── userManager.ts          # User credentials storage
-│   ├── codeManager.ts          # Code tracking & history
+│   ├── userManager.ts          # User credentials storage (AES-256-GCM encrypted)
+│   ├── codeManager.ts          # Code tracking, history & loot totals
 │   ├── auditManager.ts         # Audit log operations
 │   ├── backfillManager.ts      # Backfill operations & locking
 │   ├── schema/                 # Drizzle table definitions (one file per table)
@@ -58,7 +63,8 @@ src/bot/
 │   │   ├── redeemed_codes.ts
 │   │   ├── pending_codes.ts
 │   │   ├── audit_log.ts
-│   │   └── backfill_operations.ts
+│   │   ├── backfill_operations.ts
+│   │   └── loot_totals.ts
 │   └── migrations/             # Auto-generated SQL migrations (drizzle-kit)
 ├── handlers/
 │   ├── codeScanner.ts          # Message code detection
@@ -66,6 +72,7 @@ src/bot/
 │   └── backfillHandler.ts      # Message history scanning & redemption
 └── utils/
     ├── logger.ts               # Winston logger (file + console output)
+    ├── crypto.ts               # AES-256-GCM encryption/decryption for credentials
     ├── apiRequestLogger.ts     # API response logging & cleanup
     └── debugLogger.ts          # Debug utilities
 
@@ -139,8 +146,16 @@ bun test --watch    # Re-run on file changes
 | File | What it tests |
 |------|---------------|
 | `src/bot/handlers/codeScanner.test.ts` | `extractCodesFromText` — regex, emoji stripping, case normalisation |
-| `src/bot/database/codeManager.test.ts` | All `CodeManager` methods — per-user redemption, public/private, pending codes |
-| `src/bot/database/userManager.test.ts` | All `UserManager` CRUD operations |
+| `src/bot/handlers/autoRedeemer.test.ts` | Queue serialization, DM sending, skip logic |
+| `src/bot/handlers/backfillHandler.test.ts` | Message history scanning, server swap handling |
+| `src/bot/database/codeManager.test.ts` | All `CodeManager` methods — per-user redemption, public/private, pending codes, loot totals |
+| `src/bot/database/userManager.test.ts` | All `UserManager` CRUD operations (with AES-256-GCM encryption) |
+| `src/bot/database/auditManager.test.ts` | Audit log operations |
+| `src/bot/database/backfillManager.test.ts` | Backfill rate limiting, global lock |
+| `src/bot/commands/notifications.test.ts` | `/notifications` command and preference updates |
+| `src/bot/commands/stats.test.ts` | `/stats` with empty/populated DB |
+| `src/bot/commands/logs.test.ts` | `/logs` command with mocked filesystem |
+| `src/bot/utils/apiRequestLogger.test.ts` | API log file cleanup, sensitive param masking |
 
 ### How It Works
 
@@ -226,10 +241,14 @@ erDiagram
 
     USERS {
         string discord_id PK
-        int user_id "Idle Champions user ID"
-        string user_hash "Idle Champions auth token"
+        string user_id "AES-256-GCM encrypted"
+        string user_hash "AES-256-GCM encrypted"
         string server "game server URL"
-        string instance_id "deprecated"
+        string instance_id
+        boolean auto_redeem "default true"
+        boolean dm_on_code "default false"
+        boolean dm_on_success "default true"
+        boolean dm_on_failure "default false"
         datetime created_at
         datetime updated_at
     }
@@ -239,17 +258,17 @@ erDiagram
         string code
         string discord_id FK
         string status "Success or Code Expired"
-        json loot
+        json loot_detail
         int is_public "0 = private, 1 = public"
         datetime expires_at
-        datetime timestamp
+        datetime redeemed_at
     }
 
     PENDING_CODES {
         int id PK
         string code
         string discord_id FK
-        datetime added_at
+        datetime found_at
     }
 
     AUDIT_LOG {
@@ -257,17 +276,24 @@ erDiagram
         string discord_id FK
         string action
         json details
-        datetime timestamp
+        datetime created_at
     }
 
     BACKFILL_OPERATIONS {
         int id PK
-        string initiated_by "discord_id FK or 'system'"
+        string initiated_by "discord_id"
         datetime started_at
         datetime completed_at
         int codes_found
         int codes_redeemed
         string status "in_progress, completed, failed"
+    }
+
+    LOOT_TOTALS {
+        string loot_key PK
+        string loot_type "chest or item"
+        string scope PK "discordId or __server__"
+        int total_count
     }
 ```
 

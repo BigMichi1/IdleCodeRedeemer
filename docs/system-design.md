@@ -92,9 +92,10 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: End-user interacting with the bot
 
 **Actions**:
-- Submit slash commands (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/deleteaccount`, `/help`)
+- Submit slash commands (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/notifications`, `/stats`, `/logs`, `/backfill`, `/deleteaccount`, `/help`)
 - Send messages containing promo codes in the monitored channel
 - Receive responses and error messages from the bot
+- Receive DM notifications for code detection, redemption success/failure (configurable via `/notifications`)
 
 **Data Exchanged**:
 - Credentials (user ID, hash) → to bot
@@ -132,7 +133,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 - **Auto Redeemer** - Automatically redeems detected codes for all users with auto-redeem enabled
 - **Backfill Handler** - Scans message history
 - **API Client** - Communicates with Idle Champions API
-- **Database Managers** - Persistence layer (users, codes, backfill state)
+- **Database Managers** - Persistence layer (users, codes, audit, backfill state, loot totals)
 
 **Actions**:
 - Listen for messageCreate events (channel-specific)
@@ -183,22 +184,27 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: Persistent local storage
 
 **Tables**:
-- **users** - User credentials (Discord ID, user_id, hash)
-- **codes** - Code history (code, redeemer, timestamp, result)
-- **backfill_state** - Backfill operation tracking (lock, last_message, status)
-- **debug_log** - API response logging (call, timestamp, response, cleanup)
+- **users** - User credentials (Discord ID, encrypted user_id, encrypted hash, notification preferences, autoRedeem)
+- **redeemed_codes** - Code history (code, discordId, redeemed_at, status, loot_detail, is_public, expires_at)
+- **pending_codes** - Codes detected but not yet redeemed by the finder
+- **audit_log** - Operation tracking (action, details, created_at per user)
+- **backfill_operations** - Backfill run history & global lock (status: in_progress/completed/failed)
+- **loot_totals** - Aggregate loot cache (per-user and server-wide counts for `/stats`)
 
 **Actions**:
-- Store/retrieve user credentials
-- Record code redemption history
-- Track backfill operation state
-- Log API responses for debugging
+- Store/retrieve user credentials (AES-256-GCM encrypted)
+- Record code redemption history with loot details
+- Track pending codes for catchup/auto-redeem
+- Manage backfill operation locking and history
+- Cache aggregate loot totals for efficient stats queries
+- Log all operations for audit trail
 
 **Data Characteristics**:
 - **Persistence**: Data survives bot restarts
 - **Locality**: No network dependency
 - **Isolation**: Each user's data accessible only via their Discord ID
-- **Cleanup**: Debug logs auto-deleted after 7 days
+- **Encryption**: User credentials encrypted with AES-256-GCM at rest
+- **Cleanup**: Debug files (`debug/`) deleted after 1 hour; API request logs (`api-logs/`) deleted after 1 day
 
 ---
 

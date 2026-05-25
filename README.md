@@ -84,16 +84,19 @@ See [docker-compose.example.yml](docker-compose.example.yml) for all available c
 
 ## ✨ Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/deleteaccount`, `/help`
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/notifications`, `/stats`, `/logs`, `/deleteaccount`, `/help`
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
 - ⏮️ **Message History Backfill** - Recover missed codes from message history with built-in rate limiting
 - 🔁 **Catch Up** - Redeem all known valid codes in one command (great for new members)
 - 🤖 **Auto-Redeem Toggle** - Enable or disable automatic code redemption per user (`/autoredeem`)
+- 🔔 **DM Notifications** - Configurable per-user DM alerts for new codes, successes, and failures (`/notifications`)
+- 📊 **Server Stats** - Aggregate loot totals and redemption statistics (`/stats`)
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
 - ⚒️ **Blacksmith** - Upgrade heroes with contracts
-- 📊 **Inventory** - View gold, rubies, equipment, and progress
+- 📋 **Inventory** - View gold, rubies, equipment, and progress
 - 🗑️ **Account Deletion** - GDPR-friendly self-service data removal (`/deleteaccount`)
+- 🔐 **Encrypted Credentials** - AES-256-GCM encryption for stored user credentials
 - 💾 **Secure Storage** - SQLite database keeps credentials safe and local
 - 👥 **Multi-User** - Each user manages their own account
 - ⚡ **Fast** - Built on Bun for 3-4x performance vs Node.js

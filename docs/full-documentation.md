@@ -4,14 +4,17 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ## Features
 
-- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/deleteaccount`, `/help`
+- 🤖 **Slash Commands** - `/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/notifications`, `/stats`, `/logs`, `/backfill`, `/deleteaccount`, `/help`
 - 🔄 **Auto Code Detection** - Scans Discord messages for codes automatically
 - 🤖 **Auto-Redeem Toggle** - Enable or disable automatic code redemption per user (`/autoredeem`)
+- 🔔 **DM Notifications** - Configurable per-user DM alerts for new codes, successes, and failures (`/notifications`)
+- 📊 **Server Stats** - Aggregate loot totals and redemption statistics (`/stats`)
 - ⏮️ **Message History Backfill** - Recover missed codes from message history (protected with rate limiting)
 - 🎁 **Code Redemption** - Submit codes and get rewards
 - 📦 **Chest Management** - Open chests and view loot
 - ⚒️ **Blacksmith** - Upgrade heroes with contracts
-- 📊 **Inventory** - View gold, rubies, equipment, and progress
+- 📋 **Inventory** - View gold, rubies, equipment, and progress
+- 🔐 **Encrypted Credentials** - AES-256-GCM encryption for stored user credentials
 - 💾 **Secure Storage** - SQLite database keeps credentials safe and local
 - 🗑️ **Account Deletion** - GDPR-friendly self-service removal of all stored data (`/deleteaccount`)
 - 👥 **Multi-User** - Each user manages their own account
@@ -69,9 +72,12 @@ brew install mise
 | `/inventory`                                                  | View your account (gold, rubies, equipment, progress) |
 | `/open chest_type:<type> count:<count>`                       | Open chests (Gold, Sapphire, etc.)                    |
 | `/blacksmith contract_type:<type> hero_id:<id> count:<count>` | Upgrade heroes                                        |
-| `/codes [count:<count>]`                                      | Show your redeemed codes history (last 10)            |
+| `/codes`                                                      | Show your redeemed codes history (paginated, 5 per page) |
 | `/makepublic code:<code>`                                     | Share one of your redeemed codes with other users     |
-| `/backfill [channel:<channel>]`                               | Recover missed codes from message history             |
+| `/notifications`                                              | View/update DM notification preferences               |
+| `/stats`                                                      | Server-wide statistics and aggregate loot totals      |
+| `/logs [lines:<1-100>]`                                       | Show last N lines of combined.log (admin only)        |
+| `/backfill [channel:<channel>]`                               | Recover missed codes from message history (admin only) |
 | `/deleteaccount`                                              | Permanently delete all your stored data (GDPR)        |
 | `/help`                                                       | Show all commands                                     |
 
@@ -220,6 +226,42 @@ Permanently and irreversibly delete all data the bot holds about you. Requires a
 - **After deletion:** You will need to run `/setup` again to use the bot
 - **Example:** `/deleteaccount`
 
+### Notification Preferences
+
+#### `/notifications`
+
+View and update your DM notification preferences.
+
+- **No parameters required** (shows current settings)
+- **Optional parameters:**
+  - `dm_on_code` – DM when a new code is detected in the channel (default: false)
+  - `dm_on_success` – DM when auto-redeem succeeds (default: true)
+  - `dm_on_failure` – DM when auto-redeem fails (default: false)
+- **Example:** `/notifications` or `/notifications dm_on_code:true dm_on_failure:true`
+
+### Server Statistics
+
+#### `/stats`
+
+Show server-wide code redemption statistics and aggregate loot totals.
+
+- **No parameters required**
+- **Shows:** Total unique codes seen, total redemption events, registered user count, server-wide aggregate loot
+- **Available to:** All users — no special permissions required
+- **Example:** `/stats`
+
+### Admin Tools
+
+#### `/logs [lines:<1-100>]`
+
+Show the last N lines of the bot's combined log file.
+
+- **Optional parameters:**
+  - `lines` – Number of log lines (1–100, default: 20)
+- **Permissions:** Requires Discord `Manage Messages` permission
+- **Returns:** Ephemeral embed with log content
+- **Example:** `/logs` or `/logs lines:50`
+
 ### Help
 
 #### `/help`
@@ -235,23 +277,35 @@ Display all available commands with brief descriptions.
 src/bot/
 ├── bot.ts                     # Main Discord client & event handlers
 ├── api/
-│   └── idleChampionsApi.ts    # Game server API client
-├── commands/              # Slash command handlers (11 commands)
+│   ├── idleChampionsApi.ts    # Game server API client
+│   └── types/                 # Type definitions from game API
+├── commands/              # Slash command handlers (15 commands)
 ├── database/              # Database layer (Drizzle ORM)
 │   ├── db.ts              # Drizzle connection & migrate() on startup
-│   ├── userManager.ts     # User credentials
-│   ├── codeManager.ts     # Code tracking & history
+│   ├── userManager.ts     # User credentials (AES-256-GCM encrypted)
+│   ├── codeManager.ts     # Code tracking, history & loot totals
 │   ├── auditManager.ts    # Audit log
 │   ├── backfillManager.ts # Backfill locking & tracking
 │   ├── schema/            # Drizzle table definitions (one file per table)
+│   │   ├── users.ts
+│   │   ├── redeemed_codes.ts
+│   │   ├── pending_codes.ts
+│   │   ├── audit_log.ts
+│   │   ├── backfill_operations.ts
+│   │   └── loot_totals.ts
 │   └── migrations/        # Auto-generated SQL migrations
 ├── handlers/              # Message scanning for codes
-└── utils/                 # Helpers (logging, debug logging, etc.)
+│   ├── codeScanner.ts
+│   ├── autoRedeemer.ts
+│   └── backfillHandler.ts
+└── utils/                 # Helpers (logging, crypto, debug, API logging)
+    ├── logger.ts
+    ├── crypto.ts
+    ├── apiRequestLogger.ts
+    └── debugLogger.ts
 
 src/test/
 └── setup.ts               # Bun test preload (DB_PATH=:memory:)
-lib/
-└── *.d.ts                 # Type definitions from game API
 ```
 
 ## Configuration
@@ -288,11 +342,12 @@ mise tasks        # View all available tasks
 
 SQLite database managed with Drizzle ORM (`bun:sqlite` + `drizzle-orm`). Migrations are applied automatically at startup.
 
-- **users** - Discord user credentials
+- **users** - Discord user credentials (AES-256-GCM encrypted user_id/hash), notification prefs, autoRedeem flag
 - **redeemed_codes** - Code history (status: `Success` or `Code Expired`; includes `is_public` and `expires_at`)
 - **pending_codes** - Codes waiting to be redeemed
 - **audit_log** - All bot actions
 - **backfill_operations** - Backfill run history & global lock
+- **loot_totals** - Aggregate loot cache (per-user and server-wide, used by `/stats`)
 
 ```bash
 bun run db:generate   # Regenerate migrations from schema changes

@@ -29,7 +29,7 @@ The Discord bot responds to slash commands in Discord channels. All commands ret
 
 **Response Format**: Discord Embeds (rich message format) or Ephemeral Text
 
-**Total commands**: 12 (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/backfill`, `/deleteaccount`, `/help`)
+**Total commands**: 15 (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/notifications`, `/stats`, `/logs`, `/backfill`, `/deleteaccount`, `/help`)
 
 ---
 
@@ -754,7 +754,119 @@ Bot (ephemeral): ✅ Account Deleted
 
 ---
 
-### 12. `/help`
+### 13. `/notifications`
+
+View and update DM notification preferences.
+
+**Invocation**:
+```
+/notifications [dm_on_code:<true|false>] [dm_on_success:<true|false>] [dm_on_failure:<true|false>]
+```
+
+**Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `dm_on_code` | boolean | No | DM when a new code is detected in the channel (default: false) |
+| `dm_on_success` | boolean | No | DM when auto-redeem succeeds (default: true) |
+| `dm_on_failure` | boolean | No | DM when auto-redeem fails (default: false) |
+
+**Behaviour**: With no parameters, shows current preferences. With parameters, updates specified preferences.
+
+**Response Format** (Ephemeral):
+```
+┌─────────────────────────────────────────┐
+│ 🔔 Notification Preferences             │
+│                                         │
+│ DM on code detected:  ❌ Off            │
+│ DM on redeem success: ✅ On             │
+│ DM on redeem failure: ❌ Off            │
+└─────────────────────────────────────────┘
+```
+
+**Error Responses**:
+
+| Error | Cause | Resolution |
+|-------|-------|-----------|
+| `NO_CREDENTIALS` | User hasn't run `/setup` | Run `/setup` first |
+
+---
+
+### 14. `/stats`
+
+Show server-wide code redemption statistics and aggregate loot totals.
+
+**Invocation**:
+```
+/stats
+```
+
+**Parameters**: None
+
+**Response Format** (Public Embed):
+```
+┌───────────────────────────────────────┐
+│ 📊 Server Statistics                  │
+│                                       │
+│ Unique codes tracked: 142             │
+│ Total redemptions:    1,087           │
+│ Registered users:     12              │
+│                                       │
+│ **Aggregate Loot (all users)**        │
+│ Sapphire Chest: 2,340                 │
+│ Gold Chest: 810                       │
+│ Modron Chest: 156                     │
+│ ...                                   │
+└───────────────────────────────────────┘
+```
+
+**Data Returned**:
+- Total unique codes seen by the bot
+- Total successful redemption events
+- Number of registered users
+- Server-wide aggregate chest and item loot counts
+
+---
+
+### 15. `/logs`
+
+Show the last N lines of the bot's combined log file. Admin only.
+
+**Invocation**:
+```
+/logs [lines:<number>]
+```
+
+**Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `lines` | integer | No | Number of log lines to show (1-100, default: 20) |
+
+**Permissions**: Requires the `Manage Messages` permission on the Discord server.
+
+**Response Format** (Ephemeral):
+```
+┌─────────────────────────────────────────────┐
+│ 📋 Last 20 log lines                        │
+│                                             │
+│ [2026-05-24 10:15:01] [info]  Bot ready     │
+│ [2026-05-24 10:15:42] [info]  Code detected │
+│ [2026-05-24 10:15:43] [info]  Redeemed OK   │
+│ ...                                         │
+└─────────────────────────────────────────────┘
+```
+
+**Error Responses**:
+
+| Error | Cause | Resolution |
+|-------|-------|-----------|
+| `PERMISSION_DENIED` | User lacks Manage Messages permission | Requires Manage Messages permission |
+| `LOG_NOT_FOUND` | Log file does not exist | Bot has not run long enough to create logs |
+
+---
+
+### 16. `/help`
 
 Display command reference and usage instructions.
 
@@ -796,7 +908,13 @@ Display command reference and usage instructions.
 │ **Utilities**                                │
 │ /autoredeem enabled:<on|off>                │
 │   Toggle automatic code redemption           │
-│ /backfill [channel:<channel>]               │
+│ /notifications                               │
+│   View/update DM notification preferences   │
+│ /stats                                       │
+│   Server-wide stats and aggregate loot       │
+│ /logs [lines:<num>] (admin)                 │
+│   Show last N lines of the bot log           │
+│ /backfill [channel:<channel>] (admin)       │
 │   Recover codes from message history         │
 │ /deleteaccount                               │
 │   Permanently delete all your stored data    │
@@ -823,35 +941,36 @@ The bot automatically scans all messages in the monitored channel for promo code
 
 **Trigger**: Message posted in monitored Discord channel
 
-**Pattern Matching**: Regular expression matching 4-20 alphanumeric character sequences
+**Pattern Matching**: Regular expression matching 12- or 16-character sequences of uppercase alphanumeric and symbol characters (optionally hyphen-separated)
 
 **Detection Pattern**:
 ```regex
-\b([A-Z0-9]{4,20})\b
+(?:[A-Z0-9*!@#$%^&*]-?){12}(?:(?:[A-Z0-9*!@#$%^&*]-?){4})?
 ```
 
+Applied after stripping Discord emoji tags (`<:name:id>`, `<a:name:id>`) and URLs from message content.
+
 Matches:
-- `IDLE2024` ✅
-- `CHAMPIONS500` ✅
-- `PROMO100` ✅
+- 12-character or 16-character sequences of uppercase alphanumeric and symbol characters
+- Characters may be separated by single hyphens (e.g., `ABCD-EFGH-IJKL`)
 
 Does NOT match:
-- `ABC` (too short, <4 chars) ❌
-- `ABC-123` (contains hyphen) ❌
-- `abc123` (all lowercase, needs validation per API) ⚠️
+- Shorter sequences (< 12 characters)
+- Discord emoji markup (stripped before matching)
+- URLs (stripped before matching)
 
 **Detection Behavior**:
 
 ```
-Message Posted: "Free code: IDLE2024"
+Message Posted: "Free code: ABCD1234EFGH"
                         ↓
 Bot scans message content
                         ↓
-Pattern matches: IDLE2024
+Pattern matches: ABCD1234EFGH
                         ↓
 Retrieves message author credentials
                         ↓
-Calls API: redeemCoupon(IDLE2024)
+Calls API: redeemCoupon(ABCD1234EFGH)
                         ↓
 Records result in database
                         ↓

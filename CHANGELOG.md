@@ -8,6 +8,65 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`/stats` command** - Server-wide statistics and aggregate loot totals
+  - Shows total unique codes seen, total redemption events, registered user count
+  - Displays server-wide aggregate chest and item loot counts from `loot_totals` table
+  - Available to all users — no special permissions required
+
+- **`/logs` command** - Real-time log viewing for administrators
+  - Shows last N lines (1–100, default 20) of `logs/combined.log`
+  - Restricted to users with Discord `Administrator` permission
+  - Returns ephemeral response
+
+- **`/notifications` command** - Configurable per-user DM notification preferences
+  - `dm_on_code` (default: false) — DM user when a new code is detected in the channel
+  - `dm_on_success` (default: true) — DM user when auto-redeem succeeds
+  - `dm_on_failure` (default: false) — DM user when auto-redeem fails
+  - With no parameters, shows current preferences
+  - Settings persisted in `users` table
+
+- **`/deleteaccount` command** - GDPR-compliant self-service account deletion
+  - Requires explicit confirmation via Yes / Cancel button prompt (30-second timeout)
+  - Deletes: credentials, all redeemed code records, audit log entries, backfill operation history
+  - Refuses deletion while a user-initiated backfill is in progress
+  - Returns per-category deletion summary
+
+- **AES-256-GCM credential encryption** - Credentials now encrypted at rest
+  - `users.user_id` and `users.user_hash` stored as AES-256-GCM ciphertext (`enc1:<iv>:<authTag>:<ct>`)
+  - 12-byte random IV and 16-byte auth tag per ciphertext
+  - Key loaded from `ENCRYPTION_KEY` env var (64-char hex = 32 bytes)
+  - `isEncrypted()` / `encrypt()` / `decrypt()` helpers in `src/bot/utils/crypto.ts`
+  - `migratePlaintextCredentials()` in UserManager migrates existing plaintext rows on startup
+
+- **`loot_totals` table** - Aggregate loot cache
+  - Pre-computed per-user and server-wide loot totals updated on every redemption
+  - Composite primary key: `(loot_key, scope)` where scope is `discordId` or `__server__`
+  - `backfillLootTotals()` rebuilds the cache from existing `redeemed_codes` rows
+  - Powers the `/stats` aggregate loot display
+
+- **Winston structured logging** (`src/bot/utils/logger.ts`)
+  - Logs to `logs/combined.log` (all levels, 20 rotated files, 5 MB each)
+  - Logs errors to `logs/error.log` (10 rotated files)
+  - Console output colour-coded with timestamps
+  - Default level `info`; override with `LOG_LEVEL=debug` in `.env`
+  - `/logs` command reads `combined.log` for in-Discord admin access
+
+- **`/backfill` command** - Recover missed codes from channel history (admin only)
+  - Fetches message history in batches of 100 via Discord API
+  - Global concurrency lock: only one backfill runs at a time
+  - Per-user rate limit: 1 backfill per hour
+  - Startup backfill: runs automatically on bot start if last run was > 6 hours ago
+  - Progress reported via interaction follow-ups
+  - Returns `{ codesFound, codesRedeemed, pendingCodes, errors }` summary
+
+- **DM notification fan-out in `bot.ts`** - On code detection
+  - `getAllUsersWithDmOnCode()` fetches users with `dm_on_code = true`
+  - Sends a DM to each matching user when a new code is detected in the monitored channel
+
+- **`/codes` pagination** - `/codes` now paginates results (5 per page) with Prev/Next buttons
+  - `buildCodesPage()` helper generates paginated embeds
+  - Each entry shows code, status, loot detail, and timestamp
+
 - **`/catchup` command** - Redeem all known valid codes in one step
   - Collects every code the bot has seen (successful redeems from any user + pending codes)
   - Skips codes already redeemed by the requesting user and codes marked as expired
