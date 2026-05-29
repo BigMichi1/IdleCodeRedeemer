@@ -163,7 +163,7 @@ jobs:
           VERSION="${RELEASE_TAG#v}"
 
           # Create detailed attestation with build metadata
-          cat > attestation.json << 'EOF'
+          cat > attestation.json << EOF
           {
             "version": "1.0.0",
             "attestation_type": "release-manifest",
