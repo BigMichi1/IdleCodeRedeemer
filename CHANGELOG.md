@@ -72,6 +72,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   by re-running it. Dispatch runs from the default branch and resolves the release by tag.
 - **`deps:submit`, `deps:snapshot` and `audit:ci` Mise tasks**, plus `jq` in the pinned
   toolchain.
+- **`scripts/` is covered by typecheck, lint and formatting** - `tsconfig.bot.json`,
+  `eslint.config.mjs` and the Prettier globs all matched `src/` only, so anything under
+  `scripts/` was unchecked by every gate. Verified by planting a type error there and
+  confirming `typecheck` reports it.
 - **`db:generate` and `db:studio` Mise tasks** - Drizzle commands existed only as npm
   scripts, so the documented Mise-only workflow had no way to run them.
 
