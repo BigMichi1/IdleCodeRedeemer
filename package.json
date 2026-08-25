@@ -39,7 +39,7 @@
     "@types/bun": "1.4.0",
     "@typescript-eslint/eslint-plugin": "8.67.0",
     "@typescript-eslint/parser": "8.59.2",
-    "commitlint": "21.0.0",
+    "commitlint": "21.2.2",
     "drizzle-kit": "0.31.10",
     "eslint": "10.9.0",
     "husky": "9.1.7",

@@ -30,6 +30,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Commit message validation was silently accepting anything** - The `commitlint` Mise task
+  carried `--edit` while the commit-msg hook appended its own `--edit <path>`. The resulting
+  `--edit --edit <path>` made commitlint validate nothing and exit 0, so Conventional Commits
+  were not enforced at all: a message of `not a conventional message` passed the hook. The
+  flag now belongs to the caller, and the hook exits 1 on an invalid message.
+- **`commitlint` CLI moved to 21.2.2 to match its config package** - Dependabot bumped
+  `@commitlint/config-conventional` to 21.2.2 while the CLI stayed pinned at 21.0.0. The
+  newer config depends on an ESM-only `conventional-changelog-conventionalcommits` that the
+  older CLI's resolve-extends cannot `require`, so every commit failed with
+  `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+- **Prettier 3.9 union formatting** - `format:check` went red on main when prettier 3.9.6
+  merged; one union type in `idleChampionsApi.ts` reflows onto a single line.
 - **`format` and `format:check` tasks no longer fail on startup** - Syncpack 15 removed
   the `--source` flag and renamed `list-mismatches` to `lint`. Both tasks aborted before
   Prettier ever ran, so formatting drift accumulated unnoticed across 37 files.

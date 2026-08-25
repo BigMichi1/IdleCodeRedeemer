@@ -179,8 +179,13 @@ echo "4. Run: ./bin/mise run dev"
 '''
 
 [tasks.commitlint]
-description = "Validate commit message format"
-run = "bunx commitlint --edit"
+# No --edit here. The commit-msg hook appends its own `--edit <path>`, and the
+# resulting `--edit --edit <path>` made commitlint validate nothing and exit 0,
+# so Conventional Commits were not actually being enforced. Callers pass the
+# flag: `mise run commitlint --edit` for the current message, or
+# `--edit <path>` for a specific file.
+description = "Validate a commit message (pass --edit or --edit <path>)"
+run = "bunx commitlint"
 
 [tasks.help]
 description = "Show all available tasks"
