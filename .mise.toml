@@ -87,6 +87,14 @@ run = "docker-compose logs -f idle-code-redeemer"
 description = "Restart bot container"
 run = "docker-compose restart idle-code-redeemer"
 
+[tasks."db:generate"]
+description = "Generate a Drizzle migration from the schema in src/bot/database/schema"
+run = "bun run db:generate"
+
+[tasks."db:studio"]
+description = "Open Drizzle Studio against the local database"
+run = "bun run db:studio"
+
 [tasks.lint]
 description = "Check code quality with ESLint"
 run = "bun run lint"
@@ -104,8 +112,11 @@ description = "Auto-fix ESLint issues"
 run = "bun run lint:fix"
 
 [tasks.gitleaks]
+# The config path is part of the task, not the caller. The pre-commit hook used
+# to append its own `detect --source . --config ...`, producing a duplicated
+# argument list that gitleaks silently tolerated.
 description = "Scan for secrets with Gitleaks"
-run = "gitleaks detect --source . --verbose"
+run = "gitleaks detect --source . --config .gitleaks.toml --verbose"
 
 [tasks.audit]
 description = "Audit dependencies for vulnerabilities"

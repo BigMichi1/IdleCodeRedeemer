@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- **`format` and `format:check` tasks no longer fail on startup** - Syncpack 15 removed
+  the `--source` flag and renamed `list-mismatches` to `lint`. Both tasks aborted before
+  Prettier ever ran, so formatting drift accumulated unnoticed across 37 files.
+- **Pre-commit secret scan no longer passes duplicated arguments** - The hook appended its
+  own `detect --source . --config ...` to a Mise task that already carried those flags.
+  The config path now lives in the `gitleaks` task and the hook invokes it bare.
+
+### Added
+
+- **`db:generate` and `db:studio` Mise tasks** - Drizzle commands existed only as npm
+  scripts, so the documented Mise-only workflow had no way to run them.
+
 ## [3.0.0] - 2026-08-25
 
 ### Added

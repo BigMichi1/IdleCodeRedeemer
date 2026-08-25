@@ -15,8 +15,8 @@
     "db:studio": "drizzle-kit studio",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "format": "syncpack fix --source 'package.json' && prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
-    "format:check": "syncpack list-mismatches --source 'package.json' && prettier --check \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
+    "format": "syncpack fix && prettier --write \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
+    "format:check": "syncpack lint && prettier --check \"src/**/*.{ts,md}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
     "pre-commit": "lint-staged",
     "prepare": "husky"
   },
@@ -62,7 +62,7 @@
       "prettier --write"
     ],
     "package.json": [
-      "syncpack fix --source",
+      "sh -c 'syncpack fix' --",
       "prettier --write"
     ],
     "Dockerfile*": [
