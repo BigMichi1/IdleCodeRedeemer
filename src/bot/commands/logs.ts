@@ -9,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import logger from '../utils/logger';
 import { redactSensitive } from '../utils/redact';
+import { replyWithError } from '../utils/interactionReply';
 
 const LOG_FILE = path.join(process.cwd(), 'logs', 'combined.log');
 const MAX_LINES = 100;
@@ -95,14 +96,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     logger.error('[LOGS CMD] Error:', error);
-    const embed = new EmbedBuilder()
-      .setColor(0xff0000)
-      .setTitle('❌ Error')
-      .setDescription('Failed to read log file.');
-    if (interaction.deferred) {
-      await interaction.editReply({ embeds: [embed] });
-    } else {
-      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
-    }
+    await replyWithError(interaction, '❌ Error', 'Failed to read log file.');
   }
 }
