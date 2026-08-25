@@ -9,6 +9,7 @@ import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
 import logger from '../utils/logger';
+import { errorMessage, sleep } from '../utils/async';
 
 export const data = new SlashCommandBuilder()
   .setName('catchup')
@@ -215,7 +216,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         }
 
         // Small delay to avoid hammering the API
-        await new Promise((resolve) => setTimeout(resolve, 150));
+        await sleep(150);
       } catch (err) {
         logger.warn(
           `[CATCHUP] Failed to redeem code ${code} for ${interaction.user.tag}: ${err instanceof Error ? err.message : String(err)}`
@@ -252,7 +253,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         .setColor(0xff0000)
         .setTitle('❌ Error')
         .setDescription(
-          `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+          `An error occurred: ${errorMessage(error)}`
         );
 
       if (interaction.deferred) {

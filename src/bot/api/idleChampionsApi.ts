@@ -29,13 +29,6 @@ interface OpenChestsOptions {
   instanceId: string;
 }
 
-interface PurchaseChestsOptions {
-  server: string;
-  user_id: string;
-  hash: string;
-  chestTypeId: ChestType;
-  count: number;
-}
 
 interface UseBlacksmithOptions {
   server: string;
@@ -88,7 +81,6 @@ class IdleChampionsApi {
   private static readonly CLIENT_VERSION = '999';
   private static readonly NETWORK_ID = '21';
   private static readonly LANGUAGE_ID = '1';
-  public static readonly MAX_BUY_CHESTS = 250;
   public static readonly MAX_OPEN_CHESTS = 1000;
   public static readonly MAX_BLACKSMITH = 1000;
 
@@ -422,84 +414,6 @@ class IdleChampionsApi {
     return new GenericResponse(ResponseStatus.Failed);
   }
 
-  static async purchaseChests(options: PurchaseChestsOptions): Promise<GenericResponse> {
-    const request = new URL(options.server);
-
-    if (options.count > IdleChampionsApi.MAX_BUY_CHESTS) {
-      throw new Error('Count limited to IdleChampionsApi.MAX_BUY_CHESTS purchased per call.');
-    }
-
-    request.searchParams.append('call', 'buysoftcurrencychest');
-    request.searchParams.append('user_id', options.user_id);
-    request.searchParams.append('hash', options.hash);
-    request.searchParams.append('chest_type_id', options.chestTypeId.toString());
-    request.searchParams.append('count', options.count.toString());
-    request.searchParams.append('timestamp', '0');
-    request.searchParams.append('request_id', '0');
-    request.searchParams.append('network_id', IdleChampionsApi.NETWORK_ID);
-    request.searchParams.append('localization_aware', 'true');
-    request.searchParams.append('mobile_client_version', '999');
-    request.searchParams.append('language_id', IdleChampionsApi.LANGUAGE_ID);
-
-    logger.debug(`Purchasing chests from: ${request.toString().split('hash=')[0]}hash=***`);
-
-    try {
-      const response = await apiFetch(request.toString());
-      const purchaseResponse: PurchaseChestResponse = await IdleChampionsApi.tryToJson(
-        response.clone()
-      );
-
-      apiRequestLogger.log(
-        options.user_id,
-        'buysoftcurrencychest',
-        {
-          url: request.toString(),
-          method: 'POST',
-          body: { chestTypeId: options.chestTypeId, count: options.count },
-        },
-        {
-          status: response.status,
-          ok: response.ok,
-          body: purchaseResponse,
-        }
-      );
-
-      if (response.ok) {
-        if (!purchaseResponse) {
-          return new GenericResponse(ResponseStatus.Failed);
-        }
-        if (purchaseResponse.switch_play_server) {
-          return new GenericResponse(
-            ResponseStatus.SwitchServer,
-            purchaseResponse.switch_play_server
-          );
-        }
-        if (classifyFailureReason(String(purchaseResponse.failure_reason ?? ''))?.status === ResponseStatus.InsuficcientCurrency) {
-          return new GenericResponse(ResponseStatus.InsuficcientCurrency);
-        }
-        if (purchaseResponse.success && purchaseResponse.okay) {
-          return new GenericResponse(ResponseStatus.Success);
-        }
-      }
-    } catch (error) {
-      logger.error('Error purchasing chests:', error);
-      apiRequestLogger.log(
-        options.user_id,
-        'buysoftcurrencychest',
-        {
-          url: request.toString(),
-          method: 'POST',
-          body: { chestTypeId: options.chestTypeId, count: options.count },
-        },
-        {
-          status: 0,
-          ok: false,
-          error: String(error),
-        }
-      );
-    }
-    return new GenericResponse(ResponseStatus.Failed);
-  }
 
   static async useBlacksmith(
     options: UseBlacksmithOptions

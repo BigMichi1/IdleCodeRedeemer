@@ -27,6 +27,9 @@ export function normalizeCodeStatus(status: number | string): string {
   return status;
 }
 
+/** Scope key for the anonymised server-wide loot aggregate. */
+export const SERVER_SCOPE = '__server__';
+
 export const CHEST_TYPE_NAMES: Record<number, string> = {
   1: 'Silver Chest',
   2: 'Gold Chest',
@@ -37,7 +40,7 @@ export const CHEST_TYPE_NAMES: Record<number, string> = {
 export type LootSummary = { chests: Record<string, number>; items: Record<string, number> };
 
 function parseLootEntries(
-  lootStr: string | null
+  lootStr: string | null | undefined
 ): Array<{ key: string; type: 'chest' | 'item'; count: number }> {
   if (!lootStr) return [];
   let parsed: unknown;
@@ -94,17 +97,27 @@ class CodeManager {
     }
     // Maintain loot_totals for Success redemptions
     if (normalizedStatus === 'Success' && lootStr) {
-      const entries = parseLootEntries(lootStr);
-      for (const { key, type, count } of entries) {
-        for (const scope of [discordId, '__server__']) {
-          db.insert(lootTotals)
-            .values({ lootKey: key, lootType: type, scope, totalCount: count })
-            .onConflictDoUpdate({
-              target: [lootTotals.lootKey, lootTotals.scope],
-              set: { totalCount: sql`${lootTotals.totalCount} + ${count}` },
-            })
-            .run();
-        }
+      this.applyLootEntries(lootStr, discordId);
+    }
+  }
+
+  /**
+   * Add a code's loot to the per-user and server-wide totals.
+   *
+   * NOTE: this always ADDS, while addRedeemedCode's insert upserts. Callers must
+   * check isCodeRedeemedByUser() first or the same redemption will be counted
+   * twice, permanently inflating /codes and /stats.
+   */
+  private applyLootEntries(lootStr: string | null | undefined, discordId: string): void {
+    for (const { key, type, count } of parseLootEntries(lootStr)) {
+      for (const scope of [discordId, SERVER_SCOPE]) {
+        db.insert(lootTotals)
+          .values({ lootKey: key, lootType: type, scope, totalCount: count })
+          .onConflictDoUpdate({
+            target: [lootTotals.lootKey, lootTotals.scope],
+            set: { totalCount: sql`${lootTotals.totalCount} + ${count}` },
+          })
+          .run();
       }
     }
   }
@@ -452,7 +465,7 @@ class CodeManager {
   async getAggregateLoot(
     discordId?: string
   ): Promise<{ chests: Record<string, number>; items: Record<string, number> }> {
-    const scope = discordId ?? '__server__';
+    const scope = discordId ?? SERVER_SCOPE;
     const rows = db
       .select({
         lootKey: lootTotals.lootKey,
@@ -487,18 +500,7 @@ class CodeManager {
       .all();
 
     for (const row of rows) {
-      const entries = parseLootEntries(row.lootDetail);
-      for (const { key, type, count } of entries) {
-        for (const scope of [row.discordId, '__server__']) {
-          db.insert(lootTotals)
-            .values({ lootKey: key, lootType: type, scope, totalCount: count })
-            .onConflictDoUpdate({
-              target: [lootTotals.lootKey, lootTotals.scope],
-              set: { totalCount: sql`${lootTotals.totalCount} + ${count}` },
-            })
-            .run();
-        }
-      }
+      this.applyLootEntries(row.lootDetail, row.discordId);
     }
   }
 }

@@ -7,14 +7,10 @@ import {
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
+import { resolveGameSession } from './gameSession';
+import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
 
-enum ContractType {
-  Tiny = 31,
-  Small = 32,
-  Medium = 33,
-  Large = 34,
-}
 
 export const data = new SlashCommandBuilder()
   .setName('blacksmith')
@@ -63,76 +59,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const heroId = interaction.options.getString('hero_id', true);
     const count = interaction.options.getInteger('count', true);
 
-    // Get server
-    let server = credentials.server;
-    if (!server) {
-      server = await IdleChampionsApi.getServer();
-      if (!server) {
-        const embed = new EmbedBuilder()
-          .setColor(0xff0000)
-          .setTitle('❌ Error')
-          .setDescription('Could not determine game server.');
-
-        await interaction.editReply({ embeds: [embed] });
-        return;
-      }
-      await userManager.updateServer(interaction.user.id, server);
-    }
-
-    // Get fresh user details to get current instance ID
-    let userResult = await IdleChampionsApi.getUserDetails({
-      server,
-      user_id: credentials.userId,
-      hash: credentials.userHash,
-    });
-
-    // Handle server switch
-    if (
-      userResult instanceof Object &&
-      'status' in userResult &&
-      (userResult as any).status === 4
-    ) {
-      server = (userResult as any).newServer;
-      if (!server) {
-        const embed = new EmbedBuilder()
-          .setColor(0xff0000)
-          .setTitle('❌ Error')
-          .setDescription('Server switch failed.');
-
-        await interaction.editReply({ embeds: [embed] });
-        return;
-      }
-      await userManager.updateServer(interaction.user.id, server);
-
-      userResult = await IdleChampionsApi.getUserDetails({
-        server,
-        user_id: credentials.userId,
-        hash: credentials.userHash,
-      });
-    }
-
-    const userData = userResult as any;
-    if (!userData || !userData.details) {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription('Could not retrieve user data.');
-
-      await interaction.editReply({ embeds: [embed] });
+    const session = await resolveGameSession(interaction.user.id, credentials);
+    if (!session.ok) {
+      await replyWithError(interaction, session.title, session.description);
       return;
     }
-
-    // Get instance ID from user details
-    const instanceId = userData.details.instance_id || '0';
-    if (!instanceId || instanceId === '0') {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription('Could not retrieve valid instance ID from server.');
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
+    const { server, instanceId } = session;
 
     const contractName = getContractName(contractTypeId);
 
@@ -232,7 +164,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    console.error('[BLACKSMITH COMMAND] Error:', error);
+    logger.error('[BLACKSMITH COMMAND] Error:', error);
     await interaction.editReply({
       content: '❌ An error occurred while using blacksmith contracts.',
     });

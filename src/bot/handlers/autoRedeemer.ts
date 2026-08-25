@@ -4,6 +4,7 @@ import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
 import logger from '../utils/logger';
+import { sleep } from '../utils/async';
 
 let discordClient: Client | null = null;
 
@@ -50,7 +51,7 @@ function sendFailureDm(discordId: string, code: string, reason: string): void {
 function randomDelay(): Promise<void> {
   const ms = MIN_DELAY_MS + Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS + 1));
   logger.debug(`[AUTO REDEEMER] Waiting ${ms}ms before next user`);
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return sleep(ms);
 }
 
 /**

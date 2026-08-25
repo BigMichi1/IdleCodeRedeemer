@@ -7,6 +7,7 @@ import {
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
+import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
   .setName('inventory')
@@ -75,7 +76,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const playerData = result as any;
 
     if (!playerData || !playerData.details) {
-      console.error('[INVENTORY] Invalid player data structure.');
+      logger.error('[INVENTORY] Invalid player data structure.');
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Error')
@@ -218,7 +219,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    console.error('[INVENTORY COMMAND] Error:', error);
+    logger.error('[INVENTORY COMMAND] Error:', error);
     await interaction.editReply({
       content: '❌ An error occurred while retrieving your inventory.',
     });

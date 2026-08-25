@@ -7,6 +7,7 @@ import {
 import { codeManager, type LootSummary } from '../database/codeManager';
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
+import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
   .setName('stats')
@@ -76,7 +77,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    console.error('[STATS] Error:', error);
+    logger.error('[STATS] Error:', error);
 
     const embed = new EmbedBuilder()
       .setColor(0xff0000)
