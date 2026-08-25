@@ -38,6 +38,12 @@ jobs:
       - name: Type check
         run: ./bin/mise run typecheck
 
+      - name: Audit dependencies
+        # The dependency graph cannot see bun.lock transitives, so Dependabot
+        # alerts never fired on them. This is the gate that actually catches a
+        # vulnerable transitive package before it merges.
+        run: ./bin/mise run audit:ci
+
       - name: Run tests with coverage
         run: ./bin/mise run test:coverage
 

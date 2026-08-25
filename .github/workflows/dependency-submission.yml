@@ -1,0 +1,44 @@
+# Submits the resolved bun.lock tree to GitHub's dependency graph.
+#
+# GitHub parses package.json but not bun.lock, so the graph only ever held this
+# project's 19 direct dependencies. Dependabot alerts match against that graph,
+# which is why transitive advisories (undici, ws, js-yaml) produced zero alerts
+# while `bun audit` reported twenty.
+name: Dependency Submission
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Ahead of the Monday 03:00 Dependabot run, so alerts are matched against a
+    # freshly submitted tree.
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    name: Submit bun.lock dependency tree
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # required to write dependency graph snapshots
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned toolchain (mise)
+        run: ./bin/mise install
+
+      - name: Submit dependency snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./bin/mise run deps:submit

@@ -33,12 +33,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`format` and `format:check` tasks no longer fail on startup** - Syncpack 15 removed
   the `--source` flag and renamed `list-mismatches` to `lint`. Both tasks aborted before
   Prettier ever ran, so formatting drift accumulated unnoticed across 37 files.
+- **Release attestations are generated with `jq` instead of a quoted heredoc** - The
+  heredoc used `<< 'EOF'`, which suppresses expansion, so `$RELEASE_TAG`, `$VERSION` and
+  `$(date ...)` were written literally and the date format's inner quotes produced invalid
+  JSON. The workflow failed at `jq .` and v3.0.0 was published without its attestation
+  assets. Building the document with `jq -n --arg` makes the output valid by construction.
+- **Dependabot can now propose dependency updates again** - The bun ecosystem was set to
+  `versioning-strategy: lockfile-only` while Syncpack pins every dependency to an exact
+  version, so no update was ever permitted: the pinned version is the only one the manifest
+  admits. Switched to `increase`, which lets Dependabot rewrite the pin.
 - **Pre-commit secret scan no longer passes duplicated arguments** - The hook appended its
   own `detect --source . --config ...` to a Mise task that already carried those flags.
   The config path now lives in the `gitleaks` task and the hook invokes it bare.
 
 ### Added
 
+- **Dependency tree submission to GitHub's dependency graph** - `scripts/dependency-snapshot.ts`
+  parses `bun.lock` and submits the resolved tree via the dependency submission API, run by
+  the new `Dependency Submission` workflow on every push to `main` and weekly before the
+  Dependabot schedule. GitHub parses `package.json` but not `bun.lock`, so the graph held
+  only the 19 direct dependencies and no transitive packages at all. Dependabot alerts match
+  against that graph, which is why 20 `bun audit` findings produced zero alerts.
+- **`bun audit` gate in CI** - The `Tests & Coverage` workflow now runs `audit:ci`, which
+  fails on an advisory of any severity. Two esbuild development-server advisories reaching
+  the tree through `drizzle-kit` are ignored by GHSA ID with the reason recorded in
+  `.mise.toml`, so a new finding still breaks the build.
+- **`workflow_dispatch` trigger on the release attestation workflow** - A re-run replays the
+  workflow file from the tagged commit, so a workflow broken at tag time cannot be recovered
+  by re-running it. Dispatch runs from the default branch and resolves the release by tag.
+- **`deps:submit`, `deps:snapshot` and `audit:ci` Mise tasks**, plus `jq` in the pinned
+  toolchain.
 - **`db:generate` and `db:studio` Mise tasks** - Drizzle commands existed only as npm
   scripts, so the documented Mise-only workflow had no way to run them.
 

@@ -15,6 +15,8 @@ claude = "2.1.245"
 gitleaks = "8.30.1"
 # ripgrep for fast source search
 rg = "15.2.0"
+# jq builds the release attestation JSON and is used to inspect API output
+jq = "1.8.1"
 
 [tasks.install]
 description = "Install dependencies with Bun"
@@ -118,9 +120,30 @@ run = "bun run lint:fix"
 description = "Scan for secrets with Gitleaks"
 run = "gitleaks detect --source . --config .gitleaks.toml --verbose"
 
+[tasks."deps:submit"]
+# GitHub's dependency graph does not parse bun.lock, so transitive packages are
+# invisible to Dependabot alerts unless the resolved tree is submitted.
+description = "Submit the resolved bun.lock tree to GitHub's dependency graph"
+run = "bun run scripts/dependency-snapshot.ts"
+
+[tasks."deps:snapshot"]
+description = "Print the dependency snapshot that deps:submit would send"
+run = "bun run scripts/dependency-snapshot.ts --dry-run"
+
 [tasks.audit]
 description = "Audit dependencies for vulnerabilities"
 run = "bun audit"
+
+[tasks."audit:ci"]
+# Gate on every severity rather than a threshold, with known-unfixable findings
+# named explicitly so a new advisory of any level still fails the build.
+#
+# Both ignored IDs are esbuild development-server issues reaching the tree only
+# through drizzle-kit 0.31.10 (already the latest release), which pins the
+# affected copies via tsx and the deprecated @esbuild-kit/core-utils. esbuild is
+# a build-time bundler here and is not present in the runtime image.
+description = "Fail on any dependency advisory that is not a known upstream-blocked exception"
+run = "bun audit --ignore GHSA-67mh-4wv8-2f99 --ignore GHSA-g7r4-m6w7-qqqr"
 
 [tasks.outdated]
 description = "Check for outdated dependencies"

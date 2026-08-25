@@ -3,6 +3,16 @@ name: Generate Release Attestation & Manifest
 on:
   release:
     types: [published]
+  # Lets an attestation be regenerated for a release that already exists, which
+  # is the only recovery path when the workflow itself was broken at tag time:
+  # a re-run replays the workflow file from the tagged commit, dispatch uses the
+  # default branch.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attest (e.g. v3.0.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -22,6 +32,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0  # Full history for git log
 
       - name: Install Cosign
@@ -29,11 +40,42 @@ jobs:
         with:
           cosign-release: 'v2.6.1'
 
+      # The release payload is absent on workflow_dispatch, so both the tag and
+      # the asset upload URL are resolved once here and read from outputs below.
+      - name: Resolve Release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          EVENT_UPLOAD_URL: ${{ github.event.release.upload_url }}
+          EVENT_RELEASE_ID: ${{ github.event.release.id }}
+        run: |
+          set -e
+          TAG="${INPUT_TAG:-$EVENT_TAG}"
+          if [ -z "$TAG" ]; then
+            echo "::error::No release tag available from the event or the dispatch input"
+            exit 1
+          fi
+
+          if [ -n "$EVENT_UPLOAD_URL" ]; then
+            UPLOAD_URL="$EVENT_UPLOAD_URL"
+            RELEASE_ID="$EVENT_RELEASE_ID"
+          else
+            UPLOAD_URL="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq .upload_url)"
+            RELEASE_ID="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq .id)"
+          fi
+
+          {
+            echo "tag=$TAG"
+            echo "upload_url=$UPLOAD_URL"
+            echo "release_id=$RELEASE_ID"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Generate Release Manifest
         id: manifest
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
           REGISTRY: ghcr.io
           IMAGE_NAME: ${{ github.repository }}
         run: |
@@ -41,180 +83,71 @@ jobs:
 
           # Parse version from tag (v2.0.0 -> 2.0.0)
           VERSION="${RELEASE_TAG#v}"
+          BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-          # Create manifest file with release information
-          cat > RELEASE_MANIFEST.txt << 'EOF'
-          ===============================================
-          Release Attestation & Manifest
-          ===============================================
-          
-          Release Version: $VERSION
-          Release Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          Repository: ${{ github.repository }}
-          Commit: ${{ github.sha }}
-          Tag: $RELEASE_TAG
-          
-          ===============================================
-          Released Docker Images (with Cosign Signatures)
-          ===============================================
-          
-          Full Version Tag:
-            - $REGISTRY/$IMAGE_NAME:$VERSION
-            - Digest: $(docker inspect --format='{{index .RepoDigests 0}}' "$REGISTRY/$IMAGE_NAME:$VERSION" 2>/dev/null || echo "Will be signed after push")
-          
-          Major.Minor Tag:
-            - $REGISTRY/$IMAGE_NAME:${VERSION%.*}
-          
-          Major Tag:
-            - $REGISTRY/$IMAGE_NAME:${VERSION%%.*}
-          
-          Latest Tag (if on main):
-            - $REGISTRY/$IMAGE_NAME:latest
-          
-          All images are signed using Cosign (keyless OIDC).
-          Verify with: cosign verify $REGISTRY/$IMAGE_NAME:<tag> --certificate-identity-regexp "^https://github.com/${{ github.repository }}/" --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
-          
-          ===============================================
-          Source Code Verification
-          ===============================================
-          
-          Repository: https://github.com/${{ github.repository }}
-          Release: https://github.com/${{ github.repository }}/releases/tag/$RELEASE_TAG
-          Changelog: See CHANGELOG.md for details
-          
-          ===============================================
-          Building & Verification
-          ===============================================
-          
-          This release was built automatically via GitHub Actions.
-          Build artifacts are signed at build time using Cosign.
-          
-          Docker Image Verification:
-            1. Pull image: docker pull $REGISTRY/$IMAGE_NAME:$VERSION
-            2. Verify signature: cosign verify $REGISTRY/$IMAGE_NAME:$VERSION
-            3. Check attestation: cosign verify-attestation $REGISTRY/$IMAGE_NAME:$VERSION
-          
-          Source Code:
-            - All code changes are in CHANGELOG.md [Unreleased] section (released as [$VERSION])
-            - Security considerations documented in SECURITY.md
-            - Source code integrity maintained through git commit signing
-          
-          ===============================================
-          Release Assets
-          ===============================================
-          
-          Docker Images (published to GitHub Container Registry):
-            - ghcr.io/bigmichi1/idlecoderedeemer:$VERSION
-            - ghcr.io/bigmichi1/idlecoderedeemer:${VERSION%.*}
-          
-          All assets are signed with Cosign using OIDC keyless signing.
-          
-          ===============================================
-          Signature Verification
-          ===============================================
-          
-          To verify the authenticity of released artifacts:
-          
-          1. Install Cosign: https://github.com/sigstore/cosign/releases
-          
-          2. Verify Docker image signature (keyless):
-             cosign verify ghcr.io/${{ github.repository }}:$VERSION \
-               --certificate-identity-regexp "^https://github.com/${{ github.repository }}/" \
-               --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
-          
-          3. View attestation details:
-             cosign verify-attestation --attestation-type vuln \
-               ghcr.io/bigmichi1/idlecoderedeemer:$VERSION
-          
-          The OIDC token used for signing is tied to:
-            - GitHub Actions workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            - Signer: github.com/${{ github.repository }}@$RELEASE_TAG
-            - Issuer: https://token.actions.githubusercontent.com
-          
-          ===============================================
-          Security Contacts
-          ===============================================
-          
-          Security vulnerabilities: See SECURITY.md
-          Report via: GitHub Security Advisory
-          Contact: security-policy in SECURITY.md
-          
-          ===============================================
-          References
-          ===============================================
-          
-          - Cosign Documentation: https://docs.sigstore.dev/cosign/
-          - SLSA Framework: https://slsa.dev/
-          - OpenSSF Best Practices: https://bestpractices.coreinfrastructure.org/
-          - Supply Chain Security: https://slsa.dev/supply-chain-security/
-          
-          EOF
+          # Built with jq rather than a heredoc. The previous version used a
+          # quoted heredoc (<< 'EOF'), which suppresses expansion: $RELEASE_TAG,
+          # $VERSION and $(date ...) were written literally, and the inner quotes
+          # of the date format produced JSON that failed to parse -- so no
+          # release since has carried an attestation. jq also guarantees the
+          # output is valid by construction.
+          jq -n \
+            --arg tag "$RELEASE_TAG" \
+            --arg version "$VERSION" \
+            --arg date "$BUILD_DATE" \
+            --arg repository "${{ github.repository }}" \
+            --arg commit_sha "${{ github.sha }}" \
+            --arg commit_url "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            --arg run_id "${{ github.run_id }}" \
+            --arg run_url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --arg minor "${VERSION%.*}" \
+            --arg major "${VERSION%%.*}" \
+            '{
+              version: "1.0.0",
+              attestation_type: "release-manifest",
+              release: {
+                tag: $tag,
+                version: $version,
+                date: $date,
+                repository: $repository,
+                commit_sha: $commit_sha,
+                commit_url: $commit_url
+              },
+              build: {
+                workflow: "docker.yml",
+                workflow_run: $run_id,
+                workflow_run_url: $run_url,
+                runner: "ubuntu-latest",
+                trigger: "release-published"
+              },
+              artifacts: {
+                docker_images: [
+                  {
+                    registry: "ghcr.io",
+                    repository: $repository,
+                    tags: [$version, $minor, $major],
+                    signing_method: "cosign-keyless",
+                    signing_issuer: "https://token.actions.githubusercontent.com",
+                    verification_instructions: ("cosign verify ghcr.io/" + $repository + ":" + $version + " --certificate-identity-regexp \u0027^https://github.com/" + $repository + "/\u0027 --certificate-oidc-issuer https://token.actions.githubusercontent.com")
+                  }
+                ]
+              },
+              cryptographic_signatures: {
+                method: "Cosign (Keyless OIDC)",
+                issuer: "GitHub Actions",
+                certificate_identity: ("github.com/" + $repository + "@refs/tags/" + $tag),
+                verification_tool: "cosign verify"
+              },
+              security: {
+                vulnerability_scanning: "bun audit",
+                dependency_management: "bun.lock (frozen)",
+                secret_scanning: "Gitleaks + TruffleHog",
+                code_review_required: true,
+                branch_protection: true
+              }
+            }' > attestation.json
 
-          # Print manifest for verification
-          sed -e "s|\$VERSION|$VERSION|g" -e "s|\$REGISTRY|$REGISTRY|g" -e "s|\$IMAGE_NAME|$IMAGE_NAME|g" RELEASE_MANIFEST.txt
-
-      - name: Create Attestation File
-        id: attestation
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          set -e
-
-          VERSION="${RELEASE_TAG#v}"
-
-          # Create detailed attestation with build metadata
-          cat > attestation.json << 'EOF'
-          {
-            "version": "1.0.0",
-            "attestation_type": "release-manifest",
-            "release": {
-              "tag": "$RELEASE_TAG",
-              "version": "$VERSION",
-              "date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-              "repository": "${{ github.repository }}",
-              "commit_sha": "${{ github.sha }}",
-              "commit_url": "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
-            },
-            "build": {
-              "workflow": "docker.yml",
-              "workflow_run": "${{ github.run_id }}",
-              "workflow_run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-              "runner": "ubuntu-latest",
-              "trigger": "release-published"
-            },
-            "artifacts": {
-              "docker_images": [
-                {
-                  "registry": "ghcr.io",
-                  "repository": "${{ github.repository }}",
-                  "tags": [
-                    "$VERSION",
-                    "${VERSION%.*}",
-                    "${VERSION%%.*}"
-                  ],
-                  "signing_method": "cosign-keyless",
-                  "signing_issuer": "https://token.actions.githubusercontent.com",
-                  "verification_instructions": "cosign verify ghcr.io/${{ github.repository }}:$VERSION --certificate-identity-regexp '^https://github.com/${{ github.repository }}/' --certificate-oidc-issuer https://token.actions.githubusercontent.com"
-                }
-              ]
-            },
-            "cryptographic_signatures": {
-              "method": "Cosign (Keyless OIDC)",
-              "issuer": "GitHub Actions",
-              "certificate_identity": "github.com/${{ github.repository }}@refs/tags/$RELEASE_TAG",
-              "verification_tool": "cosign verify"
-            },
-            "security": {
-              "vulnerability_scanning": "bun audit",
-              "dependency_management": "bun.lock (frozen)",
-              "secret_scanning": "Gitleaks + TruffleHog",
-              "code_review_required": true,
-              "branch_protection": true
-            }
-          }
-          EOF
-
-          cat attestation.json | jq .
+          jq . attestation.json
 
       - name: Sign Attestation with Cosign
         env:
@@ -248,7 +181,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.release.outputs.upload_url }}
           asset_path: attestation.json
           asset_name: attestation.json
           asset_content_type: application/json
@@ -258,7 +191,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.release.outputs.upload_url }}
           asset_path: attestation.sig
           asset_name: attestation.sig
           asset_content_type: application/octet-stream
@@ -268,7 +201,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.release.outputs.upload_url }}
           asset_path: attestation.crt
           asset_name: attestation.crt
           asset_content_type: application/x-x509-ca-cert
@@ -276,11 +209,12 @@ jobs:
       - name: Create Release Comment with Signatures
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_ID: ${{ steps.release.outputs.release_id }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const releaseId = context.payload.release.id;
+            const releaseId = Number(process.env.RELEASE_ID);
             const tag = process.env.RELEASE_TAG;
             const version = tag.replace(/^v/, '');
 

@@ -21,7 +21,12 @@ updates:
     pull-request-branch-name:
       separator: "/"
     rebase-strategy: auto
-    versioning-strategy: lockfile-only
+    # Syncpack enforces exact pins on every dependency, so `lockfile-only` left
+    # Dependabot with nothing it was allowed to change: the single pinned
+    # version is the only one the manifest range admits. `increase` lets it
+    # rewrite the pin itself, which is how discord.js 14.26.4 sat untouched
+    # while 14.27.0 was published.
+    versioning-strategy: increase
 
   # GitHub Actions
   - package-ecosystem: github-actions
