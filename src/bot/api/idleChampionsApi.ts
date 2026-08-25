@@ -576,8 +576,7 @@ export enum ResponseStatus {
 }
 
 type FailureOutcome =
-  | { kind: 'code'; status: CodeSubmitStatus }
-  | { kind: 'generic'; status: ResponseStatus };
+  { kind: 'code'; status: CodeSubmitStatus } | { kind: 'generic'; status: ResponseStatus };
 
 /**
  * Exact failure_reason -> outcome mapping.
