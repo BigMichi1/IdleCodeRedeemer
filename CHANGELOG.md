@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Security
+
+- **Cleared every advisory on the production dependency path** - `bun audit` reported 20
+  advisories (10 high, 7 moderate, 3 low); 7 of those affected packages shipped in the
+  runtime image. discord.js 14.26.4 → 14.27.0 pulls `undici` ^6.27.0, and a stale lock
+  entry held a second `undici` 6.24.1 copy behind `@discordjs/rest` 2.6.1 that a refresh
+  deduplicated away. `ws` 8.20.0 → 8.21.3 clears the fragment-based memory exhaustion DoS
+  and the uninitialized memory disclosure. Development transitives `js-yaml` (4.1.1 →
+  4.3.1), `fast-uri` (3.1.2 → 3.1.5) and `brace-expansion` (5.0.6 → 5.0.9) were refreshed
+  in the same pass.
+- **Remaining known advisories are development-only and upstream-blocked** - Two esbuild
+  advisories persist through `drizzle-kit` 0.31.10 (already the latest release), which
+  pins the affected copies via `tsx` and the deprecated `@esbuild-kit/core-utils`. Both
+  concern the esbuild development server, which this project never runs; esbuild is used
+  only as a bundler and is not present in the runtime image.
+
+### Changed
+
+- **discord.js 14.26.4 → 14.27.0** - Picks up patched `undici` and `@discordjs/rest`
+  releases. No API changes affect this codebase; typecheck and the full test suite pass
+  unchanged.
+
 ### Fixed
 
 - **`format` and `format:check` tasks no longer fail on startup** - Syncpack 15 removed

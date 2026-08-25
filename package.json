@@ -28,7 +28,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "14.26.4",
+    "discord.js": "14.27.0",
     "drizzle-orm": "0.45.2",
     "winston": "3.19.0"
   },
