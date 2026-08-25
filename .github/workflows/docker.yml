@@ -78,30 +78,37 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
+      # Sign the immutable digest, not the tags. Signing a tag binds the
+      # signature to a mutable pointer: the tag can later be moved to different
+      # content while the old signature still verifies against the name. One
+      # signature on the digest covers every tag that resolves to it, so this is
+      # both stronger and three cosign invocations cheaper.
       - name: Sign Docker image with Cosign (Keyless - OIDC)
         if: github.event_name != 'pull_request'
         env:
           # COSIGN_YES skips the interactive confirmation prompt.
           # COSIGN_EXPERIMENTAL is not set: it has been a no-op since cosign v2.
           COSIGN_YES: 1
+          IMAGE_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          IMAGES="${{ steps.meta.outputs.tags }}"
-          for image in $IMAGES; do
-            echo "🔐 Signing image: $image"
-            cosign sign "$image"
-          done
+          # OCI references must be lowercase; github.repository is not.
+          DIGEST_REF="$(echo "$IMAGE_REPO" | tr '[:upper:]' '[:lower:]')@${DIGEST}"
+          echo "🔐 Signing image digest: $DIGEST_REF"
+          cosign sign "$DIGEST_REF"
 
       - name: Verify Docker image signature
         if: github.event_name != 'pull_request'
+        env:
+          IMAGE_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          IMAGES="${{ steps.meta.outputs.tags }}"
-          for image in $IMAGES; do
-            echo "✅ Verifying signature for: $image"
-            cosign verify "$image" \
-              --certificate-identity-regexp "^https://github.com/${{ github.repository }}/" \
-              --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-              | head -20
-          done
+          DIGEST_REF="$(echo "$IMAGE_REPO" | tr '[:upper:]' '[:lower:]')@${DIGEST}"
+          echo "✅ Verifying signature for: $DIGEST_REF"
+          cosign verify "$DIGEST_REF" \
+            --certificate-identity-regexp "^https://github.com/${{ github.repository }}/" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            | head -20
 
   deploy:
     name: Deploy (placeholder - not implemented)
