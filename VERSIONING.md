@@ -86,9 +86,9 @@ When you push a git tag matching `v*` pattern:
 2. **Image Publishing**
    - Published to GitHub Container Registry (GHCR)
    - Tags applied:
-     - `v2.1.0` - Full version
+     - `2.1.0` - Full version
      - `2.1` - Major.minor version
-     - `2` - Major version only
+     - `2` - Major version only (from 3.0.2 onward)
      - `latest` - Only if tag is on main branch
 
 3. **GitHub Release** (Create Manually)
@@ -175,17 +175,17 @@ ghcr.io/bigmichi1/idlecoderedeemer:latest
 ### Version Tag Builds (Releases)
 
 ```
-ghcr.io/bigmichi1/idlecoderedeemer:v2.1.0      # Full version
+ghcr.io/bigmichi1/idlecoderedeemer:2.1.0       # Full version
 ghcr.io/bigmichi1/idlecoderedeemer:2.1         # Major.minor
-ghcr.io/bigmichi1/idlecoderedeemer:2           # Major only
-ghcr.io/bigmichi1/idlecoderedeemer:<SHA>       # Commit SHA
+ghcr.io/bigmichi1/idlecoderedeemer:2           # Major only (from 3.0.2 onward)
+ghcr.io/bigmichi1/idlecoderedeemer:sha-<SHA>   # Commit SHA
 ```
 
 ### Using Specific Versions
 
 ```bash
 # Pull a specific release
-docker pull ghcr.io/bigmichi1/idlecoderedeemer:v2.1.0
+docker pull ghcr.io/bigmichi1/idlecoderedeemer:2.1.0
 
 # Pull major.minor (gets latest patch)
 docker pull ghcr.io/bigmichi1/idlecoderedeemer:2.1
@@ -322,7 +322,7 @@ The Docker metadata action automatically generates tags based on git tags:
 **For git tag `v2.1.0`:**
 
 - ✅ Extracts version: `2.1.0`
-- ✅ Creates tags: `v2.1.0`, `2.1`, `2`
+- ✅ Creates tags: `2.1.0`, `2.1`, `2`
 - ✅ Tags image with all variations
 
 **For git tag `v2.1.0-beta.1`:**

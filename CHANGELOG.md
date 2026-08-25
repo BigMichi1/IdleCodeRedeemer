@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- **The major-version Docker tag now exists** - `VERSIONING.md` and every release note
+  advertised `ghcr.io/bigmichi1/idlecoderedeemer:3`, but the metadata action was never
+  configured to emit `{{major}}`: `:3.0.1`, `:3.0` and `:latest` resolve while `:3` returned
+  404. Added the pattern, so the tag is published from 3.0.2 onward; images already pushed
+  cannot gain it retroactively.
+- **Documentation no longer advertises `v`-prefixed image tags** - `:v3.0.1` was never
+  produced either. The published tags are `{{version}}`, `{{major}}.{{minor}}`, `sha-<short>`
+  and `latest`.
+
 ## [3.0.1] - 2026-08-25
 
 ### Security

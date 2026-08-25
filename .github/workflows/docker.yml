@@ -60,6 +60,11 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # VERSIONING.md and every release note advertised a major-only tag
+            # that was never generated: ghcr.io/...:3 was a 404 while :3.0.1
+            # and :3.0 resolved. Takes effect from the next release; the images
+            # already published cannot gain the tag retroactively.
+            type=semver,pattern={{major}}
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
 
