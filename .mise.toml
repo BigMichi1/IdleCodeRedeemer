@@ -160,6 +160,10 @@ run = "bun update"
 description = "Remove build output and installed dependencies (keeps bun.lock)"
 run = "rm -rf dist-bundle node_modules"
 
+[tasks.credentials]
+description = "Walk through retrieving your Idle Champions User ID and Hash"
+run = "bun run scripts/get-credentials.ts"
+
 [tasks.setup]
 description = "Complete initial setup"
 depends = ["install"]

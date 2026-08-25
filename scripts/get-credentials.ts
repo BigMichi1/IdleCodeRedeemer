@@ -1,30 +1,23 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 /**
  * Helper script to retrieve Idle Champions User ID and Hash
- * 
+ *
  * Usage:
- *   node scripts/get-credentials.js
- * 
+ *   ./bin/mise run credentials
+ *
  * This script will guide you through the process of obtaining your credentials
  * from the official Idle Champions server.
  */
 
-const readline = require('readline');
-const rl = readline.createInterface({
+import { createInterface } from 'node:readline/promises';
+
+const rl = createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
-function question(prompt) {
-  return new Promise((resolve) => {
-    rl.question(prompt, (answer) => {
-      resolve(answer);
-    });
-  });
-}
-
-async function main() {
+async function main(): Promise<void> {
   console.log('\n╔════════════════════════════════════════════════╗');
   console.log('║  Idle Champions - Get Your Credentials         ║');
   console.log('╚════════════════════════════════════════════════╝\n');
@@ -33,7 +26,7 @@ async function main() {
   console.log('');
   console.log('1. Visit https://www.idlechampions.com');
   console.log('2. Log in with your account');
-  console.log('3. Open your browser\'s Developer Tools (F12 or Ctrl+Shift+I)');
+  console.log("3. Open your browser's Developer Tools (F12 or Ctrl+Shift+I)");
   console.log('4. Go to the Console tab');
   console.log('5. Copy and paste one of the following commands:\n');
 
@@ -43,8 +36,8 @@ async function main() {
 fetch('https://www.idlechampions.com/api/')
   .then(r => r.text())
   .then(html => {
-    const userIdMatch = html.match(/userId["\']?\\s*[:=]\\s*["\']([^"']+)/);
-    const userHashMatch = html.match(/userHash["\']?\\s*[:=]\\s*["\']([^"']+)/);
+    const userIdMatch = html.match(/userId["']?\\s*[:=]\\s*["']([^"']+)/);
+    const userHashMatch = html.match(/userHash["']?\\s*[:=]\\s*["']([^"']+)/);
     console.log('USER_ID:', userIdMatch ? userIdMatch[1] : 'NOT FOUND');
     console.log('USER_HASH:', userHashMatch ? userHashMatch[1] : 'NOT FOUND');
   });
@@ -62,7 +55,7 @@ console.log('USER_ID:', sessionStorage.getItem('userId'));
 console.log('USER_HASH:', sessionStorage.getItem('userHash'));
   `);
 
-  console.log('\n📋 Option C - Network Tab (If others don\'t work):');
+  console.log("\n📋 Option C - Network Tab (If others don't work):");
   console.log('───────────────────────────────────────────');
   console.log(`
 1. Go to Network tab
@@ -74,8 +67,8 @@ console.log('USER_HASH:', sessionStorage.getItem('userHash'));
   console.log('\n✅ Once you have your credentials:');
   console.log('───────────────────────────────────────────');
 
-  const userId = await question('\nEnter your User ID: ');
-  const userHash = await question('Enter your User Hash: ');
+  const userId = await rl.question('\nEnter your User ID: ');
+  const userHash = await rl.question('Enter your User Hash: ');
 
   if (!userId || !userHash) {
     console.log('\n❌ Error: Both User ID and Hash are required!');
@@ -86,7 +79,9 @@ console.log('USER_HASH:', sessionStorage.getItem('userHash'));
   console.log('\n✅ Credentials Retrieved:');
   console.log('───────────────────────────────────────────');
   console.log(`User ID: ${userId.substring(0, 4)}...${userId.substring(userId.length - 4)}`);
-  console.log(`User Hash: ${userHash.substring(0, 4)}...${userHash.substring(userHash.length - 4)}`);
+  console.log(
+    `User Hash: ${userHash.substring(0, 4)}...${userHash.substring(userHash.length - 4)}`
+  );
 
   console.log('\n📝 Use these credentials with the Discord bot:');
   console.log('───────────────────────────────────────────');
@@ -95,4 +90,8 @@ console.log('USER_HASH:', sessionStorage.getItem('userHash'));
   rl.close();
 }
 
-main().catch(console.error);
+main().catch((error: unknown) => {
+  console.error(error);
+  rl.close();
+  process.exit(1);
+});

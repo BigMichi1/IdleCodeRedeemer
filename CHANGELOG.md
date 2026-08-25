@@ -72,6 +72,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   by re-running it. Dispatch runs from the default branch and resolves the release by tag.
 - **`deps:submit`, `deps:snapshot` and `audit:ci` Mise tasks**, plus `jq` in the pinned
   toolchain.
+- **`scripts/get-credentials.js` converted to TypeScript** - The last JavaScript source in
+  the repository, and the only file the widened gates still could not see. Output is
+  byte-identical to the previous version, verified by diffing both runs against the same
+  input. Reachable as `mise run credentials`.
 - **`scripts/` is covered by typecheck, lint and formatting** - `tsconfig.bot.json`,
   `eslint.config.mjs` and the Prettier globs all matched `src/` only, so anything under
   `scripts/` was unchecked by every gate. Verified by planting a type error there and

@@ -53,7 +53,7 @@ idle-code-redeemer/
 │   └── *.json
 │
 ├── scripts/               ← Utility scripts
-│   └── get-credentials.js
+│   └── get-credentials.ts
 │
 ├── node_modules/          ← Dependencies (git-ignored)
 ├── package.json           ← Bun dependencies & scripts
