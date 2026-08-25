@@ -134,6 +134,29 @@ class CodeManager {
     return result !== undefined;
   }
 
+  /**
+   * True when this user has a *successful* redemption row for this code.
+   *
+   * Ownership checks must not go through getRedeemedCodes(), which is capped at
+   * LIMIT 100 and applies no status filter: past 100 redemptions a user is told
+   * they never redeemed a code they did, and a failed attempt would otherwise
+   * count as ownership.
+   */
+  async hasSuccessfulRedemption(code: string, discordId: string): Promise<boolean> {
+    const result = db
+      .select({ code: redeemedCodes.code })
+      .from(redeemedCodes)
+      .where(
+        and(
+          eq(redeemedCodes.code, code),
+          eq(redeemedCodes.discordId, discordId),
+          eq(redeemedCodes.status, 'Success')
+        )
+      )
+      .get();
+    return result !== undefined;
+  }
+
   async getRedeemedCodes(discordId: string): Promise<string[]> {
     const results = db
       .select({ code: redeemedCodes.code })
@@ -245,19 +268,31 @@ class CodeManager {
     return result !== undefined;
   }
 
-  async markCodeAsExpired(code: string): Promise<void> {
+  // The three mark* methods below are scoped to a single user's row on purpose.
+  // Their read counterparts (isCodeExpired / isCodePublic) match on ANY row for
+  // the code, so updating just the acting user's row still flips the code's
+  // global state -- while an unscoped UPDATE would rewrite every other user's
+  // row, destroying their recorded Success status and loot history.
+
+  async markCodeAsExpired(code: string, discordId: string): Promise<void> {
     db.update(redeemedCodes)
       .set({ status: 'Code Expired', expiresAt: sql`CURRENT_TIMESTAMP` })
-      .where(eq(redeemedCodes.code, code))
+      .where(and(eq(redeemedCodes.code, code), eq(redeemedCodes.discordId, discordId)))
       .run();
   }
 
-  async markCodeAsPublic(code: string): Promise<void> {
-    db.update(redeemedCodes).set({ isPublic: 1 }).where(eq(redeemedCodes.code, code)).run();
+  async markCodeAsPublic(code: string, discordId: string): Promise<void> {
+    db.update(redeemedCodes)
+      .set({ isPublic: 1 })
+      .where(and(eq(redeemedCodes.code, code), eq(redeemedCodes.discordId, discordId)))
+      .run();
   }
 
-  async markCodeAsPrivate(code: string): Promise<void> {
-    db.update(redeemedCodes).set({ isPublic: 0 }).where(eq(redeemedCodes.code, code)).run();
+  async markCodeAsPrivate(code: string, discordId: string): Promise<void> {
+    db.update(redeemedCodes)
+      .set({ isPublic: 0 })
+      .where(and(eq(redeemedCodes.code, code), eq(redeemedCodes.discordId, discordId)))
+      .run();
   }
 
   async addPendingCode(code: string, discordId?: string): Promise<void> {
@@ -276,6 +311,16 @@ class CodeManager {
 
   async removePendingCode(code: string): Promise<void> {
     db.delete(pendingCodes).where(eq(pendingCodes.code, code)).run();
+  }
+
+  /**
+   * Delete a user's personal loot totals. The '__server__' scope is an
+   * anonymised aggregate and is deliberately left intact.
+   */
+  async deleteUserLootTotals(discordId: string): Promise<number> {
+    return db.delete(lootTotals).where(eq(lootTotals.scope, discordId)).returning({
+      lootKey: lootTotals.lootKey,
+    }).all().length;
   }
 
   async clearPendingCodes(discordId?: string): Promise<void> {

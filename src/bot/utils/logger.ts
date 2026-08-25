@@ -27,7 +27,12 @@ const customLevels = {
 // Create logger instance
 const logger = winston.createLogger({
   levels: customLevels.levels,
-  level: 'info', // Set default level to info
+  // debug/trace sit below info in the custom level set above, so they are
+  // suppressed unless LOG_LEVEL raises the threshold. This is read from the
+  // environment because the docs advertise LOG_LEVEL=debug as the way to
+  // diagnose a failing redemption -- previously every logger.debug() call in
+  // the codebase was dead.
+  level: process.env.LOG_LEVEL || 'info',
   format: winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.errors({ stack: true }),

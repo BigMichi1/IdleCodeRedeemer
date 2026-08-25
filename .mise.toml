@@ -1,7 +1,10 @@
-[env]
 # Mise environment configuration for Idle Code Redeemer Bot
-# Disable SSL cert validation for Idle Champions API (expired certificate)
-NODE_TLS_REJECT_UNAUTHORIZED = "0"
+#
+# NODE_TLS_REJECT_UNAUTHORIZED is deliberately NOT set here. It disables
+# certificate validation for every outbound TLS connection in the process,
+# including the Discord gateway. The Idle Champions host exception is scoped to
+# that host's own requests via IDLE_CHAMPIONS_INSECURE_TLS (see
+# src/bot/api/idleChampionsApi.ts).
 
 [tools]
 # Bun runtime and package manager

@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from './db';
 import { backfillOperations, type BackfillOperation } from './schema/index';
+import { parseSqliteTimestamp } from '../utils/sqliteTime';
 
 class BackfillManager {
   // Global backfill lock to prevent concurrent operations
@@ -47,7 +48,7 @@ class BackfillManager {
     const timestamp = lastBackfill.completedAt ?? lastBackfill.startedAt;
     if (!timestamp) return true;
 
-    const lastTime = new Date(timestamp).getTime();
+    const lastTime = parseSqliteTimestamp(timestamp);
     if (isNaN(lastTime)) return true;
 
     const now = Date.now();
@@ -70,7 +71,7 @@ class BackfillManager {
 
     const timestamp = lastBackfill.completedAt ?? lastBackfill.startedAt;
     if (!timestamp) return true;
-    const lastTime = new Date(timestamp).getTime();
+    const lastTime = parseSqliteTimestamp(timestamp);
     if (isNaN(lastTime)) return true;
     return Date.now() - lastTime >= 6 * 60 * 60 * 1000;
   }

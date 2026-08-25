@@ -177,10 +177,19 @@ class ApiRequestLogger {
    */
   public getLogContent(filename: string): Record<string, any> | null {
     try {
-      const filepath = path.join(API_LOGS_DIR, filename);
-
-      // Security: prevent directory traversal
-      if (!filepath.startsWith(API_LOGS_DIR)) {
+      // Security: prevent directory traversal.
+      // path.join normalizes, so '../../etc/passwd' is rejected -- but a plain
+      // startsWith() prefix test also admits sibling directories that merely
+      // share the prefix ('../api-logs-evil/x.json' resolves inside
+      // '<cwd>/api-logs-evil' and passes). Resolve and compare against the
+      // directory plus a separator, and reject any filename with a path
+      // component of its own.
+      if (filename !== path.basename(filename)) {
+        logger.warn('Attempted directory traversal in getLogContent');
+        return null;
+      }
+      const filepath = path.resolve(API_LOGS_DIR, filename);
+      if (!filepath.startsWith(path.resolve(API_LOGS_DIR) + path.sep)) {
         logger.warn('Attempted directory traversal in getLogContent');
         return null;
       }

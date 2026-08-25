@@ -9,6 +9,7 @@ import {
 } from 'discord.js';
 import { codeManager, CHEST_TYPE_NAMES, type LootSummary } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
+import { parseSqliteTimestamp } from '../utils/sqliteTime';
 
 export const PAGE_SIZE = 5;
 
@@ -56,7 +57,7 @@ export async function buildCodesPage(
       }[statusLower] || '❓';
 
     const dateStr = codeRow.redeemedAt
-      ? new Date(codeRow.redeemedAt).toLocaleDateString('en-US', {
+      ? new Date(parseSqliteTimestamp(codeRow.redeemedAt)).toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
           year: '2-digit',

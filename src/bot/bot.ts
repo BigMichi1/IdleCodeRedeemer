@@ -8,6 +8,7 @@ import { backfillManager } from './database/backfillManager';
 import { userManager } from './database/userManager';
 import { initDebugLogger } from './utils/debugLogger';
 import logger from './utils/logger';
+import { isSensitiveOption } from './utils/redact';
 import { apiRequestLogger } from './utils/apiRequestLogger';
 import * as backfillCommand from './commands/backfill';
 import * as blacksmithCommand from './commands/blacksmith';
@@ -26,13 +27,12 @@ import * as redeemCommand from './commands/redeem';
 import * as setupCommand from './commands/setup';
 import * as statsCommand from './commands/stats';
 
-// CRITICAL: Disable certificate validation for Idle Champions API
-// Their server has an expired certificate - this must be set BEFORE any HTTPS requests
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
 const TOKEN = process.env.DISCORD_TOKEN;
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
+// When set, only this user/bot ID is treated as a source of codes. Mirrors the
+// filter backfillHandler applies to history scans.
+const CODE_AUTHOR_ID = process.env.DISCORD_CODE_AUTHOR_ID;
 
 if (!TOKEN) {
   logger.error('DISCORD_TOKEN environment variable is not set');
@@ -157,8 +157,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!command) return;
 
   try {
+    // Redact at write time, not at read time. /setup's options are the user's
+    // Idle Champions credentials; logging them here would put the plaintext in
+    // logs/combined.log and container stdout regardless of what /logs filters
+    // out on display.
     const options = interaction.options.data
-      .map((opt: any) => `${opt.name}=${opt.value}`)
+      .map((opt: any) => `${opt.name}=${isSensitiveOption(opt.name) ? '[REDACTED]' : opt.value}`)
       .join(' ');
     const cmdMsg = `[COMMAND] ${interaction.commandName} ${options || '(no args)'} from ${interaction.user.tag}`;
 
@@ -224,6 +228,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.on(Events.MessageCreate, async (message) => {
   // Only scan in the specified channel if configured
   if (CHANNEL_ID && message.channelId !== CHANNEL_ID) {
+    return;
+  }
+
+  // Apply the same author allowlist the backfill path uses. Without it, any
+  // member who can post in the channel drives live redemption attempts against
+  // every registered user's game account.
+  if (CODE_AUTHOR_ID && message.author.id !== CODE_AUTHOR_ID) {
+    return;
+  }
+
+  // The bot's own messages are never a code source.
+  if (message.author.id === client.user?.id) {
     return;
   }
 
@@ -297,13 +313,29 @@ client.on(Events.MessageCreate, async (message) => {
 // Login
 client.login(TOKEN);
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  logger.info('Shutting down...');
+// Graceful shutdown. SIGINT comes from a terminal; SIGTERM is what `docker stop`
+// and orchestrators actually send, and is the only path that runs in production.
+let shuttingDown = false;
+async function shutdown(signal: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info(`Shutting down (${signal})...`);
   apiRequestLogger.shutdown();
   await closeDatabase();
   client.destroy();
   process.exit(0);
+}
+
+process.on('SIGINT', () => void shutdown('SIGINT'));
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+
+// Without these, a rejection inside an async discord.js listener can take the
+// process down with no diagnostic.
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled promise rejection:', reason);
+});
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught exception:', error);
 });
 
 export default client;

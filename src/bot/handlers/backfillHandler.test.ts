@@ -306,3 +306,76 @@ describe('Scenario 4: invalid instance_id skips code submission', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Consent and accounting
+// ---------------------------------------------------------------------------
+
+describe('backfill respects user preferences and counts honestly', () => {
+  test('does not redeem for a user who turned auto-redeem off', async () => {
+    // Regression: backfill used getAllUsers(), so a user who ran
+    // /autoredeem off still had codes redeemed against their game account on
+    // every startup backfill and every admin /backfill.
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: '316463',
+      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      server: MOCK_SERVER,
+    });
+    await userManager.setAutoRedeem(USER, false);
+
+    const stats = await backfillChannelHistory(makeChannel([CODE_A]));
+
+    expect(submitCodeSpy).not.toHaveBeenCalled();
+    expect(stats.codesRedeemed).toBe(0);
+    // The code is still captured for later, just not acted on for this user.
+    expect(await codeManager.getPendingCodes()).toContain(CODE_A);
+  });
+
+  test('still redeems for a user who left auto-redeem on', async () => {
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: '316463',
+      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      server: MOCK_SERVER,
+    });
+
+    const stats = await backfillChannelHistory(makeChannel([CODE_A]));
+
+    expect(submitCodeSpy).toHaveBeenCalled();
+    expect(stats.codesRedeemed).toBe(1);
+  });
+
+  test('does not count a rejected code as redeemed', async () => {
+    // Regression: every CodeSubmitResponse carries a codeStatus, so counting
+    // them all reported "Codes Redeemed: N" for a run that redeemed nothing.
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: '316463',
+      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      server: MOCK_SERVER,
+    });
+    submitCodeSpy.mockResolvedValue({ codeStatus: 3 } as any); // Not a Valid Code
+
+    const stats = await backfillChannelHistory(makeChannel([CODE_A]));
+
+    expect(submitCodeSpy).toHaveBeenCalled();
+    expect(stats.codesRedeemed).toBe(0);
+  });
+
+  test('records an error when the API returns an infrastructure failure', async () => {
+    // Regression: GenericResponse fell through with no log and no error, so the
+    // operation was written as "completed" despite redeeming nothing.
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: '316463',
+      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      server: MOCK_SERVER,
+    });
+    submitCodeSpy.mockResolvedValue({ status: 2 } as any); // GenericResponse(Failed)
+
+    const stats = await backfillChannelHistory(makeChannel([CODE_A]));
+
+    expect(stats.codesRedeemed).toBe(0);
+    expect(stats.errors.length).toBeGreaterThan(0);
+  });
+});

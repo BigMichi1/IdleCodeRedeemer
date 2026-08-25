@@ -2,10 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { Channel, TextChannel } from 'discord.js';
 import { ChannelType } from 'discord.js';
-import { scanMessageForCodes, extractCodesFromText } from './codeScanner';
+import { scanMessageForCodes } from './codeScanner';
 import { codeManager } from '../database/codeManager';
 import { userManager } from '../database/userManager';
-import IdleChampionsApi from '../api/idleChampionsApi';
+import IdleChampionsApi, { CodeSubmitStatus } from '../api/idleChampionsApi';
 import logger from '../utils/logger';
 
 const API_LOGS_DIR = path.join(process.cwd(), 'api-logs');
@@ -144,7 +144,10 @@ export async function backfillChannelHistory(
     dumpDiscordMessages(textChannel.name, 'other-messages', otherMessages);
 
     // Now attempt to redeem found codes for each user with credentials
-    const users = await userManager.getAllUsers();
+    // Honour the auto-redeem opt-out. Backfill previously used getAllUsers(),
+    // so a user who ran /autoredeem off still had codes redeemed against their
+    // game account on every startup backfill and every admin /backfill.
+    const users = await userManager.getAllUsersWithAutoRedeem();
 
     for (const user of users) {
       try {
@@ -184,10 +187,14 @@ export async function backfillChannelHistory(
             // carry a `details` object with the instance_id.
             const playerData = userDetailsResponse as any;
             if (!playerData?.details) {
-              logger.warn(
-                `[BACKFILL] Failed to get user details for ${user.discordId}: not a valid response`
-              );
-              continue;
+              // Break rather than continue: this fails per-user, not per-code.
+              // Continuing retried the same dead credentials once per code and
+              // left stats.errors empty, so the run was still recorded as
+              // "completed" while redeeming nothing.
+              const msg = `Could not get user details for ${user.discordId} (invalid credentials or API failure) - skipping their remaining codes`;
+              logger.error(`[BACKFILL] ${msg}`);
+              stats.errors.push(msg);
+              break;
             }
 
             const instanceId = String(playerData.details?.instance_id ?? '').trim() || '0';
@@ -206,7 +213,6 @@ export async function backfillChannelHistory(
               instanceId,
             });
 
-            // Type guard: check if response has codeStatus
             if (response instanceof Object && 'codeStatus' in response) {
               const codeResponse = response as any;
               await codeManager.addRedeemedCode(
@@ -215,10 +221,30 @@ export async function backfillChannelHistory(
                 codeResponse.codeStatus,
                 codeResponse.lootDetail
               );
-              stats.codesRedeemed++;
-              logger.info(
-                `[BACKFILL] Successfully redeemed code ${code} for user ${user.discordId}`
-              );
+
+              // Only status 0 is an actual redemption. Every CodeSubmitResponse
+              // carries a codeStatus -- including Already Redeemed, Expired,
+              // Not a Valid Code and Cannot Redeem -- so counting them all
+              // reported "Codes Redeemed: 40" for a run that redeemed nothing.
+              if (codeResponse.codeStatus === CodeSubmitStatus.Success) {
+                stats.codesRedeemed++;
+                logger.info(
+                  `[BACKFILL] Successfully redeemed code ${code} for user ${user.discordId}`
+                );
+              } else {
+                logger.info(
+                  `[BACKFILL] Code ${code} not redeemed for user ${user.discordId} (status ${codeResponse.codeStatus})`
+                );
+              }
+            } else {
+              // GenericResponse: an infrastructure failure (network, non-2xx,
+              // unparseable body, stale session). Previously this fell through
+              // with no log and no error recorded, so the operation was written
+              // as "completed" despite redeeming nothing.
+              const genericStatus = (response as any)?.status;
+              const msg = `Code ${code} for user ${user.discordId} failed with API status ${genericStatus}`;
+              logger.error(`[BACKFILL] ${msg}`);
+              stats.errors.push(msg);
             }
           } catch (error) {
             // Log error but continue with other codes

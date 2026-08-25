@@ -6,6 +6,7 @@ import {
 } from 'discord.js';
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
+import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
   .setName('setup')
@@ -17,53 +18,52 @@ export const data = new SlashCommandBuilder()
     option.setName('user_hash').setDescription('Your Idle Champions User Hash').setRequired(true)
   );
 
+/**
+ * Mask a credential for display, keeping only the first and last 4 characters.
+ * Short values are masked entirely rather than leaking overlapping halves.
+ */
+function maskCredential(value: string): string {
+  if (value.length <= 8) return '*'.repeat(value.length);
+  return `${value.substring(0, 4)}***${value.substring(value.length - 4)}`;
+}
+
 export async function execute(interaction: ChatInputCommandInteraction) {
   try {
-    console.log('[SETUP] Deferring reply...');
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    console.log('[SETUP] Reply deferred');
 
     const userId = interaction.options.getString('user_id', true);
     const userHash = interaction.options.getString('user_hash', true);
-    console.log('[SETUP] Got credentials from options:', { userId, userHash });
 
-    // Save credentials
-    console.log('[SETUP] Saving credentials...');
+    // NEVER log userId/userHash. They are the auth pair for the user's game
+    // account; encrypting them at rest is pointless if they also sit in
+    // logs/combined.log and container stdout.
     await userManager.saveCredentials({
       discordId: interaction.user.id,
       userId,
       userHash,
     });
-    console.log('[SETUP] Credentials saved');
 
-    // Log action
-    await auditManager.logAction(interaction.user.id, 'USER_SETUP', { userId });
+    // Audit the event, not the credential: the discordId already identifies the
+    // row, and audit_log is stored unencrypted alongside the encrypted users table.
+    await auditManager.logAction(interaction.user.id, 'USER_SETUP');
 
     const embed = new EmbedBuilder()
       .setColor(0x00ff00)
       .setTitle('✅ Credentials Saved')
       .setDescription('Your Idle Champions credentials have been saved securely.')
       .addFields(
-        {
-          name: 'User ID',
-          value: userId.substring(0, 4) + '***' + userId.substring(userId.length - 4),
-          inline: true,
-        },
-        {
-          name: 'Hash',
-          value: userHash.substring(0, 4) + '***' + userHash.substring(userHash.length - 4),
-          inline: true,
-        }
+        { name: 'User ID', value: maskCredential(userId), inline: true },
+        { name: 'Hash', value: maskCredential(userHash), inline: true }
       )
       .setFooter({ text: 'Your credentials are stored securely in our database.' });
 
-    console.log('[SETUP] Sending reply...');
     await interaction.editReply({ embeds: [embed] });
-    console.log('[SETUP] Reply sent');
   } catch (error) {
-    console.error('[SETUP COMMAND] Error:', error);
-    await interaction.editReply({
-      content: '❌ An error occurred while saving your credentials.',
-    });
+    logger.error('[SETUP COMMAND] Error:', error);
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({
+        content: '❌ An error occurred while saving your credentials.',
+      });
+    }
   }
 }
