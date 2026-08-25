@@ -2,11 +2,9 @@ import winston from 'winston';
 import path from 'path';
 import fs from 'fs';
 
-// Ensure logs directory exists
+// Ensure logs directory exists (recursive: true is a no-op when it already does)
 const logsDir = path.join(process.cwd(), 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
+fs.mkdirSync(logsDir, { recursive: true });
 
 // Define log levels with colors
 const customLevels = {

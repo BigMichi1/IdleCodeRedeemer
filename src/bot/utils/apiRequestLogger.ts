@@ -13,11 +13,8 @@ class ApiRequestLogger {
    * Initialize the API request logger and start cleanup interval
    */
   public initialize(): void {
-    // Ensure directory exists
-    if (!fs.existsSync(API_LOGS_DIR)) {
-      fs.mkdirSync(API_LOGS_DIR, { recursive: true });
-      logger.debug('Created api-logs directory');
-    }
+    // Ensure directory exists (recursive: true is a no-op when it already does)
+    fs.mkdirSync(API_LOGS_DIR, { recursive: true });
 
     // Run cleanup immediately
     this.cleanup();
@@ -44,9 +41,7 @@ class ApiRequestLogger {
     response: { status: number; ok: boolean; body?: any; error?: string }
   ): void {
     try {
-      if (!fs.existsSync(API_LOGS_DIR)) {
-        fs.mkdirSync(API_LOGS_DIR, { recursive: true });
-      }
+      fs.mkdirSync(API_LOGS_DIR, { recursive: true });
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const userPart = userId ? userId.substring(0, 8) : 'system';
       const filename = `${userPart}_${action}_${timestamp}.json`;

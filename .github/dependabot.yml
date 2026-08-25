@@ -30,6 +30,12 @@ updates:
       interval: weekly
       day: monday
       time: "04:00"
+    # All github/codeql-action/* steps must run the same version; separate PRs
+    # per sub-action produce a version mismatch that fails the CodeQL analysis.
+    groups:
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
     reviewers:
       - BigMichi1
       - Copilot

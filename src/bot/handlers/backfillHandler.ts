@@ -15,9 +15,7 @@ type RawMessage = { id: string; author: string; authorId: string; bot: boolean; 
 function dumpDiscordMessages(channelName: string, label: string, messages: RawMessage[]): void {
   if (messages.length === 0) return;
   try {
-    if (!fs.existsSync(API_LOGS_DIR)) {
-      fs.mkdirSync(API_LOGS_DIR, { recursive: true });
-    }
+    fs.mkdirSync(API_LOGS_DIR, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = path.join(API_LOGS_DIR, `discord_${label}_${channelName}_${timestamp}.json`);
     fs.writeFileSync(filename, JSON.stringify({ channel: channelName, label, count: messages.length, messages }, null, 2));
