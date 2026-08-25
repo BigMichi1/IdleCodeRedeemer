@@ -7,6 +7,7 @@ import { codeManager } from '../database/codeManager';
 import { userManager } from '../database/userManager';
 import IdleChampionsApi, { CodeSubmitStatus } from '../api/idleChampionsApi';
 import logger from '../utils/logger';
+import { errorMessage, sleep } from '../utils/async';
 
 const API_LOGS_DIR = path.join(process.cwd(), 'api-logs');
 
@@ -126,9 +127,9 @@ export async function backfillChannelHistory(
         beforeId = messages.last()?.id;
 
         // Discord rate limit - wait a bit between batches
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await sleep(500);
       } catch (error) {
-        const errorMsg = `Error fetching message batch: ${error instanceof Error ? error.message : String(error)}`;
+        const errorMsg = `Error fetching message batch: ${errorMessage(error)}`;
         logger.error(`[BACKFILL] ${errorMsg}`);
         stats.errors.push(errorMsg);
         break; // Exit the loop on fetch error
@@ -249,15 +250,15 @@ export async function backfillChannelHistory(
           } catch (error) {
             // Log error but continue with other codes
             logger.warn(
-              `[BACKFILL] Failed to redeem code ${code} for user ${user.discordId}: ${error instanceof Error ? error.message : String(error)}`
+              `[BACKFILL] Failed to redeem code ${code} for user ${user.discordId}: ${errorMessage(error)}`
             );
           }
 
           // Small delay between redemption attempts
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await sleep(100);
         }
       } catch (error) {
-        const errorMsg = `Error processing user ${user.discordId}: ${error instanceof Error ? error.message : String(error)}`;
+        const errorMsg = `Error processing user ${user.discordId}: ${errorMessage(error)}`;
         logger.error(`[BACKFILL] ${errorMsg}`);
         stats.errors.push(errorMsg);
       }
@@ -275,7 +276,7 @@ export async function backfillChannelHistory(
       `✅ Backfill complete! Found: ${stats.codesFound}, Redeemed: ${stats.codesRedeemed}, Pending: ${stats.pendingCodes}`
     );
   } catch (error) {
-    const errorMsg = `Backfill error: ${error instanceof Error ? error.message : String(error)}`;
+    const errorMsg = `Backfill error: ${errorMessage(error)}`;
     logger.error(`[BACKFILL] ${errorMsg}`);
     stats.errors.push(errorMsg);
   }

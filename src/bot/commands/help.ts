@@ -4,6 +4,7 @@ import {
   EmbedBuilder,
   MessageFlags,
 } from 'discord.js';
+import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
   .setName('help')
@@ -120,7 +121,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    console.error('[HELP COMMAND] Error:', error);
+    logger.error('[HELP COMMAND] Error:', error);
     await interaction.editReply({
       content: '❌ An error occurred while displaying help.',
     });

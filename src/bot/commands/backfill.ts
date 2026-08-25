@@ -10,6 +10,7 @@ import { backfillManager } from '../database/backfillManager';
 import { auditManager } from '../database/auditManager';
 import { backfillChannelHistory } from '../handlers/backfillHandler';
 import logger from '../utils/logger';
+import { errorMessage } from '../utils/async';
 
 export const data = new SlashCommandBuilder()
   .setName('backfill')
@@ -153,7 +154,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         .setColor(0xff0000)
         .setTitle('❌ Error')
         .setDescription(
-          `An error occurred during backfill: ${error instanceof Error ? error.message : String(error)}`
+          `An error occurred during backfill: ${errorMessage(error)}`
         );
 
       if (interaction.deferred) {

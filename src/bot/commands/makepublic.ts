@@ -6,6 +6,7 @@ import {
 } from 'discord.js';
 import { codeManager } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
+import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
   .setName('makepublic')
@@ -50,7 +51,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    console.error('[MAKEPUBLIC] Error:', error);
+    logger.error('[MAKEPUBLIC] Error:', error);
 
     const embed = new EmbedBuilder()
       .setColor(0xff0000)

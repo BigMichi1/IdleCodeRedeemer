@@ -10,6 +10,7 @@ import {
 import { codeManager, CHEST_TYPE_NAMES, type LootSummary } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import { parseSqliteTimestamp } from '../utils/sqliteTime';
+import logger from '../utils/logger';
 
 export const PAGE_SIZE = 5;
 
@@ -159,7 +160,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const { embeds, components } = await buildCodesPage(interaction.user.id, 0);
     await interaction.editReply({ embeds, components });
   } catch (error) {
-    console.error('[CODES] Error:', error);
+    logger.error('[CODES] Error:', error);
 
     const embed = new EmbedBuilder()
       .setColor(0xff0000)

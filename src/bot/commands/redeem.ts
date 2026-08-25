@@ -5,9 +5,11 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { userManager } from '../database/userManager';
-import { codeManager, normalizeCodeStatus } from '../database/codeManager';
+import { codeManager, normalizeCodeStatus, CHEST_TYPE_NAMES } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi from '../api/idleChampionsApi';
+import { resolveGameSession } from './gameSession';
+import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
@@ -72,76 +74,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    // Get server
-    let server = credentials.server;
-    if (!server) {
-      server = await IdleChampionsApi.getServer();
-      if (!server) {
-        const embed = new EmbedBuilder()
-          .setColor(0xff0000)
-          .setTitle('❌ Error')
-          .setDescription('Could not determine game server.');
-
-        await interaction.editReply({ embeds: [embed] });
-        return;
-      }
-      await userManager.updateServer(interaction.user.id, server);
-    }
-
-    // Get fresh user details to get current instance ID
-    let userResult = await IdleChampionsApi.getUserDetails({
-      server,
-      user_id: credentials.userId,
-      hash: credentials.userHash,
-    });
-
-    // Handle server switch
-    if (
-      userResult instanceof Object &&
-      'status' in userResult &&
-      (userResult as any).status === 4
-    ) {
-      server = (userResult as any).newServer;
-      if (!server) {
-        const embed = new EmbedBuilder()
-          .setColor(0xff0000)
-          .setTitle('❌ Error')
-          .setDescription('Server switch failed.');
-
-        await interaction.editReply({ embeds: [embed] });
-        return;
-      }
-      await userManager.updateServer(interaction.user.id, server);
-
-      userResult = await IdleChampionsApi.getUserDetails({
-        server,
-        user_id: credentials.userId,
-        hash: credentials.userHash,
-      });
-    }
-
-    const userData = userResult as any;
-    if (!userData || !userData.details) {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription('Could not retrieve user data.');
-
-      await interaction.editReply({ embeds: [embed] });
+    const session = await resolveGameSession(interaction.user.id, credentials);
+    if (!session.ok) {
+      await replyWithError(interaction, session.title, session.description);
       return;
     }
-
-    // Get instance ID from user details
-    const instanceId = userData.details.instance_id || '0';
-    if (!instanceId || instanceId === '0') {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription('Could not retrieve valid instance ID from server.');
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
+    const { server, instanceId } = session;
 
     // Submit code
     const response = await IdleChampionsApi.submitCode({
@@ -242,7 +180,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const lootLines = codeResponse.lootDetail
         .map((loot: any) => {
           if (loot.chest_type_id !== undefined) {
-            const chestName = getChestTypeName(loot.chest_type_id);
+            const chestName = CHEST_TYPE_NAMES[loot.chest_type_id] ?? `Chest ${loot.chest_type_id}`;
             return `• ${chestName}: ${loot.before} → ${loot.after} (+${loot.count})`;
           } else if (loot.loot_item) {
             return `• ${loot.loot_item.replace(/_/g, ' ')}: x${loot.count}`;
@@ -260,28 +198,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    console.error('[REDEEM COMMAND] Error:', error);
+    logger.error('[REDEEM COMMAND] Error:', error);
     await interaction.editReply({
       content: '❌ An error occurred while redeeming the code.',
     });
   }
 }
 
-enum CodeSubmitStatus {
-  Success = 'Success',
-  AlreadyRedeemed = 'Already Redeemed',
-  InvalidParameters = 'Invalid Parameters',
-  NotValidCombo = 'Not a Valid Code',
-  Expired = 'Code Expired',
-  CannotRedeem = 'Cannot Redeem',
-}
-
-function getChestTypeName(chestTypeId: number): string {
-  const chestTypes: { [key: number]: string } = {
-    1: 'Silver Chest',
-    2: 'Gold Chest',
-    230: 'Modron Chest',
-    282: 'Electrum Chest',
-  };
-  return chestTypes[chestTypeId] || `Chest ${chestTypeId}`;
-}
