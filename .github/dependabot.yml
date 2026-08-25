@@ -27,6 +27,14 @@ updates:
     # rewrite the pin itself, which is how discord.js 14.26.4 sat untouched
     # while 14.27.0 was published.
     versioning-strategy: increase
+    ignore:
+      # typescript-eslint does not support TS 7.0: the plugin throws on load,
+      # which breaks `mise run lint` and with it the pre-commit hook. TS 7.0.2
+      # merged automatically once and had to be reverted. Lift this once
+      # typescript-eslint ships TS 7 support.
+      # https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: github-actions

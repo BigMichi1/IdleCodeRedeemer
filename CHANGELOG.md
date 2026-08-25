@@ -30,6 +30,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Reverted TypeScript 7.0.2; typescript-eslint cannot load against it** - The major bump
+  merged automatically and the plugin throws `typescript-eslint does not support TS 7.0` on
+  load, which breaks `mise run lint` and with it the pre-commit hook, blocking every commit.
+  Typecheck itself passes under TS 7, so only linting is affected. Pinned back to 6.0.3 and
+  added a Dependabot ignore for `typescript` majors until typescript-eslint ships support
+  (typescript-eslint#10940).
+
 - **Commit message validation was silently accepting anything** - The `commitlint` Mise task
   carried `--edit` while the commit-msg hook appended its own `--edit <path>`. The resulting
   `--edit --edit <path>` made commitlint validate nothing and exit 0, so Conventional Commits
