@@ -26,8 +26,10 @@ COPY bun.lock ./
 COPY .env.example .env
 COPY bin/mise ./bin/mise
 
-# Trust the .mise.toml configuration file
-RUN bin/mise trust
+# No `mise trust` step: bin/mise is the generated bootstrap, which exports
+# MISE_TRUSTED_CONFIG_PATHS for the project directory before invoking mise. The
+# explicit trust call was therefore a no-op that logged
+# "mise WARN  No untrusted config files found." on every build.
 
 # Install tools and dependencies via Mise
 RUN bin/mise install
