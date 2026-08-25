@@ -33,6 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`format` and `format:check` tasks no longer fail on startup** - Syncpack 15 removed
   the `--source` flag and renamed `list-mismatches` to `lint`. Both tasks aborted before
   Prettier ever ran, so formatting drift accumulated unnoticed across 37 files.
+- **Attestations name the commit the release was tagged from** - The manifest took its
+  commit from `github.sha`, which on a `workflow_dispatch` run is the default branch's HEAD
+  rather than the tagged commit, so a regenerated attestation would attest a commit the
+  release was never built from. The tag is now dereferenced to its own commit.
 - **Verification instructions now reach the release instead of 404ing** - The final step
   called `issues.createComment` with the release id as an issue number; releases have no
   comment thread, so the API answered 404 and the step failed on every release. It now

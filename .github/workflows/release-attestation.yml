@@ -66,10 +66,17 @@ jobs:
             RELEASE_ID="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq .id)"
           fi
 
+          # github.sha is main's HEAD on a dispatch, so an attestation built from
+          # it would name a commit the release was never built from. Resolve the
+          # tag's own commit instead; `commits/<tag>` dereferences an annotated
+          # tag to the commit it points at.
+          COMMIT_SHA="$(gh api "repos/${{ github.repository }}/commits/$TAG" --jq .sha)"
+
           {
             echo "tag=$TAG"
             echo "upload_url=$UPLOAD_URL"
             echo "release_id=$RELEASE_ID"
+            echo "commit_sha=$COMMIT_SHA"
           } >> "$GITHUB_OUTPUT"
 
       - name: Generate Release Manifest
@@ -96,8 +103,8 @@ jobs:
             --arg version "$VERSION" \
             --arg date "$BUILD_DATE" \
             --arg repository "${{ github.repository }}" \
-            --arg commit_sha "${{ github.sha }}" \
-            --arg commit_url "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            --arg commit_sha "${{ steps.release.outputs.commit_sha }}" \
+            --arg commit_url "${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.release.outputs.commit_sha }}" \
             --arg run_id "${{ github.run_id }}" \
             --arg run_url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --arg minor "${VERSION%.*}" \
@@ -282,7 +289,7 @@ jobs:
             ✅ **Build Details**:
             - Workflow: [\`.github/workflows/docker.yml\`](.github/workflows/docker.yml)
             - Run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            - Commit: [\`${{ github.sha }}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            - Commit: [\`${{ steps.release.outputs.commit_sha }}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.release.outputs.commit_sha }})
 
             For security information, see [SECURITY.md](https://github.com/${{ github.repository }}/blob/${tag}/SECURITY.md)`;
 
