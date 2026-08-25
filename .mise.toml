@@ -6,8 +6,12 @@ NODE_TLS_REJECT_UNAUTHORIZED = "0"
 [tools]
 # Bun runtime and package manager
 bun = "1.4.0"
+# Claude Code CLI
+claude = "2.1.245"
 # Gitleaks for secret detection
 gitleaks = "8.30.1"
+# ripgrep for fast source search
+rg = "15.2.0"
 
 [tasks.install]
 description = "Install dependencies with Bun"
