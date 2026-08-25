@@ -1,30 +1,29 @@
 import { eq, ne, and, or, isNull, gt, inArray, notInArray, sql } from 'drizzle-orm';
 import { db } from './db';
 import { redeemedCodes, pendingCodes, lootTotals } from './schema/index';
+import { CODE_STATUS_MAP, SETTLED_STATUSES, isCodeStatus, type CodeStatus } from './codeStatus';
+import type { CodeSubmitStatus } from '../api/idleChampionsApi';
 
 type RedeemedCodeRow = typeof redeemedCodes.$inferSelect;
 
-const CODE_STATUS_MAP: Record<number, string> = {
-  0: 'Success',
-  1: 'Already Redeemed',
-  2: 'Invalid Parameters',
-  3: 'Not a Valid Code',
-  4: 'Code Expired',
-  5: 'Cannot Redeem',
-};
 
 /**
  * Converts a raw codeStatus value (number, numeric string, or canonical string)
  * to the canonical status string stored in the database.
+ *
+ * Anything unrecognised becomes 'Unknown Status' rather than being written
+ * through verbatim. Every query in this file compares status against a
+ * canonical literal, so persisting an arbitrary string produced a row that no
+ * lookup could ever match -- the bot would re-redeem that code forever.
  */
-export function normalizeCodeStatus(status: number | string): string {
-  if (typeof status === 'number') {
-    return CODE_STATUS_MAP[status] ?? 'Unknown Status';
+export function normalizeCodeStatus(status: number | string): CodeStatus {
+  const numeric =
+    typeof status === 'number' ? status : /^\d+$/.test(status) ? Number(status) : undefined;
+
+  if (numeric !== undefined) {
+    return CODE_STATUS_MAP[numeric as CodeSubmitStatus] ?? 'Unknown Status';
   }
-  if (/^\d+$/.test(status)) {
-    return CODE_STATUS_MAP[Number(status)] ?? 'Unknown Status';
-  }
-  return status;
+  return typeof status === 'string' && isCodeStatus(status) ? status : 'Unknown Status';
 }
 
 /** Scope key for the anonymised server-wide loot aggregate. */
@@ -132,7 +131,6 @@ class CodeManager {
   }
 
   async isCodeRedeemedByUser(code: string, discordId: string): Promise<boolean> {
-    const qualifyingStatuses = ['Success', 'Already Redeemed', 'Code Expired'] as const;
     const result = db
       .select({ code: redeemedCodes.code })
       .from(redeemedCodes)
@@ -140,7 +138,7 @@ class CodeManager {
         and(
           eq(redeemedCodes.code, code),
           eq(redeemedCodes.discordId, discordId),
-          inArray(redeemedCodes.status, qualifyingStatuses as unknown as string[])
+          inArray(redeemedCodes.status, SETTLED_STATUSES)
         )
       )
       .get();
@@ -428,7 +426,6 @@ class CodeManager {
     }
 
     const result = new Map<string, Set<string>>();
-    const qualifyingStatuses = ['Success', 'Already Redeemed', 'Code Expired'] as const;
     for (let i = 0; i < discordIds.length; i += discordIdChunkSize) {
       const chunk = discordIds.slice(i, i + discordIdChunkSize);
       const rows = db
@@ -438,7 +435,7 @@ class CodeManager {
           and(
             inArray(redeemedCodes.code, codes),
             inArray(redeemedCodes.discordId, chunk),
-            inArray(redeemedCodes.status, qualifyingStatuses as unknown as string[])
+            inArray(redeemedCodes.status, SETTLED_STATUSES)
           )
         )
         .all();

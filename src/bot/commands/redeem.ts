@@ -7,7 +7,7 @@ import {
 import { userManager } from '../database/userManager';
 import { codeManager, normalizeCodeStatus, CHEST_TYPE_NAMES } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi from '../api/idleChampionsApi';
+import IdleChampionsApi, { CodeSubmitStatus } from '../api/idleChampionsApi';
 import { resolveGameSession } from './gameSession';
 import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
@@ -103,8 +103,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const codeResponse = response as any;
     const statusName = normalizeCodeStatus(codeResponse.codeStatus);
-    const isSuccess = codeResponse.codeStatus === 0; // 0 = Success
-    const isExpiredStatus = codeResponse.codeStatus === 4; // 4 = Code Expired
+    const isSuccess = codeResponse.codeStatus === CodeSubmitStatus.Success;
+    const isExpiredStatus = codeResponse.codeStatus === CodeSubmitStatus.Expired;
 
     logger.info(
       `[REDEEM] Code ${code} redeemed with status: ${statusName} for user ${interaction.user.tag}`

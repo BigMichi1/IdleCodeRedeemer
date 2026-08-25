@@ -40,7 +40,7 @@ interface BackfillStats {
  * @returns Statistics about the backfill operation
  */
 export async function backfillChannelHistory(
-  channel: any,
+  channel: Channel,
   onProgress?: (message: string) => void
 ): Promise<BackfillStats> {
   const stats: BackfillStats = {

@@ -7,7 +7,7 @@ import {
 import { userManager } from '../database/userManager';
 import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi from '../api/idleChampionsApi';
+import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
 import logger from '../utils/logger';
 import { errorMessage, sleep } from '../utils/async';
 
@@ -78,7 +78,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     if (
       userResult instanceof Object &&
       'status' in userResult &&
-      (userResult as any).status === 4
+      (userResult as any).status === ResponseStatus.SwitchServer
     ) {
       server = (userResult as any).newServer;
       if (!server) {
@@ -179,7 +179,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         const codeResponse = response as any;
         const codeStatus: number = codeResponse.codeStatus;
 
-        if (codeStatus === 0) {
+        if (codeStatus === CodeSubmitStatus.Success) {
           // Success
           const wasRedeemedByOther = await codeManager.isCodeSuccessfullyRedeemedByOther(
             code,
@@ -195,11 +195,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           redeemed++;
           logger.info(`[CATCHUP] Redeemed code ${code} for ${interaction.user.tag}`);
           await auditManager.logAction(interaction.user.id, 'CATCHUP_REDEEM_SUCCESS', { code });
-        } else if (codeStatus === 1) {
+        } else if (codeStatus === CodeSubmitStatus.AlreadyRedeemed) {
           // Already redeemed by this user — persist so future /catchup runs skip the API call
           await codeManager.addRedeemedCode(code, interaction.user.id, 'Already Redeemed');
           alreadyHad++;
-        } else if (codeStatus === 4) {
+        } else if (codeStatus === CodeSubmitStatus.Expired) {
           // Expired - update DB
           await codeManager.markCodeAsExpired(code, interaction.user.id);
           expired++;

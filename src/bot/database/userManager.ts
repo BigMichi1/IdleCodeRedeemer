@@ -4,6 +4,12 @@ import { users } from './schema/index';
 import { encrypt, decrypt, isEncrypted } from '../utils/crypto';
 import logger from '../utils/logger';
 
+/**
+ * Write side: what a caller may supply to saveCredentials().
+ *
+ * The preference fields are genuinely optional here -- omitting them leaves an
+ * existing user's choices untouched.
+ */
 export interface UserCredentials {
   discordId: string;
   userId: string;
@@ -16,6 +22,26 @@ export interface UserCredentials {
   dmOnFailure?: boolean;
 }
 
+/**
+ * Read side: what rowToCredentials() always produces.
+ *
+ * Every preference column is NOT NULL with a default, so these are always
+ * present. Typing them as required stops consumers writing defensive checks for
+ * an `undefined` that cannot occur -- and stops `if (credentials.dmOnFailure)`
+ * conflating "absent" with "false".
+ */
+export interface UserProfile {
+  discordId: string;
+  userId: string;
+  userHash: string;
+  server?: string;
+  instanceId?: string;
+  autoRedeem: boolean;
+  dmOnCode: boolean;
+  dmOnSuccess: boolean;
+  dmOnFailure: boolean;
+}
+
 export interface NotificationPreferences {
   dmOnCode: boolean;
   dmOnSuccess: boolean;
@@ -26,17 +52,19 @@ function decryptField(value: string): string {
   return isEncrypted(value) ? decrypt(value) : value;
 }
 
-function rowToCredentials(user: typeof users.$inferSelect): UserCredentials {
+function rowToCredentials(user: typeof users.$inferSelect): UserProfile {
   return {
     discordId: user.discordId,
     userId: decryptField(user.userId),
     userHash: decryptField(user.userHash),
     server: user.server ?? undefined,
     instanceId: user.instanceId ?? undefined,
-    autoRedeem: user.autoRedeem ?? true,
-    dmOnCode: user.dmOnCode ?? false,
-    dmOnSuccess: user.dmOnSuccess ?? true,
-    dmOnFailure: user.dmOnFailure ?? false,
+    // The four preference columns are NOT NULL with defaults, so no `??`
+    // fallbacks are needed -- those branches were unreachable.
+    autoRedeem: user.autoRedeem,
+    dmOnCode: user.dmOnCode,
+    dmOnSuccess: user.dmOnSuccess,
+    dmOnFailure: user.dmOnFailure,
   };
 }
 
@@ -126,7 +154,7 @@ class UserManager {
       .run();
   }
 
-  async getAllUsersWithAutoRedeem(): Promise<UserCredentials[]> {
+  async getAllUsersWithAutoRedeem(): Promise<UserProfile[]> {
     const rows = db.select().from(users).where(eq(users.autoRedeem, true)).orderBy(sql`${users.createdAt} DESC`).all();
     return rows.map(rowToCredentials);
   }
@@ -160,7 +188,7 @@ class UserManager {
     return rows.length > 0;
   }
 
-  async getAllUsers(): Promise<UserCredentials[]> {
+  async getAllUsers(): Promise<UserProfile[]> {
     const rows = db.select().from(users).orderBy(sql`${users.createdAt} DESC`).all();
     return rows.map(rowToCredentials);
   }

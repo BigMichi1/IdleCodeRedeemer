@@ -135,18 +135,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         inline: true,
       });
 
-    // Add response data if available
-    if (response instanceof Object && 'chests_remaining' in response) {
-      const responseData = response as any;
-      if (responseData.chests_remaining !== undefined) {
-        embed.addFields({
-          name: 'Remaining',
-          value: responseData.chests_remaining.toString(),
-          inline: true,
-        });
-      }
-    }
-
     if (response instanceof Object && 'lootDetail' in response) {
       const openResponse = response as any;
       if (
@@ -157,7 +145,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         // Group loot by type for summary
         const lootSummary: { [key: string]: number } = {};
         for (const loot of openResponse.lootDetail) {
-          const description = loot.description || JSON.stringify(loot);
+          // LootDetailsEntity has no `description` field, so the previous
+          // `loot.description || JSON.stringify(loot)` always rendered raw JSON.
+          const description = loot.loot_action || JSON.stringify(loot);
           lootSummary[description] = (lootSummary[description] || 0) + 1;
         }
 

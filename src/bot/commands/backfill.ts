@@ -6,6 +6,7 @@ import {
   PermissionFlagsBits,
   ChannelType,
 } from 'discord.js';
+import type { Channel } from 'discord.js';
 import { backfillManager } from '../database/backfillManager';
 import { auditManager } from '../database/auditManager';
 import { backfillChannelHistory } from '../handlers/backfillHandler';
@@ -62,7 +63,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     // Get the target channel
-    let targetChannel: any = interaction.options.getChannel('channel');
+    let targetChannel: Channel | null = interaction.options.getChannel('channel') as Channel | null;
     if (!targetChannel) {
       targetChannel = interaction.channel;
     }

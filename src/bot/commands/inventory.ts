@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi from '../api/idleChampionsApi';
+import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
 import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
@@ -50,7 +50,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     // Handle server switch
-    if (result instanceof Object && 'status' in result && (result as any).status === 4) {
+    if (result instanceof Object && 'status' in result && (result as any).status === ResponseStatus.SwitchServer) {
       // ResponseStatus.SwitchServer
       await userManager.updateServer(interaction.user.id, (result as any).newServer);
 

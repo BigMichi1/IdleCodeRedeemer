@@ -4,8 +4,31 @@ import { auditLog } from './schema/index';
 
 type AuditLog = typeof auditLog.$inferSelect;
 
+/**
+ * The closed set of audited actions. A union rather than `string` so a typo is
+ * a compile error and getAuditLogByAction() cannot search for a value that is
+ * never written.
+ */
+export type AuditAction =
+  | 'USER_SETUP'
+  | 'CODE_REDEEMED'
+  | 'CODE_REDEEM_FAILED'
+  | 'CODE_MADE_PUBLIC'
+  | 'CHESTS_OPENED'
+  | 'BLACKSMITH_USED'
+  | 'VIEWED_CODES'
+  | 'VIEWED_INVENTORY'
+  | 'VIEWED_STATS'
+  | 'BACKFILL_STARTED'
+  | 'BACKFILL_COMPLETED'
+  | 'CATCHUP_REDEEM_SUCCESS'
+  | 'CATCHUP_REDEEM_FAILED'
+  | 'AUTO_REDEEM_TOGGLED'
+  | 'NOTIFICATION_PREFS_UPDATED';
+
 class AuditManager {
-  async logAction(discordId: string | null, action: string, details?: any): Promise<void> {
+  // `details` is only ever JSON.stringify'd, so `unknown` is the accurate type.
+  async logAction(discordId: string | null, action: AuditAction, details?: unknown): Promise<void> {
     const detailsStr = details ? JSON.stringify(details) : null;
     db.insert(auditLog).values({ discordId, action, details: detailsStr }).run();
   }
@@ -39,7 +62,7 @@ class AuditManager {
       .all();
   }
 
-  async getAuditLogByAction(action: string, limit: number = 50): Promise<AuditLog[]> {
+  async getAuditLogByAction(action: AuditAction, limit: number = 50): Promise<AuditLog[]> {
     return db
       .select()
       .from(auditLog)
