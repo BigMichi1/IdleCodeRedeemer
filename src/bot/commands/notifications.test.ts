@@ -9,10 +9,7 @@ import { execute } from './notifications';
 // Interaction mock helpers
 // ---------------------------------------------------------------------------
 
-function makeInteraction(
-  userId: string,
-  options: Record<string, boolean | null> = {}
-) {
+function makeInteraction(userId: string, options: Record<string, boolean | null> = {}) {
   const editReplySpy = spyOn({ editReply: async (_: unknown) => {} }, 'editReply');
   const replySpy = spyOn({ reply: async (_: unknown) => {} }, 'reply');
 
@@ -20,7 +17,9 @@ function makeInteraction(
     user: { id: userId, tag: `user#${userId}` },
     deferred: false,
     replied: false,
-    deferReply: async () => { (interaction as any).deferred = true; },
+    deferReply: async () => {
+      (interaction as any).deferred = true;
+    },
     editReply: editReplySpy,
     reply: replySpy,
     options: {

@@ -124,12 +124,19 @@ class UserManager {
   }
 
   async hasCredentials(discordId: string): Promise<boolean> {
-    const user = db.select({ discordId: users.discordId }).from(users).where(eq(users.discordId, discordId)).get();
+    const user = db
+      .select({ discordId: users.discordId })
+      .from(users)
+      .where(eq(users.discordId, discordId))
+      .get();
     return user !== undefined;
   }
 
   async getUserCount(): Promise<number> {
-    const result = db.select({ count: sql<number>`COUNT(*)` }).from(users).get();
+    const result = db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(users)
+      .get();
     return result?.count ?? 0;
   }
 
@@ -155,7 +162,12 @@ class UserManager {
   }
 
   async getAllUsersWithAutoRedeem(): Promise<UserProfile[]> {
-    const rows = db.select().from(users).where(eq(users.autoRedeem, true)).orderBy(sql`${users.createdAt} DESC`).all();
+    const rows = db
+      .select()
+      .from(users)
+      .where(eq(users.autoRedeem, true))
+      .orderBy(sql`${users.createdAt} DESC`)
+      .all();
     return rows.map(rowToCredentials);
   }
 
@@ -163,7 +175,11 @@ class UserManager {
    * Returns only the Discord IDs of users who have opted into code-detection DMs.
    */
   async getDiscordIdsWithDmOnCode(): Promise<string[]> {
-    const rows = db.select({ discordId: users.discordId }).from(users).where(eq(users.dmOnCode, true)).all();
+    const rows = db
+      .select({ discordId: users.discordId })
+      .from(users)
+      .where(eq(users.dmOnCode, true))
+      .all();
     return rows.map((r) => r.discordId);
   }
 
@@ -174,13 +190,17 @@ class UserManager {
    * database. The `/notifications` command guards against this by requiring
    * `getCredentials` to succeed first. Direct callers must do the same.
    */
-  async setNotificationPreferences(discordId: string, prefs: Partial<NotificationPreferences>): Promise<boolean> {
+  async setNotificationPreferences(
+    discordId: string,
+    prefs: Partial<NotificationPreferences>
+  ): Promise<boolean> {
     const update: Partial<{ dmOnCode: boolean; dmOnSuccess: boolean; dmOnFailure: boolean }> = {};
     if (prefs.dmOnCode !== undefined) update.dmOnCode = prefs.dmOnCode;
     if (prefs.dmOnSuccess !== undefined) update.dmOnSuccess = prefs.dmOnSuccess;
     if (prefs.dmOnFailure !== undefined) update.dmOnFailure = prefs.dmOnFailure;
     if (Object.keys(update).length === 0) return false;
-    const rows = db.update(users)
+    const rows = db
+      .update(users)
       .set({ ...update, updatedAt: sql`CURRENT_TIMESTAMP` })
       .where(eq(users.discordId, discordId))
       .returning({ discordId: users.discordId })
@@ -189,7 +209,11 @@ class UserManager {
   }
 
   async getAllUsers(): Promise<UserProfile[]> {
-    const rows = db.select().from(users).orderBy(sql`${users.createdAt} DESC`).all();
+    const rows = db
+      .select()
+      .from(users)
+      .orderBy(sql`${users.createdAt} DESC`)
+      .all();
     return rows.map(rowToCredentials);
   }
 
@@ -216,7 +240,9 @@ class UserManager {
       }
     }
     if (migrated > 0) {
-      logger.info(`[USER MANAGER] Migrated ${migrated} plaintext credential row(s) to encrypted storage`);
+      logger.info(
+        `[USER MANAGER] Migrated ${migrated} plaintext credential row(s) to encrypted storage`
+      );
     }
   }
 }

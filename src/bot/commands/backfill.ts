@@ -154,9 +154,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Error')
-        .setDescription(
-          `An error occurred during backfill: ${errorMessage(error)}`
-        );
+        .setDescription(`An error occurred during backfill: ${errorMessage(error)}`);
 
       if (interaction.deferred) {
         await interaction.editReply({ embeds: [embed] });

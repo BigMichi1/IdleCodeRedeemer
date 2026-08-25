@@ -92,12 +92,14 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: End-user interacting with the bot
 
 **Actions**:
+
 - Submit slash commands (`/setup`, `/redeem`, `/catchup`, `/autoredeem`, `/inventory`, `/open`, `/blacksmith`, `/codes`, `/makepublic`, `/notifications`, `/stats`, `/logs`, `/backfill`, `/deleteaccount`, `/help`)
 - Send messages containing promo codes in the monitored channel
 - Receive responses and error messages from the bot
 - Receive DM notifications for code detection, redemption success/failure (configurable via `/notifications`)
 
 **Data Exchanged**:
+
 - Credentials (user ID, hash) → to bot
 - Account inventory data ← from bot
 - Command responses (text/embeds) ← from bot
@@ -107,17 +109,20 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: Message bus and authentication provider
 
 **Actors Within**:
+
 - **Guild**: Container for channels, permissions, and bot membership
 - **Channel**: Monitored for code messages and command execution
 - **Event Stream**: Delivers messageCreate, interactionCreate events to bot
 
 **Actions**:
+
 - Route user messages to bot
 - Route user slash commands to bot
 - Deliver event payloads with user authentication context
 - Validate bot permissions before accepting responses
 
 **Data Exchanged**:
+
 - messageCreate events → to bot
 - interactionCreate events → to bot
 - Message content (text) → to bot
@@ -128,6 +133,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: Orchestrator and processor
 
 **Subsystems**:
+
 - **Command Handler** - Routes slash commands to handlers
 - **Code Scanner** - Detects promo codes in messages
 - **Auto Redeemer** - Automatically redeems detected codes for all users with auto-redeem enabled
@@ -136,6 +142,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 - **Database Managers** - Persistence layer (users, codes, audit, backfill state, loot totals)
 
 **Actions**:
+
 - Listen for messageCreate events (channel-specific)
 - Listen for interactionCreate events (global)
 - Parse slash command invocations
@@ -146,6 +153,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 - Manage rate limiting and backfill locking
 
 **Data Processed**:
+
 - Discord events (messages, interactions)
 - Promo code strings
 - User credentials
@@ -157,6 +165,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: Authoritative source for game state
 
 **Endpoints**:
+
 - `POST /~idledragons/post.php?call=getUserDetails` - Get account status
 - `POST /~idledragons/post.php?call=redeemcoupon` - Submit promo code
 - `POST /~idledragons/post.php?call=openChests` - Open loot chests
@@ -164,6 +173,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 - `POST /~idledragons/post.php?call=purchaseChests` - Buy chests
 
 **Actions**:
+
 - Validate user credentials (user_id, hash)
 - Process code submissions
 - Return account state (inventory, progress)
@@ -171,10 +181,12 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 - Enforce rate limits and business logic
 
 **Data Exchanged**:
+
 - Query parameters (user_id, hash, code, etc.) → from bot
 - JSON response (player data, results) → to bot
 
 **Security**:
+
 - HTTPS/TLS for transport (certificate validation disabled - known issue)
 - Query parameter format (no JSON body)
 - User credentials required for all operations
@@ -184,6 +196,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 **Role**: Persistent local storage
 
 **Tables**:
+
 - **users** - User credentials (Discord ID, encrypted user_id, encrypted hash, notification preferences, autoRedeem)
 - **redeemed_codes** - Code history (code, discordId, redeemed_at, status, loot_detail, is_public, expires_at)
 - **pending_codes** - Codes detected but not yet redeemed by the finder
@@ -192,6 +205,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 - **loot_totals** - Aggregate loot cache (per-user and server-wide counts for `/stats`)
 
 **Actions**:
+
 - Store/retrieve user credentials (AES-256-GCM encrypted)
 - Record code redemption history with loot details
 - Track pending codes for catchup/auto-redeem
@@ -200,6 +214,7 @@ The bot reads promo codes from Discord messages, redeems them via the Idle Champ
 - Log all operations for audit trail
 
 **Data Characteristics**:
+
 - **Persistence**: Data survives bot restarts
 - **Locality**: No network dependency
 - **Isolation**: Each user's data accessible only via their Discord ID
@@ -220,12 +235,13 @@ User ─ /setup <user_id> <hash> ─> Bot
                                      ├─> Validate format
                                      ├─> Store in users table
                                      └─> Respond "Credentials saved"
-                                     
+
 User <─ Ephemeral response ─ Bot
    (only user sees)
 ```
 
 **System Operations**:
+
 1. User invokes `/setup` command with arguments
 2. Discord delivers `interactionCreate` event to bot
 3. Bot's command handler routes to `setup.ts`
@@ -234,6 +250,7 @@ User <─ Ephemeral response ─ Bot
 6. Bot responds with ephemeral message (only user sees)
 
 **Security**:
+
 - Credentials never logged
 - Ephemeral response (not visible to other users)
 - HTTPS only over Discord API
@@ -269,13 +286,14 @@ User posts:     "Free code: ABC123"
                      │   └─> Response: {"Success": 1, "Message": "Code redeemed"}
                      │
                      ├─> Store in codes table:
-                     │   {code: "ABC123", redeemer: <user_id>, 
+                     │   {code: "ABC123", redeemer: <user_id>,
                      │    result: "Success", timestamp: now}
                      │
                      └─> Respond in channel (or quiet if in public mode)
 ```
 
 **Key Design Decisions**:
+
 1. **Code Detection**: Regex pattern matches known code format
 2. **Automatic Redemption**: No user action required
 3. **User Selection**: Scans message author for stored credentials
@@ -304,13 +322,14 @@ User ─ /redeem <code> ─> Bot
                            │   {code, redeemer, result, timestamp}
                            │
                            └─> Respond with result
-                               "✓ Code redeemed!" or 
+                               "✓ Code redeemed!" or
                                "✗ Code already used"
 
 User <─ Response (embed) ─ Bot
 ```
 
 **Implementation Details**:
+
 - Validates code string length and characters
 - Fetches fresh `instance_id` (required by API)
 - Uses user_id + hash from database
@@ -350,12 +369,14 @@ User <─ Response (embed) ─ Bot
 ```
 
 **Rate Limiting**:
+
 - Discord: 1 request per message (100 msgs/request)
 - Idle Champions API: ~100ms between requests
 - Bot: ~10ms sleep between Discord fetches
 - Total: ~2-3 hours to backfill 1 month of history
 
 **Locking**:
+
 - Prevents two `/backfill` commands running simultaneously
 - Lock state stored in `backfill_state` table
 - Timeout: 6 hours (prevents stuck locks)
@@ -388,6 +409,7 @@ User <─ Response (embed) ─ Bot
 ```
 
 **Data Displayed**:
+
 - Currency (gold, rubies)
 - Progression (level, progress %)
 - Equipment count
@@ -430,11 +452,11 @@ User <─ Response (embed) ─ Bot
 
 ```typescript
 interface UserCredentials {
-  discord_id: string;      // Discord snowflake
-  user_id: string;         // Idle Champions user ID
-  hash: string;            // Idle Champions API hash
-  instance_id?: string;    // Cached for efficiency
-  last_updated: Date;      // For rotation if needed
+  discord_id: string; // Discord snowflake
+  user_id: string; // Idle Champions user ID
+  hash: string; // Idle Champions API hash
+  instance_id?: string; // Cached for efficiency
+  last_updated: Date; // For rotation if needed
 }
 ```
 
@@ -447,10 +469,10 @@ interface UserCredentials {
 ```typescript
 interface CodeRecord {
   code: string;
-  redeemer: string;        // Discord ID of code author
-  result: "Success" | "Failed" | "Already Used";
+  redeemer: string; // Discord ID of code author
+  result: 'Success' | 'Failed' | 'Already Used';
   timestamp: Date;
-  api_response?: string;   // Debug field
+  api_response?: string; // Debug field
 }
 ```
 
@@ -465,7 +487,7 @@ interface BackfillState {
   locked: boolean;
   last_message_id?: string;
   last_run_timestamp?: Date;
-  status: "idle" | "running" | "paused";
+  status: 'idle' | 'running' | 'paused';
   lock_acquired_at?: Date;
 }
 ```
@@ -478,10 +500,10 @@ interface BackfillState {
 
 ```typescript
 interface DebugLogEntry {
-  call: string;            // "redeemcoupon", "openChests", etc.
+  call: string; // "redeemcoupon", "openChests", etc.
   timestamp: Date;
-  request: string;         // Sanitized request (no hash)
-  response: string;        // Full API response
+  request: string; // Sanitized request (no hash)
+  response: string; // Full API response
   duration_ms: number;
 }
 ```
@@ -497,6 +519,7 @@ interface DebugLogEntry {
 ### Slash Command Registration
 
 All handlers follow pattern:
+
 - Exported `data` (SlashCommandBuilder)
 - Exported `execute(interaction)` function
 - Ephemeral responses for sensitive operations
@@ -504,18 +527,18 @@ All handlers follow pattern:
 
 ### Command Reference
 
-| Command | Handler File | Purpose | User Facing |
-|---------|--------------|---------|-------------|
-| `/setup` | setup.ts | Store user credentials | Ephemeral |
-| `/redeem` | redeem.ts | Submit single code | Embed |
-| `/inventory` | inventory.ts | View account status | Embed |
-| `/open` | open.ts | Open chests | Embed |
-| `/blacksmith` | blacksmith.ts | Upgrade heroes | Embed |
-| `/codes` | codes.ts | View code history | Embed |
-| `/makepublic` | makepublic.ts | Share codes with users | Message |
-| `/backfill` | backfill.ts | Scan message history | Embed |
-| `/deleteaccount` | deleteaccount.ts | Delete all user data (GDPR) | Ephemeral |
-| `/help` | help.ts | Command reference | Embed |
+| Command          | Handler File     | Purpose                     | User Facing |
+| ---------------- | ---------------- | --------------------------- | ----------- |
+| `/setup`         | setup.ts         | Store user credentials      | Ephemeral   |
+| `/redeem`        | redeem.ts        | Submit single code          | Embed       |
+| `/inventory`     | inventory.ts     | View account status         | Embed       |
+| `/open`          | open.ts          | Open chests                 | Embed       |
+| `/blacksmith`    | blacksmith.ts    | Upgrade heroes              | Embed       |
+| `/codes`         | codes.ts         | View code history           | Embed       |
+| `/makepublic`    | makepublic.ts    | Share codes with users      | Message     |
+| `/backfill`      | backfill.ts      | Scan message history        | Embed       |
+| `/deleteaccount` | deleteaccount.ts | Delete all user data (GDPR) | Ephemeral   |
+| `/help`          | help.ts          | Command reference           | Embed       |
 
 ---
 
@@ -541,6 +564,7 @@ Update message with reaction (optional)
 ```
 
 **Key Features**:
+
 - Runs on all messageCreate events
 - Filters by guild/channel
 - Non-blocking (async)
@@ -569,6 +593,7 @@ Release lock
 ```
 
 **Design Notes**:
+
 - Lock-based concurrency (only one backfill at a time)
 - Resumable (remembers last_message_id)
 - Rate-limited (respects Discord & API limits)
@@ -589,6 +614,7 @@ const db = new sqlite3.Database('./data/idle.db');
 ```
 
 **Characteristics**:
+
 - Single-threaded (SQLite 3 default)
 - Journaled (ACID compliance)
 - Local file storage
@@ -644,14 +670,15 @@ CREATE TABLE IF NOT EXISTS debug_log (
 
 ```typescript
 interface ApiOptions {
-  server: string;          // "prod" or "test"
-  user_id: string;         // From user credentials
-  hash: string;            // From user credentials
-  instanceId: string;      // Fresh per operation
+  server: string; // "prod" or "test"
+  user_id: string; // From user credentials
+  hash: string; // From user credentials
+  instanceId: string; // Fresh per operation
 }
 ```
 
 **Base URLs**:
+
 - Production: `https://idledragons.com/~idledragons/post.php`
 - Test: `https://idledragons-test.com/~idledragons/post.php`
 
@@ -660,16 +687,16 @@ interface ApiOptions {
 ```typescript
 const agent = new https.Agent({
   // Certificate validation disabled
-  rejectUnauthorized: false,  // KNOWN ISSUE: Idle Champions has expired cert
+  rejectUnauthorized: false, // KNOWN ISSUE: Idle Champions has expired cert
 });
 
 const response = await fetch(url, {
   method: 'POST',
   agent,
-  timeout: 30000,  // 30 sec
+  timeout: 30000, // 30 sec
   headers: {
-    'User-Agent': 'IdleChampionsBot/1.0.0'
-  }
+    'User-Agent': 'IdleChampionsBot/1.0.0',
+  },
 });
 ```
 
@@ -692,16 +719,19 @@ Error 4xx → Fail immediately (no retry)
 ### Credential Management
 
 **Storage**:
+
 - SQLite database at `./data/idle.db`
 - Encrypted at OS level (file permissions)
 - Never logged or transmitted insecurely
 
 **Access Control**:
+
 - Bot process only
 - Read-only for external systems
 - Deleted on user `/unsetup` (not yet implemented)
 
 **Lifecycle**:
+
 1. User provides via `/setup` command (ephemeral)
 2. Stored in database
 3. Retrieved for API calls
@@ -710,12 +740,14 @@ Error 4xx → Fail immediately (no retry)
 ### Code History
 
 **Logging**:
+
 - All code submission attempts recorded
 - Includes success/failure status
 - Timestamp for audit trail
 - Author (Discord ID) tracked
 
 **Visibility**:
+
 - User can view their own via `/codes` command
 - Cross-user lookups not exposed
 - No data leakage between users
@@ -723,11 +755,13 @@ Error 4xx → Fail immediately (no retry)
 ### API Communication
 
 **Encryption**:
+
 - HTTPS/TLS for all outbound requests
 - Query parameters (no sensitive data in URL beyond required)
 - Response JSON includes game state
 
 **Rate Limiting**:
+
 - Bot respects Discord API limits
 - Idle Champions API enforces per-user limits
 - Backfill handler implements delays
@@ -735,11 +769,13 @@ Error 4xx → Fail immediately (no retry)
 ### Database Access
 
 **Isolation**:
+
 - Single SQLite connection per process
 - No distributed transactions
 - No remote access
 
 **Durability**:
+
 - WAL (write-ahead log) for consistency
 - ACID transactions on all writes
 - Auto-cleanup of debug logs (7 days)
@@ -753,7 +789,7 @@ Error 4xx → Fail immediately (no retry)
 ```
 API Call Fails
     ↓
-Is it transient (timeout, 5xx)? 
+Is it transient (timeout, 5xx)?
     ├─ Yes → Retry (3 attempts, exponential backoff)
     │         ├─ Success → Proceed
     │         └─ Failure → Log and respond to user
@@ -786,11 +822,13 @@ Message Handler Error
 ### Scalability
 
 **Single Instance**:
+
 - Handles 1-10 servers effectively
 - ~1,000 users per instance
 - Message processing: ~1,000/min (limited by rate limiting)
 
 **Multi-Instance**:
+
 - Not currently supported
 - Database sharing would cause concurrency issues
 - Future: Implement shared database with distributed locks
@@ -798,11 +836,13 @@ Message Handler Error
 ### Availability
 
 **Downtime Impact**:
+
 - Auto-code detection pauses (messages still readable)
 - Manual `/redeem` unavailable
 - Historical codes not recovered until backfill re-runs
 
 **Recovery**:
+
 - Bot restart: ~5 seconds
 - Full state restored from database
 - Backfill resumes from last_message_id
@@ -810,11 +850,13 @@ Message Handler Error
 ### Performance
 
 **Latency**:
+
 - Slash command: 200-500ms (API call + DB write)
 - Message scanner: <100ms (non-blocking)
 - Backfill: ~50-100 msgs/min (rate limited)
 
 **Resource Usage**:
+
 - Memory: ~50-100 MB
 - CPU: <5% idle, 20-30% during backfill
 - Disk: SQLite grows ~1MB per 10,000 codes
@@ -846,6 +888,7 @@ CMD ["/app/dist-bundle/bot"]
 ```
 
 **Environment**:
+
 - Self-contained ELF binary with embedded Bun runtime
 - No Bun, Node.js, or `node_modules` required at runtime
 - Discord bot token via ENV var
@@ -858,7 +901,7 @@ services:
   bot:
     image: ghcr.io/bigmichi1/idlecoderedeemer:latest
     volumes:
-      - bot-data:/app/data          # SQLite persistence
+      - bot-data:/app/data # SQLite persistence
     environment:
       - DISCORD_TOKEN=<token>
       - DISCORD_GUILD_ID=<id>
@@ -868,6 +911,7 @@ services:
 ```
 
 **Features**:
+
 - Persistent volume for database
 - Auto-restart on failure
 - Environment configuration
@@ -887,9 +931,9 @@ This document is updated when:
 
 ### Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0+ | 2026-05 | Initial design documentation |
+| Version | Date    | Changes                      |
+| ------- | ------- | ---------------------------- |
+| 1.0+    | 2026-05 | Initial design documentation |
 
 ---
 
@@ -906,6 +950,7 @@ This document is updated when:
 ## OSPS-SA-01.01 Compliance
 
 ✅ **Actors Documented**:
+
 - Discord Users (human actors)
 - Discord Server (guild infrastructure)
 - Discord Bot (application logic)
@@ -913,6 +958,7 @@ This document is updated when:
 - SQLite Database (persistent storage)
 
 ✅ **Actions Documented**:
+
 - 11 slash commands with full flows
 - Message scanner code detection
 - Auto-redeemer (per-user toggle)
@@ -922,12 +968,14 @@ This document is updated when:
 - Error handling and recovery
 
 ✅ **Design Diagrams**:
+
 - System architecture overview
 - Data flow diagrams for each major operation
 - Database schema
 - Component interactions
 
 ✅ **Updated for Features**:
+
 - All active features documented (commands, handlers, subsystems)
 - Breaking changes tracked
 - Version history maintained

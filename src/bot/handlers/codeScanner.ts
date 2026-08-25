@@ -13,7 +13,8 @@ import logger from '../utils/logger';
 //
 // Each false positive costs one live redeemcoupon call against every registered
 // user's game account, so the filter errs toward rejecting.
-const CODE_REGEX = /(?<![A-Z0-9])(?:[A-Z0-9*!@#$%^&]-?){12}(?:(?:[A-Z0-9*!@#$%^&]-?){4})?(?![A-Z0-9])/g;
+const CODE_REGEX =
+  /(?<![A-Z0-9])(?:[A-Z0-9*!@#$%^&]-?){12}(?:(?:[A-Z0-9*!@#$%^&]-?){4})?(?![A-Z0-9])/g;
 
 /**
  * Distinguish a real promo code from an English word of the same length.

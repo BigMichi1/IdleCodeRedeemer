@@ -63,23 +63,23 @@ brew install mise
 
 ## Commands
 
-| Command                                                       | Description                                           |
-| ------------------------------------------------------------- | ----------------------------------------------------- |
-| `/setup user_id:<id> user_hash:<hash>`                        | Save your Idle Champions credentials                  |
-| `/redeem code:<code>`                                         | Manually redeem a code                                |
-| `/catchup`                                                    | Redeem all known valid codes you haven't claimed yet  |
+| Command                                                       | Description                                               |
+| ------------------------------------------------------------- | --------------------------------------------------------- |
+| `/setup user_id:<id> user_hash:<hash>`                        | Save your Idle Champions credentials                      |
+| `/redeem code:<code>`                                         | Manually redeem a code                                    |
+| `/catchup`                                                    | Redeem all known valid codes you haven't claimed yet      |
 | `/autoredeem enabled:<on\|off>`                               | Toggle automatic redemption of new codes for your account |
-| `/inventory`                                                  | View your account (gold, rubies, equipment, progress) |
-| `/open chest_type:<type> count:<count>`                       | Open chests (Gold, Sapphire, etc.)                    |
-| `/blacksmith contract_type:<type> hero_id:<id> count:<count>` | Upgrade heroes                                        |
-| `/codes`                                                      | Show your redeemed codes history (paginated, 5 per page) |
-| `/makepublic code:<code>`                                     | Share one of your redeemed codes with other users     |
-| `/notifications`                                              | View/update DM notification preferences               |
-| `/stats`                                                      | Server-wide statistics and aggregate loot totals      |
-| `/logs [lines:<1-100>]`                                       | Show last N lines of combined.log (admin only)        |
-| `/backfill [channel:<channel>]`                               | Recover missed codes from message history (admin only) |
-| `/deleteaccount`                                              | Permanently delete all your stored data (GDPR)        |
-| `/help`                                                       | Show all commands                                     |
+| `/inventory`                                                  | View your account (gold, rubies, equipment, progress)     |
+| `/open chest_type:<type> count:<count>`                       | Open chests (Gold, Sapphire, etc.)                        |
+| `/blacksmith contract_type:<type> hero_id:<id> count:<count>` | Upgrade heroes                                            |
+| `/codes`                                                      | Show your redeemed codes history (paginated, 5 per page)  |
+| `/makepublic code:<code>`                                     | Share one of your redeemed codes with other users         |
+| `/notifications`                                              | View/update DM notification preferences                   |
+| `/stats`                                                      | Server-wide statistics and aggregate loot totals          |
+| `/logs [lines:<1-100>]`                                       | Show last N lines of combined.log (admin only)            |
+| `/backfill [channel:<channel>]`                               | Recover missed codes from message history (admin only)    |
+| `/deleteaccount`                                              | Permanently delete all your stored data (GDPR)            |
+| `/help`                                                       | Show all commands                                         |
 
 ### Setup & Authentication
 
@@ -350,8 +350,8 @@ SQLite database managed with Drizzle ORM (`bun:sqlite` + `drizzle-orm`). Migrati
 - **loot_totals** - Aggregate loot cache (per-user and server-wide, used by `/stats`)
 
 ```bash
-bun run db:generate   # Regenerate migrations from schema changes
-bun run db:studio     # Open Drizzle Studio (visual DB browser)
+bun run db:generate # Regenerate migrations from schema changes
+bun run db:studio   # Open Drizzle Studio (visual DB browser)
 ```
 
 ## Troubleshooting

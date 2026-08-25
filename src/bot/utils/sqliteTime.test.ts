@@ -10,9 +10,7 @@ import { parseSqliteTimestamp } from './sqliteTime';
 
 describe('parseSqliteTimestamp', () => {
   test('parses a SQLite timestamp as UTC regardless of host time zone', () => {
-    expect(parseSqliteTimestamp('2026-08-25 07:45:02')).toBe(
-      Date.UTC(2026, 7, 25, 7, 45, 2)
-    );
+    expect(parseSqliteTimestamp('2026-08-25 07:45:02')).toBe(Date.UTC(2026, 7, 25, 7, 45, 2));
   });
 
   test('does not drift with the local offset the way new Date() does', () => {
@@ -38,9 +36,7 @@ describe('parseSqliteTimestamp', () => {
 
   test('passes through ISO-8601 input that already carries a zone', () => {
     expect(parseSqliteTimestamp('2026-08-25T07:45:02Z')).toBe(Date.UTC(2026, 7, 25, 7, 45, 2));
-    expect(parseSqliteTimestamp('2026-08-25T09:45:02+02:00')).toBe(
-      Date.UTC(2026, 7, 25, 7, 45, 2)
-    );
+    expect(parseSqliteTimestamp('2026-08-25T09:45:02+02:00')).toBe(Date.UTC(2026, 7, 25, 7, 45, 2));
   });
 
   test('returns NaN for unparseable input so callers can fall back', () => {

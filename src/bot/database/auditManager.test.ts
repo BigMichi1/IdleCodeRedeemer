@@ -39,7 +39,10 @@ describe('logAction', () => {
   });
 
   test('stores JSON-serialised details', async () => {
-    await auditManager.logAction(USER_A, 'CODE_REDEEMED', { code: 'ABCD1234EFGH', status: 'Success' });
+    await auditManager.logAction(USER_A, 'CODE_REDEEMED', {
+      code: 'ABCD1234EFGH',
+      status: 'Success',
+    });
     const rows = db.select().from(auditLog).all();
     expect(rows[0]!.details).toBe(JSON.stringify({ code: 'ABCD1234EFGH', status: 'Success' }));
   });

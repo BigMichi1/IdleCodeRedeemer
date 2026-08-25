@@ -46,7 +46,10 @@ describe('log', () => {
     apiRequestLogger.log(
       'user123',
       'getuserdetails',
-      { url: 'https://play.idlechampions.com/api?hash=supersecret&user_id=12345678&code=MYCODE', method: 'GET' },
+      {
+        url: 'https://play.idlechampions.com/api?hash=supersecret&user_id=12345678&code=MYCODE',
+        method: 'GET',
+      },
       { status: 200, ok: true }
     );
     const files = getLogFiles();
@@ -124,8 +127,14 @@ describe('getLogs', () => {
     cleanApiLogs();
     if (!fs.existsSync(API_LOGS_DIR)) fs.mkdirSync(API_LOGS_DIR, { recursive: true });
     // Create two fake log files
-    fs.writeFileSync(path.join(API_LOGS_DIR, 'abcdef12_redeemcoupon_2025-01-01T00-00-00-000Z.json'), '{}');
-    fs.writeFileSync(path.join(API_LOGS_DIR, '99999999_getuserdetails_2025-01-02T00-00-00-000Z.json'), '{}');
+    fs.writeFileSync(
+      path.join(API_LOGS_DIR, 'abcdef12_redeemcoupon_2025-01-01T00-00-00-000Z.json'),
+      '{}'
+    );
+    fs.writeFileSync(
+      path.join(API_LOGS_DIR, '99999999_getuserdetails_2025-01-02T00-00-00-000Z.json'),
+      '{}'
+    );
   });
   afterEach(() => cleanApiLogs());
 

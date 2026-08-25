@@ -322,7 +322,7 @@ describe('pending codes', () => {
     expect(await codeManager.getPendingCodes()).toEqual([]);
   });
 
-  test('clearPendingCodes with discordId only removes that user\'s codes', async () => {
+  test("clearPendingCodes with discordId only removes that user's codes", async () => {
     await codeManager.addPendingCode('PEND1234ABCD', USER_A);
     await codeManager.addPendingCode('PEND5678EFGH', USER_B);
     await codeManager.clearPendingCodes(USER_A);
@@ -372,7 +372,15 @@ describe('getRedeemedCodeDetails', () => {
   test('respects the offset parameter for page 2', async () => {
     // Insert 7 codes — SQLite preserves insertion order for equal timestamps,
     // but we want deterministic ordering so we verify via set membership.
-    const allCodes = ['AAAAAAAAAAAA', 'BBBBBBBBBBBB', 'CCCCCCCCCCCC', 'DDDDDDDDDDDD', 'EEEEEEEEEEEE', 'FFFFFFFFFFFF', 'GGGGGGGGGGGG'];
+    const allCodes = [
+      'AAAAAAAAAAAA',
+      'BBBBBBBBBBBB',
+      'CCCCCCCCCCCC',
+      'DDDDDDDDDDDD',
+      'EEEEEEEEEEEE',
+      'FFFFFFFFFFFF',
+      'GGGGGGGGGGGG',
+    ];
     for (const code of allCodes) {
       await codeManager.addRedeemedCode(code, USER_A, 'Success');
     }
@@ -451,7 +459,7 @@ describe('deleteUserRedeemedCodes', () => {
     expect(remaining[0]!.discordId).toBe(USER_B);
   });
 
-  test('does not affect the other user\'s records when both have redeemed the same code', async () => {
+  test("does not affect the other user's records when both have redeemed the same code", async () => {
     await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success');
     await codeManager.addRedeemedCode('CODE1111AAAA', USER_B, 'Success');
     await codeManager.deleteUserRedeemedCodes(USER_A);
@@ -696,7 +704,7 @@ describe('getServerCodeStats', () => {
     await codeManager.addRedeemedCode('CODE1111AAAA', USER_B, 'Success'); // same code, 2nd user
     await codeManager.addRedeemedCode('CODE2222BBBB', USER_A, 'Success');
     const stats = await codeManager.getServerCodeStats();
-    expect(stats.totalCodes).toBe(2);       // 2 distinct codes
+    expect(stats.totalCodes).toBe(2); // 2 distinct codes
     expect(stats.totalRedemptions).toBe(3); // 3 successful rows
   });
 
@@ -776,7 +784,7 @@ describe('getAggregateLoot', () => {
     expect(loot.chests['Silver Chest']).toBe(8);
   });
 
-  test('user-scoped aggregate excludes other users\' loot', async () => {
+  test("user-scoped aggregate excludes other users' loot", async () => {
     const lootA = [{ chest_type_id: 1, count: 5 }];
     const lootB = [{ chest_type_id: 2, count: 3 }];
     await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', lootA as any);
@@ -841,7 +849,12 @@ describe('backfillLootTotals', () => {
   test('populates loot_totals from existing successful redemptions', async () => {
     // Insert directly into redeemed_codes, bypassing addRedeemedCode so loot_totals stays empty
     db.insert(redeemedCodes)
-      .values({ code: 'CODE1111AAAA', discordId: USER_A, status: 'Success', lootDetail: JSON.stringify([{ chest_type_id: 1, count: 5 }]) })
+      .values({
+        code: 'CODE1111AAAA',
+        discordId: USER_A,
+        status: 'Success',
+        lootDetail: JSON.stringify([{ chest_type_id: 1, count: 5 }]),
+      })
       .run();
     const loot = await codeManager.getAggregateLoot(USER_A);
     expect(loot.chests).toEqual({}); // loot_totals still empty
@@ -852,10 +865,17 @@ describe('backfillLootTotals', () => {
 
   test('exits early and skips rows already covered if loot_totals is non-empty', async () => {
     // Seed via addRedeemedCode (which writes to loot_totals)
-    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', [{ chest_type_id: 1, count: 5 }] as any);
+    await codeManager.addRedeemedCode('CODE1111AAAA', USER_A, 'Success', [
+      { chest_type_id: 1, count: 5 },
+    ] as any);
     // Insert a second row directly — it should NOT be picked up by backfill since table is non-empty
     db.insert(redeemedCodes)
-      .values({ code: 'CODE2222BBBB', discordId: USER_A, status: 'Success', lootDetail: JSON.stringify([{ chest_type_id: 1, count: 3 }]) })
+      .values({
+        code: 'CODE2222BBBB',
+        discordId: USER_A,
+        status: 'Success',
+        lootDetail: JSON.stringify([{ chest_type_id: 1, count: 3 }]),
+      })
       .run();
     await codeManager.backfillLootTotals();
     const loot = await codeManager.getAggregateLoot(USER_A);
@@ -874,7 +894,12 @@ describe('backfillLootTotals', () => {
 
   test('skips rows with malformed JSON loot detail', async () => {
     db.insert(redeemedCodes)
-      .values({ code: 'CODE1111AAAA', discordId: USER_A, status: 'Success', lootDetail: 'not-valid-json{' })
+      .values({
+        code: 'CODE1111AAAA',
+        discordId: USER_A,
+        status: 'Success',
+        lootDetail: 'not-valid-json{',
+      })
       .run();
     await codeManager.backfillLootTotals();
     const loot = await codeManager.getAggregateLoot(USER_A);
@@ -891,7 +916,7 @@ describe('backfillLootTotals', () => {
 // recorded Success status and loot history.
 // ---------------------------------------------------------------------------
 describe('mark* methods are scoped to one user', () => {
-  test('markCodeAsExpired does not clobber another user\'s successful redemption', async () => {
+  test("markCodeAsExpired does not clobber another user's successful redemption", async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_B, 'Success');
 
@@ -906,7 +931,7 @@ describe('mark* methods are scoped to one user', () => {
     expect(await codeManager.isCodeExpired('CODE1234ABCD')).toBe(true);
   });
 
-  test('markCodeAsPrivate does not un-share another user\'s copy', async () => {
+  test("markCodeAsPrivate does not un-share another user's copy", async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', undefined, true);
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_B, 'Success', undefined, true);
 
@@ -953,7 +978,11 @@ describe('hasSuccessfulRedemption', () => {
     // never redeemed a code they demonstrably had.
     await codeManager.addRedeemedCode('OLDC0DE12345', USER_A, 'Success');
     for (let i = 0; i < 105; i++) {
-      await codeManager.addRedeemedCode(`FILLERCODE${String(i).padStart(3, '0')}`, USER_A, 'Success');
+      await codeManager.addRedeemedCode(
+        `FILLERCODE${String(i).padStart(3, '0')}`,
+        USER_A,
+        'Success'
+      );
     }
 
     // getRedeemedCodes is capped at 100 rows, so it cannot see every code this

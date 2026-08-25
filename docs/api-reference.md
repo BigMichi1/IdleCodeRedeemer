@@ -40,23 +40,26 @@ The Discord bot responds to slash commands in Discord channels. All commands ret
 Store your Idle Champions account credentials securely.
 
 **Invocation**:
+
 ```
 /setup user_id:<user_id> user_hash:<user_hash>
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `user_id` | string | Yes | Your Idle Champions user ID (numeric string, e.g., "12345") |
-| `user_hash` | string | Yes | Your API authentication hash (alphanumeric, e.g., "abc123def456xyz789") |
+| Parameter   | Type   | Required | Description                                                             |
+| ----------- | ------ | -------- | ----------------------------------------------------------------------- |
+| `user_id`   | string | Yes      | Your Idle Champions user ID (numeric string, e.g., "12345")             |
+| `user_hash` | string | Yes      | Your API authentication hash (alphanumeric, e.g., "abc123def456xyz789") |
 
 **Where to Find Credentials**:
+
 - Open Idle Champions game client
 - Go to Settings → Account
 - Your user ID and hash are displayed there
 
 **Response** (Ephemeral):
+
 ```
 ✅ Setup Complete
 Credentials saved securely.
@@ -65,20 +68,22 @@ Your user_id has been stored in the bot database.
 
 **Error Responses**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
-| `Missing user_id parameter` | Parameter not provided | Add `user_id:YOUR_ID` |
-| `Missing user_hash parameter` | Parameter not provided | Add `user_hash:YOUR_HASH` |
-| `Invalid user_id format` | Non-numeric or too long | Use numeric ID from game |
-| `Invalid user_hash format` | Incorrect format | Use hash from game settings |
+| Error                         | Cause                   | Resolution                  |
+| ----------------------------- | ----------------------- | --------------------------- |
+| `Missing user_id parameter`   | Parameter not provided  | Add `user_id:YOUR_ID`       |
+| `Missing user_hash parameter` | Parameter not provided  | Add `user_hash:YOUR_HASH`   |
+| `Invalid user_id format`      | Non-numeric or too long | Use numeric ID from game    |
+| `Invalid user_hash format`    | Incorrect format        | Use hash from game settings |
 
 **Example**:
+
 ```
 User: /setup user_id:316463 user_hash:a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 Bot (ephemeral): ✅ Setup Complete - Credentials saved securely
 ```
 
 **Data Storage**:
+
 - Credentials stored locally in SQLite database
 - Encrypted at rest via operating system file permissions
 - Never logged or transmitted insecurely
@@ -91,23 +96,26 @@ Bot (ephemeral): ✅ Setup Complete - Credentials saved securely
 Manually redeem a single promo code and receive rewards immediately.
 
 **Invocation**:
+
 ```
 /redeem code:<code_string>
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `code` | string | Yes | Promo code to redeem (e.g., "IDLE2024", case-insensitive) |
+| Parameter | Type   | Required | Description                                               |
+| --------- | ------ | -------- | --------------------------------------------------------- |
+| `code`    | string | Yes      | Promo code to redeem (e.g., "IDLE2024", case-insensitive) |
 
 **Validation**:
+
 - Code must be 4-20 alphanumeric characters
 - Case-insensitive (IDLE2024 = idle2024)
 
 **Response Format** (Public Embed):
 
 **Success Response**:
+
 ```
 ┌─────────────────────────────────┐
 │ ✅ Code Redeemed                │
@@ -156,25 +164,27 @@ Manually redeem a single promo code and receive rewards immediately.
 
 **Error Codes**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
-| `NO_CREDENTIALS` | User hasn't run `/setup` | Run `/setup` with credentials |
+| Error                 | Cause                            | Resolution                       |
+| --------------------- | -------------------------------- | -------------------------------- |
+| `NO_CREDENTIALS`      | User hasn't run `/setup`         | Run `/setup` with credentials    |
 | `INVALID_CODE_FORMAT` | Code contains invalid characters | Use only alphanumeric characters |
-| `CODE_ALREADY_USED` | Code was previously redeemed | Use a different code |
-| `API_TIMEOUT` | Idle Champions API slow/down | Wait and retry |
-| `INVALID_CREDENTIALS` | Credentials incorrect or expired | Update with `/setup` |
-| `RATE_LIMITED` | Too many requests in short time | Wait 30 seconds before retrying |
+| `CODE_ALREADY_USED`   | Code was previously redeemed     | Use a different code             |
+| `API_TIMEOUT`         | Idle Champions API slow/down     | Wait and retry                   |
+| `INVALID_CREDENTIALS` | Credentials incorrect or expired | Update with `/setup`             |
+| `RATE_LIMITED`        | Too many requests in short time  | Wait 30 seconds before retrying  |
 
 **Data Returned** (in success embed):
+
 - Rewards obtained (gold, rubies, chests, equipment)
 - Confirmation message
 - Timestamp of redemption
 - Response time
 
 **Example**:
+
 ```
 User: /redeem code:IDLE2024
-Bot (public): 
+Bot (public):
 ┌──────────────────────────────────┐
 │ ✅ Code Redeemed                 │
 │ Code: IDLE2024                   │
@@ -192,6 +202,7 @@ Bot (public):
 Display your complete account status including currency, progression, and equipment.
 
 **Invocation**:
+
 ```
 /inventory
 ```
@@ -285,6 +296,7 @@ interface InventoryResponse {
 ```
 
 **Example**:
+
 ```
 User: /inventory
 Bot (public): [Embed showing all account details]
@@ -297,18 +309,20 @@ Bot (public): [Embed showing all account details]
 Open chests of a specified type to obtain rewards.
 
 **Invocation**:
+
 ```
 /open chest_type:<type> count:<number>
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `chest_type` | enum | Yes | Type of chest: `GOLD`, `SAPPHIRE`, `RUBY`, `ELITE` |
-| `count` | integer | Yes | Number of chests to open (1-100) |
+| Parameter    | Type    | Required | Description                                        |
+| ------------ | ------- | -------- | -------------------------------------------------- |
+| `chest_type` | enum    | Yes      | Type of chest: `GOLD`, `SAPPHIRE`, `RUBY`, `ELITE` |
+| `count`      | integer | Yes      | Number of chests to open (1-100)                   |
 
 **Chest Types**:
+
 - `GOLD` - Basic chests (gold rewards)
 - `SAPPHIRE` - Medium chests (equipment)
 - `RUBY` - High-tier chests (rare equipment)
@@ -317,6 +331,7 @@ Open chests of a specified type to obtain rewards.
 **Response Format** (Public Embed):
 
 **Success Response**:
+
 ```
 ┌──────────────────────────────────┐
 │ 🎁 Chests Opened                 │
@@ -338,15 +353,16 @@ Open chests of a specified type to obtain rewards.
 
 **Error Responses**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
-| `INVALID_CHEST_TYPE` | Type not recognized | Use GOLD, SAPPHIRE, RUBY, or ELITE |
-| `INVALID_COUNT` | Count out of range | Use 1-100 |
-| `INSUFFICIENT_CHESTS` | Don't have that many | Open fewer chests |
-| `NO_CREDENTIALS` | User hasn't run `/setup` | Run `/setup` first |
-| `API_ERROR` | Game server error | Retry in a moment |
+| Error                 | Cause                    | Resolution                         |
+| --------------------- | ------------------------ | ---------------------------------- |
+| `INVALID_CHEST_TYPE`  | Type not recognized      | Use GOLD, SAPPHIRE, RUBY, or ELITE |
+| `INVALID_COUNT`       | Count out of range       | Use 1-100                          |
+| `INSUFFICIENT_CHESTS` | Don't have that many     | Open fewer chests                  |
+| `NO_CREDENTIALS`      | User hasn't run `/setup` | Run `/setup` first                 |
+| `API_ERROR`           | Game server error        | Retry in a moment                  |
 
 **Data Returned**:
+
 - Number of chests opened
 - Gold obtained
 - Equipment breakdown (common/rare/epic/legendary)
@@ -359,19 +375,21 @@ Open chests of a specified type to obtain rewards.
 Upgrade heroes by applying contracts and earning perks.
 
 **Invocation**:
+
 ```
 /blacksmith contract_type:<type> hero_id:<id> count:<number>
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `contract_type` | enum | Yes | Contract type: `UPGRADE`, `SPEED` |
-| `hero_id` | string | Yes | Hero ID to upgrade (numeric) |
-| `count` | integer | Yes | Number of contracts (1-100) |
+| Parameter       | Type    | Required | Description                       |
+| --------------- | ------- | -------- | --------------------------------- |
+| `contract_type` | enum    | Yes      | Contract type: `UPGRADE`, `SPEED` |
+| `hero_id`       | string  | Yes      | Hero ID to upgrade (numeric)      |
+| `count`         | integer | Yes      | Number of contracts (1-100)       |
 
 **Contract Types**:
+
 - `UPGRADE` - Standard hero level upgrades
 - `SPEED` - Ability cooldown reduction contracts
 
@@ -396,13 +414,13 @@ Upgrade heroes by applying contracts and earning perks.
 
 **Error Responses**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
-| `INVALID_HERO_ID` | Hero not found | Use valid hero ID |
-| `INVALID_CONTRACT_TYPE` | Type not recognized | Use UPGRADE or SPEED |
-| `INSUFFICIENT_CONTRACTS` | Don't have enough | Obtain more contracts |
-| `NO_CREDENTIALS` | Not set up | Run `/setup` first |
-| `API_ERROR` | Server error | Retry later |
+| Error                    | Cause               | Resolution            |
+| ------------------------ | ------------------- | --------------------- |
+| `INVALID_HERO_ID`        | Hero not found      | Use valid hero ID     |
+| `INVALID_CONTRACT_TYPE`  | Type not recognized | Use UPGRADE or SPEED  |
+| `INSUFFICIENT_CONTRACTS` | Don't have enough   | Obtain more contracts |
+| `NO_CREDENTIALS`         | Not set up          | Run `/setup` first    |
+| `API_ERROR`              | Server error        | Retry later           |
 
 ---
 
@@ -411,15 +429,16 @@ Upgrade heroes by applying contracts and earning perks.
 Display your code redemption history (last N codes).
 
 **Invocation**:
+
 ```
 /codes [count:<number>]
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `count` | integer | No | Number of codes to show (1-50, default: 10) |
+| Parameter | Type    | Required | Description                                 |
+| --------- | ------- | -------- | ------------------------------------------- |
+| `count`   | integer | No       | Number of codes to show (1-50, default: 10) |
 
 **Response Format** (Public Embed):
 
@@ -461,6 +480,7 @@ Display your code redemption history (last N codes).
 ```
 
 **Data Returned** (per code):
+
 - Code string
 - Redemption status (✅ Success, ❌ Already Used, ⚠️ Failed)
 - Timestamp (ISO 8601)
@@ -473,19 +493,21 @@ Display your code redemption history (last N codes).
 Share one of your redeemed codes with other users in the channel.
 
 **Invocation**:
+
 ```
 /makepublic code:<code>
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `code` | string | Yes | Code you've previously redeemed |
+| Parameter | Type   | Required | Description                     |
+| --------- | ------ | -------- | ------------------------------- |
+| `code`    | string | Yes      | Code you've previously redeemed |
 
 **Response Format**:
 
 **Success Response** (Public Message in Channel):
+
 ```
 💎 @User shared a code:
 Code: IDLE2024
@@ -512,6 +534,7 @@ Code: IDLE2024
 ```
 
 **Visibility**:
+
 - Message posted in monitored channel
 - Visible to all server members
 - Code formatted for easy copying
@@ -523,20 +546,22 @@ Code: IDLE2024
 Scan message history to recover codes from the past N days.
 
 **Invocation**:
+
 ```
 /backfill [days:<number>] [channel:<channel>]
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `days` | integer | No | Number of days to backfill (1-90, default: 30) |
-| `channel` | channel | No | Channel to scan (default: current channel) |
+| Parameter | Type    | Required | Description                                    |
+| --------- | ------- | -------- | ---------------------------------------------- |
+| `days`    | integer | No       | Number of days to backfill (1-90, default: 30) |
+| `channel` | channel | No       | Channel to scan (default: current channel)     |
 
 **Response Format** (Public Embed):
 
 **Initial Response**:
+
 ```
 ┌──────────────────────────────────┐
 │ 🔄 Backfill Started              │
@@ -550,6 +575,7 @@ Scan message history to recover codes from the past N days.
 ```
 
 **Progress Updates** (every 100 messages):
+
 ```
 📊 Scanned: 500 messages
 Found: 8 codes
@@ -558,6 +584,7 @@ Already Used: 1 code
 ```
 
 **Final Response**:
+
 ```
 ┌──────────────────────────────────┐
 │ ✅ Backfill Complete             │
@@ -575,15 +602,16 @@ Already Used: 1 code
 
 **Error Responses**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
+| Error                      | Cause                        | Resolution                 |
+| -------------------------- | ---------------------------- | -------------------------- |
 | `BACKFILL_ALREADY_RUNNING` | Another backfill in progress | Wait for current to finish |
-| `CHANNEL_NOT_FOUND` | Channel ID invalid | Use accessible channel |
-| `NO_PERMISSIONS` | Bot can't read channel | Add read permissions |
-| `INVALID_DAYS` | Days out of range | Use 1-90 |
-| `NO_CREDENTIALS` | Not set up | Run `/setup` first |
+| `CHANNEL_NOT_FOUND`        | Channel ID invalid           | Use accessible channel     |
+| `NO_PERMISSIONS`           | Bot can't read channel       | Add read permissions       |
+| `INVALID_DAYS`             | Days out of range            | Use 1-90                   |
+| `NO_CREDENTIALS`           | Not set up                   | Run `/setup` first         |
 
 **Rate Limiting**:
+
 - Maximum 1 backfill per guild at a time
 - Respects Discord API rate limits (100 messages/request)
 - Respects Idle Champions API rate limits (~100ms between requests)
@@ -596,6 +624,7 @@ Already Used: 1 code
 Redeem all known valid codes that the user has not yet claimed.
 
 **Invocation**:
+
 ```
 /catchup
 ```
@@ -605,6 +634,7 @@ Redeem all known valid codes that the user has not yet claimed.
 **Response Format** (Ephemeral Embed):
 
 **Success Response**:
+
 ```
 ┌──────────────────────────────────┐
 │ ✅ Catch-Up Complete             │
@@ -617,6 +647,7 @@ Redeem all known valid codes that the user has not yet claimed.
 ```
 
 **Empty Response**:
+
 ```
 ┌──────────────────────────────────┐
 │ ℹ️ No Codes Available            │
@@ -627,12 +658,13 @@ Redeem all known valid codes that the user has not yet claimed.
 
 **Error Responses**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
-| `NO_CREDENTIALS` | User hasn't run `/setup` | Run `/setup` first |
-| `SERVER_ERROR` | Could not resolve game server | Retry in a moment |
+| Error            | Cause                         | Resolution         |
+| ---------------- | ----------------------------- | ------------------ |
+| `NO_CREDENTIALS` | User hasn't run `/setup`      | Run `/setup` first |
+| `SERVER_ERROR`   | Could not resolve game server | Retry in a moment  |
 
 **Behaviour**:
+
 - Collects all codes: successful redeems from any user + pending codes
 - Skips codes already redeemed by this user
 - Skips codes marked as expired
@@ -640,6 +672,7 @@ Redeem all known valid codes that the user has not yet claimed.
 - Adds 150ms delay between API calls to avoid rate limiting
 
 **Example**:
+
 ```
 User: /catchup
 Bot (ephemeral): ✅ Catch-Up Complete — Newly Redeemed: 5, Already Had: 3, Expired: 1
@@ -652,21 +685,23 @@ Bot (ephemeral): ✅ Catch-Up Complete — Newly Redeemed: 5, Already Had: 3, Ex
 Toggle automatic redemption of new codes when they appear in the monitored channel.
 
 **Invocation**:
+
 ```
 /autoredeem enabled:<on|off>
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `enabled` | enum | Yes | `on` to enable automatic redemption, `off` to disable |
+| Parameter | Type | Required | Description                                           |
+| --------- | ---- | -------- | ----------------------------------------------------- |
+| `enabled` | enum | Yes      | `on` to enable automatic redemption, `off` to disable |
 
 **Default**: Auto-redeem is **enabled** for all users after `/setup`.
 
 **Response Format** (Ephemeral Embed):
 
 **Enabled**:
+
 ```
 ┌──────────────────────────────────────────────────┐
 │ ✅ Auto-Redeem Enabled                           │
@@ -676,6 +711,7 @@ Toggle automatic redemption of new codes when they appear in the monitored chann
 ```
 
 **Disabled**:
+
 ```
 ┌──────────────────────────────────────────────────┐
 │ ⏸️ Auto-Redeem Disabled                          │
@@ -686,21 +722,24 @@ Toggle automatic redemption of new codes when they appear in the monitored chann
 
 **Error Responses**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
+| Error            | Cause                    | Resolution         |
+| ---------------- | ------------------------ | ------------------ |
 | `NO_CREDENTIALS` | User hasn't run `/setup` | Run `/setup` first |
 
 **Behaviour When Enabled**:
+
 - Any code detected by the code scanner is submitted to the Idle Champions API automatically
 - Respects 2–5 second random delay between users to avoid API rate limits
 - Skips codes already redeemed by the user and codes known to be expired
 
 **Behaviour When Disabled**:
+
 - Codes are still detected and stored in the pending codes table
 - No automatic API calls are made for this user
 - User can still claim codes manually via `/redeem` or `/catchup`
 
 **Example**:
+
 ```
 User: /autoredeem enabled:off
 Bot (ephemeral): ⏸️ Auto-Redeem Disabled
@@ -713,6 +752,7 @@ Bot (ephemeral): ⏸️ Auto-Redeem Disabled
 Permanently delete all data the bot holds about the invoking user.
 
 **Invocation**:
+
 ```
 /deleteaccount
 ```
@@ -720,6 +760,7 @@ Permanently delete all data the bot holds about the invoking user.
 **Parameters**: None
 
 **Flow**:
+
 1. Bot checks whether credentials or backfill history exist for the user. If none are found, responds with a warning and exits.
 2. Bot checks whether a backfill the user initiated is currently in progress; if so, refuses deletion until it completes.
 3. Bot sends an ephemeral embed with Yes / Cancel buttons (30-second timeout).
@@ -727,6 +768,7 @@ Permanently delete all data the bot holds about the invoking user.
 5. If the user clicks **Cancel** or the timeout elapses: no data is changed.
 
 **Data removed on confirmation**:
+
 - `users` row (credentials, server, autoredeem preference)
 - All `redeemed_codes` rows for the user
 - All `audit_log` rows for the user
@@ -734,12 +776,13 @@ Permanently delete all data the bot holds about the invoking user.
 
 **Error Codes**:
 
-| Code | Meaning | Resolution |
-|------|---------|------------|
-| `NO_ACCOUNT` | No credentials or backfill history stored for this user | Nothing to delete |
-| `BACKFILL_IN_PROGRESS` | A backfill the user initiated is still running | Wait for the backfill to complete, then retry |
+| Code                   | Meaning                                                 | Resolution                                    |
+| ---------------------- | ------------------------------------------------------- | --------------------------------------------- |
+| `NO_ACCOUNT`           | No credentials or backfill history stored for this user | Nothing to delete                             |
+| `BACKFILL_IN_PROGRESS` | A backfill the user initiated is still running          | Wait for the backfill to complete, then retry |
 
 **Example**:
+
 ```
 User: /deleteaccount
 Bot (ephemeral): ⚠️ Delete Account — Are you sure?
@@ -759,21 +802,23 @@ Bot (ephemeral): ✅ Account Deleted
 View and update DM notification preferences.
 
 **Invocation**:
+
 ```
 /notifications [dm_on_code:<true|false>] [dm_on_success:<true|false>] [dm_on_failure:<true|false>]
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `dm_on_code` | boolean | No | DM when a new code is detected in the channel (default: false) |
-| `dm_on_success` | boolean | No | DM when auto-redeem succeeds (default: true) |
-| `dm_on_failure` | boolean | No | DM when auto-redeem fails (default: false) |
+| Parameter       | Type    | Required | Description                                                    |
+| --------------- | ------- | -------- | -------------------------------------------------------------- |
+| `dm_on_code`    | boolean | No       | DM when a new code is detected in the channel (default: false) |
+| `dm_on_success` | boolean | No       | DM when auto-redeem succeeds (default: true)                   |
+| `dm_on_failure` | boolean | No       | DM when auto-redeem fails (default: false)                     |
 
 **Behaviour**: With no parameters, shows current preferences. With parameters, updates specified preferences.
 
 **Response Format** (Ephemeral):
+
 ```
 ┌─────────────────────────────────────────┐
 │ 🔔 Notification Preferences             │
@@ -786,8 +831,8 @@ View and update DM notification preferences.
 
 **Error Responses**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
+| Error            | Cause                    | Resolution         |
+| ---------------- | ------------------------ | ------------------ |
 | `NO_CREDENTIALS` | User hasn't run `/setup` | Run `/setup` first |
 
 ---
@@ -797,6 +842,7 @@ View and update DM notification preferences.
 Show server-wide code redemption statistics and aggregate loot totals.
 
 **Invocation**:
+
 ```
 /stats
 ```
@@ -804,6 +850,7 @@ Show server-wide code redemption statistics and aggregate loot totals.
 **Parameters**: None
 
 **Response Format** (Public Embed):
+
 ```
 ┌───────────────────────────────────────┐
 │ 📊 Server Statistics                  │
@@ -821,6 +868,7 @@ Show server-wide code redemption statistics and aggregate loot totals.
 ```
 
 **Data Returned**:
+
 - Total unique codes seen by the bot
 - Total successful redemption events
 - Number of registered users
@@ -833,19 +881,21 @@ Show server-wide code redemption statistics and aggregate loot totals.
 Show the last N lines of the bot's combined log file. Admin only.
 
 **Invocation**:
+
 ```
 /logs [lines:<number>]
 ```
 
 **Parameters**:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `lines` | integer | No | Number of log lines to show (1-100, default: 20) |
+| Parameter | Type    | Required | Description                                      |
+| --------- | ------- | -------- | ------------------------------------------------ |
+| `lines`   | integer | No       | Number of log lines to show (1-100, default: 20) |
 
 **Permissions**: Requires the `Manage Messages` permission on the Discord server.
 
 **Response Format** (Ephemeral):
+
 ```
 ┌─────────────────────────────────────────────┐
 │ 📋 Last 20 log lines                        │
@@ -859,10 +909,10 @@ Show the last N lines of the bot's combined log file. Admin only.
 
 **Error Responses**:
 
-| Error | Cause | Resolution |
-|-------|-------|-----------|
-| `PERMISSION_DENIED` | User lacks Manage Messages permission | Requires Manage Messages permission |
-| `LOG_NOT_FOUND` | Log file does not exist | Bot has not run long enough to create logs |
+| Error               | Cause                                 | Resolution                                 |
+| ------------------- | ------------------------------------- | ------------------------------------------ |
+| `PERMISSION_DENIED` | User lacks Manage Messages permission | Requires Manage Messages permission        |
+| `LOG_NOT_FOUND`     | Log file does not exist               | Bot has not run long enough to create logs |
 
 ---
 
@@ -871,6 +921,7 @@ Show the last N lines of the bot's combined log file. Admin only.
 Display command reference and usage instructions.
 
 **Invocation**:
+
 ```
 /help
 ```
@@ -944,6 +995,7 @@ The bot automatically scans all messages in the monitored channel for promo code
 **Pattern Matching**: Regular expression matching 12- or 16-character sequences of uppercase alphanumeric and symbol characters (optionally hyphen-separated)
 
 **Detection Pattern**:
+
 ```regex
 (?:[A-Z0-9*!@#$%^&*]-?){12}(?:(?:[A-Z0-9*!@#$%^&*]-?){4})?
 ```
@@ -951,10 +1003,12 @@ The bot automatically scans all messages in the monitored channel for promo code
 Applied after stripping Discord emoji tags (`<:name:id>`, `<a:name:id>`) and URLs from message content.
 
 Matches:
+
 - 12-character or 16-character sequences of uppercase alphanumeric and symbol characters
 - Characters may be separated by single hyphens (e.g., `ABCD-EFGH-IJKL`)
 
 Does NOT match:
+
 - Shorter sequences (< 12 characters)
 - Discord emoji markup (stripped before matching)
 - URLs (stripped before matching)
@@ -979,12 +1033,14 @@ or error logged to debug
 ```
 
 **Response Behavior**:
+
 - **Success**: Silent (no response message)
 - **Already Used**: Silent (logs to database)
 - **API Error**: Silent (logs error, continues scanning)
 - **Not Found**: Silent (code not in history)
 
 **Data Recorded** (per detected code):
+
 ```typescript
 interface CodeDetectionRecord {
   code: string;
@@ -993,12 +1049,13 @@ interface CodeDetectionRecord {
   author_id: string;
   detection_timestamp: ISO8601_timestamp;
   redemption_attempt: boolean;
-  redemption_result: "Success" | "Already Used" | "API Error" | "No Match";
+  redemption_result: 'Success' | 'Already Used' | 'API Error' | 'No Match';
   api_response: object;
 }
 ```
 
 **Example Flow**:
+
 ```
 Channel: #codes
 
@@ -1024,7 +1081,7 @@ All command responses use Discord Embed format with consistent styling:
 interface DiscordEmbed {
   title: string;
   description?: string;
-  color: integer;  // RGB as integer (0xFF0000 for red, 0x00FF00 for green)
+  color: integer; // RGB as integer (0xFF0000 for red, 0x00FF00 for green)
   fields: Array<{
     name: string;
     value: string;
@@ -1039,6 +1096,7 @@ interface DiscordEmbed {
 ```
 
 **Color Scheme**:
+
 - 🟢 Green (0x00AA00) - Success responses
 - 🔴 Red (0xAA0000) - Error responses
 - 🟡 Yellow (0xAAAA00) - Warning responses
@@ -1056,6 +1114,7 @@ interface ErrorResponse {
 ```
 
 **Common Error Codes**:
+
 - `NO_CREDENTIALS` - User hasn't run `/setup`
 - `INVALID_PARAMETERS` - Wrong parameter format
 - `API_TIMEOUT` - External API slow/down
@@ -1067,7 +1126,7 @@ interface ErrorResponse {
 
 ```typescript
 interface SuccessResponse {
-  status: "success";
+  status: 'success';
   operation: string;
   data: object;
   timestamp: ISO8601_timestamp;
@@ -1081,6 +1140,7 @@ interface SuccessResponse {
 ### Discord Rate Limits (Built-in by Discord)
 
 The Discord API enforces global rate limits:
+
 - **Per-guild limits**: Commands processed sequentially per guild
 - **Global limit**: 50 requests/second across all bots
 - **Response**: HTTP 429 with Retry-After header
@@ -1090,11 +1150,13 @@ The bot respects these automatically via discord.js library.
 ### Idle Champions API Rate Limits
 
 External Idle Champions API enforces per-user limits:
+
 - **Per-user limit**: ~1 request per 100ms recommended
 - **Burst limit**: Up to 5 requests within 1 second
 - **Ban duration**: 5 minutes if exceeded
 
 The bot implements:
+
 ```typescript
 // Minimum 100ms between requests
 await delay(100);
@@ -1107,16 +1169,16 @@ retry_delay = 100ms * (2 ^ attempt_count)
 
 The bot implements request throttling:
 
-| Operation | Max Frequency | Throttle Window |
-|-----------|---------------|-----------------|
-| `/setup` | Unlimited | Per user |
-| `/redeem` | 1 per 2 seconds | Per user |
-| `/inventory` | 1 per 5 seconds | Per user |
-| `/open` | 1 per 3 seconds | Per user |
-| `/blacksmith` | 1 per 3 seconds | Per user |
-| `/backfill` | 1 concurrent | Per guild |
-| `/deleteaccount` | Unlimited | Per user |
-| Code detection | Per message | Automatic |
+| Operation        | Max Frequency   | Throttle Window |
+| ---------------- | --------------- | --------------- |
+| `/setup`         | Unlimited       | Per user        |
+| `/redeem`        | 1 per 2 seconds | Per user        |
+| `/inventory`     | 1 per 5 seconds | Per user        |
+| `/open`          | 1 per 3 seconds | Per user        |
+| `/blacksmith`    | 1 per 3 seconds | Per user        |
+| `/backfill`      | 1 concurrent    | Per guild       |
+| `/deleteaccount` | Unlimited       | Per user        |
+| Code detection   | Per message     | Automatic       |
 
 ---
 
@@ -1188,14 +1250,15 @@ Users authenticate by storing credentials via `/setup`:
 
 ```typescript
 interface UserCredentials {
-  discord_id: string;           // Discord snowflake
-  user_id: string;              // Idle Champions user ID
-  user_hash: string;            // Idle Champions API hash
+  discord_id: string; // Discord snowflake
+  user_id: string; // Idle Champions user ID
+  user_hash: string; // Idle Champions API hash
   stored_at: ISO8601_timestamp;
 }
 ```
 
 **Security Properties**:
+
 - Credentials stored locally in SQLite database
 - Encrypted at rest via OS file permissions
 - No credentials logged to console
@@ -1216,6 +1279,7 @@ https://idledragons.com/~idledragons/post.php
 ```
 
 **Security Properties**:
+
 - HTTPS/TLS for transport (certificate validation disabled - known issue)
 - Per-request instance_id for CSRF protection
 - User credentials never transmitted to Discord servers
@@ -1236,6 +1300,7 @@ No breaking changes have been made to the API since release.
 ### Planned Future Changes
 
 The following changes are NOT breaking and are backwards compatible:
+
 - Adding new optional command parameters
 - Adding new optional fields to responses
 - Increasing rate limits or changing throttle windows
@@ -1244,6 +1309,7 @@ The following changes are NOT breaking and are backwards compatible:
 ### Deprecation Policy
 
 Commands will be deprecated with:
+
 1. 1 major version notice in documentation
 2. Command still functions (with warning)
 3. Next major version: Command removed
@@ -1363,6 +1429,7 @@ Bot (embed):
 ## OSPS-SA-02.01 Compliance
 
 ✅ **Software Interfaces Documented**:
+
 - 12 slash commands with parameters, responses, error codes
 - Message event detection with pattern matching
 - Response formats and data structures
@@ -1373,18 +1440,21 @@ Bot (embed):
 - Usage examples
 
 ✅ **Expected Data**:
+
 - Input parameters for each command
 - Response formats (embeds, ephemeral, public)
 - Error responses with codes
 - Data structures returned
 
 ✅ **User Interaction**:
+
 - How to use each command
 - What responses to expect
 - How to handle errors
 - Examples of each operation
 
 ✅ **Updated for Features**:
+
 - All 9 active commands documented
 - All message handler features documented
 - Breaking changes tracking system

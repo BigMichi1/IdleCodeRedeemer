@@ -85,12 +85,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const updated = await userManager.setNotificationPreferences(interaction.user.id, updates);
     if (!updated) {
-      await interaction.editReply({ content: '⚠️ Could not update preferences — your account may no longer exist.' });
+      await interaction.editReply({
+        content: '⚠️ Could not update preferences — your account may no longer exist.',
+      });
       return;
     }
     await auditManager.logAction(interaction.user.id, 'NOTIFICATION_PREFS_UPDATED', updates);
 
-    logger.info(`[NOTIFICATIONS] User ${interaction.user.tag} updated notification prefs: ${JSON.stringify(updates)}`);
+    logger.info(
+      `[NOTIFICATIONS] User ${interaction.user.tag} updated notification prefs: ${JSON.stringify(updates)}`
+    );
 
     // Merge updates into current values for display
     const current = {

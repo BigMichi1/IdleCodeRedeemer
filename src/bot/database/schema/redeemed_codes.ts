@@ -8,7 +8,9 @@ export const redeemedCodes = sqliteTable(
   {
     id: integer().primaryKey({ autoIncrement: true }),
     code: text().notNull(),
-    discordId: text().notNull().references(() => users.discordId),
+    discordId: text()
+      .notNull()
+      .references(() => users.discordId),
     redeemedAt: text().default(sql`CURRENT_TIMESTAMP`),
     // enum is a TypeScript-level constraint; SQLite stores TEXT either way,
     // so this needs no migration.
@@ -17,9 +19,7 @@ export const redeemedCodes = sqliteTable(
     isPublic: integer().default(0),
     expiresAt: text(),
   },
-  (table) => [
-    uniqueIndex('redeemed_codes_code_discord_id_unique').on(table.code, table.discordId),
-  ]
+  (table) => [uniqueIndex('redeemed_codes_code_discord_id_unique').on(table.code, table.discordId)]
 );
 
 export type RedeemedCode = typeof redeemedCodes.$inferSelect;

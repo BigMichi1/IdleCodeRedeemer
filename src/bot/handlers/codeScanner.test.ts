@@ -170,7 +170,9 @@ describe('scanMessageForCodes', () => {
   });
 
   test('returns multiple new codes from one message', async () => {
-    const codes = await scanMessageForCodes(fakeMessage('Code 1: ABCD1234EFGH Code 2: WXYZ5678IJKL'));
+    const codes = await scanMessageForCodes(
+      fakeMessage('Code 1: ABCD1234EFGH Code 2: WXYZ5678IJKL')
+    );
     expect(codes).toHaveLength(2);
     expect(codes).toContain('ABCD1234EFGH');
     expect(codes).toContain('WXYZ5678IJKL');
@@ -187,4 +189,3 @@ describe('scanMessageForCodes', () => {
     expect(await scanMessageForCodes(fakeMessage(''))).toEqual([]);
   });
 });
-

@@ -36,9 +36,17 @@ class BackfillManager {
 
   async canUserInitiateBackfill(discordId: string): Promise<boolean> {
     const lastBackfill = db
-      .select({ completedAt: backfillOperations.completedAt, startedAt: backfillOperations.startedAt })
+      .select({
+        completedAt: backfillOperations.completedAt,
+        startedAt: backfillOperations.startedAt,
+      })
       .from(backfillOperations)
-      .where(and(eq(backfillOperations.initiatedBy, discordId), eq(backfillOperations.status, 'completed')))
+      .where(
+        and(
+          eq(backfillOperations.initiatedBy, discordId),
+          eq(backfillOperations.status, 'completed')
+        )
+      )
       .orderBy(sql`${backfillOperations.completedAt} DESC`)
       .limit(1)
       .get();
@@ -133,9 +141,7 @@ class BackfillManager {
       .all();
     const total = rows.length;
     if (total > 0) {
-      db.delete(backfillOperations)
-        .where(eq(backfillOperations.initiatedBy, discordId))
-        .run();
+      db.delete(backfillOperations).where(eq(backfillOperations.initiatedBy, discordId)).run();
     }
     return total;
   }

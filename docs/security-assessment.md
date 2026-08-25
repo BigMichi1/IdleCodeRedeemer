@@ -11,6 +11,7 @@ This document identifies security threats, vulnerabilities, and risks associated
 The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application that redeems promo codes in the Idle Champions game. The application handles user credentials, communicates with external APIs, and manages a local SQLite database.
 
 **Security Assessment Scope**:
+
 - Application code (TypeScript, discord.js)
 - External API communication (Idle Champions, Discord)
 - Data storage (SQLite database)
@@ -20,6 +21,7 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
 **Overall Risk Level**: **MEDIUM** (with mitigations in place)
 
 **Key Findings**:
+
 - ✅ Credentials properly isolated and encrypted at rest
 - ✅ No hardcoded secrets in code (Gitleaks enforcement)
 - ✅ HTTPS/TLS for external API communication
@@ -35,12 +37,14 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
 ### Actors & Attack Vectors
 
 **External Threat Actors**:
+
 1. **Malicious Discord Users** - Potential privilege escalation or exploitation
 2. **Network Attackers** - Man-in-the-middle attacks on external API communication
 3. **Compromised Dependencies** - Vulnerabilities in third-party libraries
 4. **Idle Champions API Attackers** - Fake API responses or credential theft
 
 **Internal Threat Actors**:
+
 1. **Developers** - Accidental secrets in code or unsafe practices
 2. **System Administrators** - Database access, bot token exposure
 3. **Supply Chain** - Compromised dependencies during build
@@ -55,15 +59,15 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
 
 **Vulnerability Details**:
 
-| Aspect | Current State | Risk |
-|--------|---------------|------|
-| Storage | SQLite database, encrypted at OS level | MEDIUM - File system access required |
-| In Transit | HTTPS/TLS to external APIs | LOW - Encrypted transport |
-| In Memory | Loaded from database during operation | MEDIUM - Process memory access |
-| Backup | No automatic backup (git-ignored) | LOW - No cloud exposure |
-| Rotation | No automatic rotation mechanism | MEDIUM - Manual process required |
-| Logging | Sanitized, never logged | LOW - Proper handling |
-| Deletion | No automated cleanup (manual `/unsetup` needed) | MEDIUM - Abandoned accounts |
+| Aspect     | Current State                                   | Risk                                 |
+| ---------- | ----------------------------------------------- | ------------------------------------ |
+| Storage    | SQLite database, encrypted at OS level          | MEDIUM - File system access required |
+| In Transit | HTTPS/TLS to external APIs                      | LOW - Encrypted transport            |
+| In Memory  | Loaded from database during operation           | MEDIUM - Process memory access       |
+| Backup     | No automatic backup (git-ignored)               | LOW - No cloud exposure              |
+| Rotation   | No automatic rotation mechanism                 | MEDIUM - Manual process required     |
+| Logging    | Sanitized, never logged                         | LOW - Proper handling                |
+| Deletion   | No automated cleanup (manual `/unsetup` needed) | MEDIUM - Abandoned accounts          |
 
 **Attack Scenarios**:
 
@@ -88,6 +92,7 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
    - Caught by Gitleaks pre-commit hook (prevents this)
 
 **Mitigation Strategies in Place**:
+
 - ✅ SQLite database encrypted at OS level (file permissions)
 - ✅ User credentials encrypted at rest with AES-256-GCM (key from `ENCRYPTION_KEY` env var)
 - ✅ HTTPS/TLS for all external API communication
@@ -101,6 +106,7 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
 **Residual Risk**: **MEDIUM**
 
 **Recommended Actions**:
+
 1. Add automatic credential rotation mechanism
    - Require `/setup` update every N days
    - Notify user of stale credentials
@@ -117,19 +123,20 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
 
 **Vulnerability Details**:
 
-| Aspect | Current State | Risk |
-|--------|---------------|------|
-| Encryption | HTTPS/TLS | LOW - Encrypted transport |
-| Cert Validation | DISABLED (known SSL issue) | HIGH - No cert validation |
-| Rate Limiting | Implemented locally | MEDIUM - API can still be abused |
-| Request Validation | Input sanitization present | LOW - Proper validation |
-| Response Validation | JSON parsing (no validation) | MEDIUM - Untrusted input |
-| Error Messages | Sanitized before user display | LOW - No info leakage |
-| Timeout | 30 seconds (reasonable) | LOW - DoS resistant |
+| Aspect              | Current State                 | Risk                             |
+| ------------------- | ----------------------------- | -------------------------------- |
+| Encryption          | HTTPS/TLS                     | LOW - Encrypted transport        |
+| Cert Validation     | DISABLED (known SSL issue)    | HIGH - No cert validation        |
+| Rate Limiting       | Implemented locally           | MEDIUM - API can still be abused |
+| Request Validation  | Input sanitization present    | LOW - Proper validation          |
+| Response Validation | JSON parsing (no validation)  | MEDIUM - Untrusted input         |
+| Error Messages      | Sanitized before user display | LOW - No info leakage            |
+| Timeout             | 30 seconds (reasonable)       | LOW - DoS resistant              |
 
 **Known SSL Certificate Issue**:
 
 The Idle Champions API server uses an expired SSL certificate. As a result:
+
 - Certificate validation is disabled (`NODE_TLS_REJECT_UNAUTHORIZED=0`)
 - Vulnerable to man-in-the-middle attacks
 - Not verified server identity
@@ -166,6 +173,7 @@ The project assumes the risk and implements verification through other means.
    - Causes account lockout or bans
 
 **Mitigation Strategies in Place**:
+
 - ✅ HTTPS/TLS for transport encryption (mitigates packet sniffing)
 - ✅ Instance ID validation per API call (CSRF protection)
 - ✅ API response validation (JSON parsing with error handling)
@@ -208,15 +216,15 @@ The project assumes the risk and implements verification through other means.
 
 **Vulnerability Details**:
 
-| Aspect | Current State | Risk |
-|--------|---------------|------|
-| Bot Token | Environment variable | LOW - Not in code |
-| Token Storage | Docker secrets / .env | MEDIUM - File access required |
-| Permissions | Limited to guild | LOW - Scoped correctly |
-| Commands | Slash commands only | LOW - Input validated |
-| Rate Limiting | Discord API built-in | LOW - API enforced |
-| Intents | Necessary intents only | LOW - Minimal permissions |
-| Defer Replies | Used for long operations | LOW - No timeout issues |
+| Aspect        | Current State            | Risk                          |
+| ------------- | ------------------------ | ----------------------------- |
+| Bot Token     | Environment variable     | LOW - Not in code             |
+| Token Storage | Docker secrets / .env    | MEDIUM - File access required |
+| Permissions   | Limited to guild         | LOW - Scoped correctly        |
+| Commands      | Slash commands only      | LOW - Input validated         |
+| Rate Limiting | Discord API built-in     | LOW - API enforced            |
+| Intents       | Necessary intents only   | LOW - Minimal permissions     |
+| Defer Replies | Used for long operations | LOW - No timeout issues       |
 
 **Attack Scenarios**:
 
@@ -248,6 +256,7 @@ The project assumes the risk and implements verification through other means.
    - Mitigated: All long operations deferred properly
 
 **Mitigation Strategies in Place**:
+
 - ✅ Slash commands (safer than text commands)
 - ✅ Input validation on all parameters
 - ✅ Parameterized database queries (SQL injection prevention)
@@ -281,15 +290,15 @@ The project assumes the risk and implements verification through other means.
 
 **Vulnerability Details**:
 
-| Component   | Version  | Status  | Risk                         |
-| ----------- | -------- | ------- | ---------------------------- |
-| discord.js  | 14.26.4  | Current | LOW                          |
-| TypeScript  | 6.0.3    | Current | LOW                          |
-| Bun         | 1.3.14   | Current | LOW                          |
+| Component   | Version  | Status  | Risk                             |
+| ----------- | -------- | ------- | -------------------------------- |
+| discord.js  | 14.26.4  | Current | LOW                              |
+| TypeScript  | 6.0.3    | Current | LOW                              |
+| Bun         | 1.3.14   | Current | LOW                              |
 | drizzle-orm | 0.45.2   | Current | LOW - ORM, parameterized queries |
-| bun:sqlite  | built-in | Current | LOW - First-party SQLite module |
-| ESLint      | Latest   | Current | LOW - Dev dependency         |
-| Prettier    | Latest   | Current | LOW - Dev dependency         |
+| bun:sqlite  | built-in | Current | LOW - First-party SQLite module  |
+| ESLint      | Latest   | Current | LOW - Dev dependency             |
+| Prettier    | Latest   | Current | LOW - Dev dependency             |
 
 **Attack Scenarios**:
 
@@ -317,6 +326,7 @@ The project assumes the risk and implements verification through other means.
    - Mitigated: Bun built-in fetch and `bun:sqlite` (first-party, audited modules); proper error handling
 
 **Mitigation Strategies in Place**:
+
 - ✅ Frozen lockfile (bun.lock) - prevents version mutations
 - ✅ `bun audit` scanning for vulnerabilities
 - ✅ GitHub dependency review workflow
@@ -349,16 +359,16 @@ The project assumes the risk and implements verification through other means.
 
 **Vulnerability Details**:
 
-| Aspect | Current State | Risk |
-|--------|---------------|------|
-| File Permissions | OS-level (user read/write) | MEDIUM - File system access |
-| Encryption | Not encrypted (OS file permissions) | MEDIUM - Plaintext on disk |
-| Backup | Git-ignored, no backup | MEDIUM - Data loss risk |
-| Transactions | ACID (SQLite journaling) | LOW - Consistency guaranteed |
-| SQL Injection | Parameterized queries | LOW - Protected |
-| Access Control | Single user/process | LOW - Bot only |
-| Integrity | No checksums/signatures | MEDIUM - Corruption undetected |
-| Deletion | Soft delete not implemented | LOW - Data persists after delete |
+| Aspect           | Current State                       | Risk                             |
+| ---------------- | ----------------------------------- | -------------------------------- |
+| File Permissions | OS-level (user read/write)          | MEDIUM - File system access      |
+| Encryption       | Not encrypted (OS file permissions) | MEDIUM - Plaintext on disk       |
+| Backup           | Git-ignored, no backup              | MEDIUM - Data loss risk          |
+| Transactions     | ACID (SQLite journaling)            | LOW - Consistency guaranteed     |
+| SQL Injection    | Parameterized queries               | LOW - Protected                  |
+| Access Control   | Single user/process                 | LOW - Bot only                   |
+| Integrity        | No checksums/signatures             | MEDIUM - Corruption undetected   |
+| Deletion         | Soft delete not implemented         | LOW - Data persists after delete |
 
 **Attack Scenarios**:
 
@@ -392,6 +402,7 @@ The project assumes the risk and implements verification through other means.
    - Mitigated: Backfill locking (only one concurrent)
 
 **Mitigation Strategies in Place**:
+
 - ✅ Parameterized queries (SQL injection prevention)
 - ✅ Single-threaded SQLite access (no concurrent writes)
 - ✅ ACID transactions (SQLite journaling)
@@ -430,16 +441,16 @@ The project assumes the risk and implements verification through other means.
 
 **Vulnerability Details**:
 
-| Aspect | Current State | Risk |
-|--------|---------------|------|
-| Secrets in Code | Gitleaks scanning | LOW - Detected and prevented |
-| Code Review | CODEOWNERS enforcement | LOW - Reviewed before merge |
-| Tests | Automated test suites | LOW - Coverage validated |
-| Linting | ESLint strict rules | LOW - Code quality enforced |
-| Type Safety | TypeScript strict mode | LOW - Type errors prevented |
-| Build Process | Deterministic (frozen lockfile) | LOW - Reproducible |
-| Container Security | Non-root user (implied) | MEDIUM - Not verified |
-| Secrets in Logs | Sanitization | LOW - Proper handling |
+| Aspect             | Current State                   | Risk                         |
+| ------------------ | ------------------------------- | ---------------------------- |
+| Secrets in Code    | Gitleaks scanning               | LOW - Detected and prevented |
+| Code Review        | CODEOWNERS enforcement          | LOW - Reviewed before merge  |
+| Tests              | Automated test suites           | LOW - Coverage validated     |
+| Linting            | ESLint strict rules             | LOW - Code quality enforced  |
+| Type Safety        | TypeScript strict mode          | LOW - Type errors prevented  |
+| Build Process      | Deterministic (frozen lockfile) | LOW - Reproducible           |
+| Container Security | Non-root user (implied)         | MEDIUM - Not verified        |
+| Secrets in Logs    | Sanitization                    | LOW - Proper handling        |
 
 **Attack Scenarios**:
 
@@ -469,6 +480,7 @@ The project assumes the risk and implements verification through other means.
    - Mitigated: HTTPS for git, GPG commit signatures (optional)
 
 **Mitigation Strategies in Place**:
+
 - ✅ Gitleaks scanning (pre-commit and CI/CD)
 - ✅ ESLint linting (code quality, security rules)
 - ✅ TypeScript strict mode (type safety)
@@ -504,16 +516,16 @@ The project assumes the risk and implements verification through other means.
 
 **Vulnerability Details**:
 
-| Aspect | Current State | Risk |
-|--------|---------------|------|
-| Environment Variables | Docker compose, secrets | LOW - Protected |
-| Logging | Sanitized, debug logs auto-cleanup | LOW - Proper handling |
-| Monitoring | Basic (none in place) | MEDIUM - No alerting |
-| Incident Response | No formal process | MEDIUM - Ad-hoc |
-| Security Updates | Reactive (when discovered) | MEDIUM - Delays possible |
-| Documentation | Governance & security docs | LOW - Well-documented |
-| Access Control | Owner-only (single person) | MEDIUM - No backup admin |
-| Key Management | GitHub secrets, environment | LOW - Proper storage |
+| Aspect                | Current State                      | Risk                     |
+| --------------------- | ---------------------------------- | ------------------------ |
+| Environment Variables | Docker compose, secrets            | LOW - Protected          |
+| Logging               | Sanitized, debug logs auto-cleanup | LOW - Proper handling    |
+| Monitoring            | Basic (none in place)              | MEDIUM - No alerting     |
+| Incident Response     | No formal process                  | MEDIUM - Ad-hoc          |
+| Security Updates      | Reactive (when discovered)         | MEDIUM - Delays possible |
+| Documentation         | Governance & security docs         | LOW - Well-documented    |
+| Access Control        | Owner-only (single person)         | MEDIUM - No backup admin |
+| Key Management        | GitHub secrets, environment        | LOW - Proper storage     |
 
 **Attack Scenarios**:
 
@@ -548,6 +560,7 @@ The project assumes the risk and implements verification through other means.
    - Mitigated: Proper Docker configuration
 
 **Mitigation Strategies in Place**:
+
 - ✅ Environment variables for sensitive config
 - ✅ GitHub secrets for bot token and API keys
 - ✅ Debug logs auto-cleanup (7 days)
@@ -591,15 +604,15 @@ The project assumes the risk and implements verification through other means.
 
 ## Risk Summary Table
 
-| Threat | Likelihood | Impact | Risk Level | Mitigation Status |
-|--------|------------|--------|------------|------------------|
-| Credential Theft | Medium | High | **MEDIUM** | Mitigated, Residual Risk |
-| API Interception | Medium | Medium | **MEDIUM** | Mitigated, Known SSL Issue |
-| Discord Privilege Escalation | Low | Medium | **LOW** | Well-Mitigated |
-| Dependency Compromise | Medium | Low | **LOW** | Well-Mitigated |
-| Database Corruption | Medium | Medium | **MEDIUM** | Mitigated, Improvement Needed |
-| Code Injection | Medium | Low | **LOW** | Well-Mitigated |
-| Operational Error | High | Medium | **MEDIUM** | Partially-Mitigated |
+| Threat                       | Likelihood | Impact | Risk Level | Mitigation Status             |
+| ---------------------------- | ---------- | ------ | ---------- | ----------------------------- |
+| Credential Theft             | Medium     | High   | **MEDIUM** | Mitigated, Residual Risk      |
+| API Interception             | Medium     | Medium | **MEDIUM** | Mitigated, Known SSL Issue    |
+| Discord Privilege Escalation | Low        | Medium | **LOW**    | Well-Mitigated                |
+| Dependency Compromise        | Medium     | Low    | **LOW**    | Well-Mitigated                |
+| Database Corruption          | Medium     | Medium | **MEDIUM** | Mitigated, Improvement Needed |
+| Code Injection               | Medium     | Low    | **LOW**    | Well-Mitigated                |
+| Operational Error            | High       | Medium | **MEDIUM** | Partially-Mitigated           |
 
 **Overall Risk Assessment**: **MEDIUM** (with strong mitigations in place)
 
@@ -609,37 +622,37 @@ The project assumes the risk and implements verification through other means.
 
 ### Preventive Controls (Stop attacks before they occur)
 
-| Control | Implementation | Effectiveness | Status |
-|---------|----------------|----------------|--------|
-| Input Validation | All command parameters validated | High | ✅ Implemented |
-| SQL Injection Prevention | Parameterized queries | High | ✅ Implemented |
-| Credential Encryption | OS-level file encryption | Medium | ✅ Implemented |
-| HTTPS/TLS | All external API communication | High | ✅ Implemented |
-| Code Review | CODEOWNERS, 1 approval required | High | ✅ Implemented |
-| Secrets Detection | Gitleaks pre-commit + CI/CD | High | ✅ Implemented |
-| Dependency Scanning | GitHub dependency review | High | ✅ Implemented |
-| Type Safety | TypeScript strict mode | Medium | ✅ Implemented |
-| Linting | ESLint with security rules | Medium | ✅ Implemented |
-| Tests | Automated test suites | Medium | ✅ Implemented |
+| Control                  | Implementation                   | Effectiveness | Status         |
+| ------------------------ | -------------------------------- | ------------- | -------------- |
+| Input Validation         | All command parameters validated | High          | ✅ Implemented |
+| SQL Injection Prevention | Parameterized queries            | High          | ✅ Implemented |
+| Credential Encryption    | OS-level file encryption         | Medium        | ✅ Implemented |
+| HTTPS/TLS                | All external API communication   | High          | ✅ Implemented |
+| Code Review              | CODEOWNERS, 1 approval required  | High          | ✅ Implemented |
+| Secrets Detection        | Gitleaks pre-commit + CI/CD      | High          | ✅ Implemented |
+| Dependency Scanning      | GitHub dependency review         | High          | ✅ Implemented |
+| Type Safety              | TypeScript strict mode           | Medium        | ✅ Implemented |
+| Linting                  | ESLint with security rules       | Medium        | ✅ Implemented |
+| Tests                    | Automated test suites            | Medium        | ✅ Implemented |
 
 ### Detective Controls (Identify attacks as they occur)
 
-| Control | Implementation | Effectiveness | Status |
-|---------|----------------|----------------|--------|
-| Security Scanning | CodeQL, Gitleaks, dependency audit | High | ✅ Implemented |
-| Audit Logging | API call logging, code history | Medium | ✅ Implemented |
-| Error Handling | Proper error logging and alerts | Medium | ✅ Implemented |
-| Monitoring | Not implemented | N/A | ⚠️ Not Yet |
-| Alerting | Not implemented | N/A | ⚠️ Not Yet |
+| Control           | Implementation                     | Effectiveness | Status         |
+| ----------------- | ---------------------------------- | ------------- | -------------- |
+| Security Scanning | CodeQL, Gitleaks, dependency audit | High          | ✅ Implemented |
+| Audit Logging     | API call logging, code history     | Medium        | ✅ Implemented |
+| Error Handling    | Proper error logging and alerts    | Medium        | ✅ Implemented |
+| Monitoring        | Not implemented                    | N/A           | ⚠️ Not Yet     |
+| Alerting          | Not implemented                    | N/A           | ⚠️ Not Yet     |
 
 ### Responsive Controls (Address attacks after they occur)
 
-| Control | Implementation | Effectiveness | Status |
-|---------|----------------|----------------|--------|
-| Incident Response Plan | Not formally documented | N/A | ⚠️ Recommended |
-| Backup & Recovery | Manual backup recommended | Medium | ⚠️ Manual Process |
-| Security Updates | Reactive process | Medium | ⚠️ Needs Improvement |
-| Remediation | Ad-hoc process | N/A | ⚠️ Informal |
+| Control                | Implementation            | Effectiveness | Status               |
+| ---------------------- | ------------------------- | ------------- | -------------------- |
+| Incident Response Plan | Not formally documented   | N/A           | ⚠️ Recommended       |
+| Backup & Recovery      | Manual backup recommended | Medium        | ⚠️ Manual Process    |
+| Security Updates       | Reactive process          | Medium        | ⚠️ Needs Improvement |
+| Remediation            | Ad-hoc process            | N/A           | ⚠️ Informal          |
 
 ---
 
@@ -650,27 +663,32 @@ The project assumes the risk and implements verification through other means.
 **Issue**: The Idle Champions game API uses an expired or self-signed SSL certificate.
 
 **Current Mitigation**:
+
 ```
 NODE_TLS_REJECT_UNAUTHORIZED=0  # Disables certificate validation
 ```
 
 **Impact**:
+
 - Vulnerable to man-in-the-middle attacks
 - No guarantee of server identity
 - No protection against response tampering
 
 **Why It's Necessary**:
+
 - The game server infrastructure has not been updated
 - The API cannot be accessed without this workaround
 - This is a limitation of the external service, not the bot
 
 **Recommendation for Users**:
+
 - Run the bot in an isolated network/VPN
 - Use DNS over HTTPS (DoH)
 - Monitor for unusual behavior
 - Be aware this is a known risk
 
 **Long-term Solution**:
+
 - Pressure game developers to fix SSL certificate
 - Consider alternative authentication methods
 - Implement response signature verification
@@ -682,20 +700,24 @@ NODE_TLS_REJECT_UNAUTHORIZED=0  # Disables certificate validation
 **Issue**: Credentials stored in SQLite database (plaintext at application level).
 
 **Current Protection**:
+
 - OS-level file permissions
 - Database file not in git history
 - File system encryption (if enabled by host)
 
 **Risk**:
+
 - File system compromise exposes all credentials
 - No application-level encryption
 
 **Why Not Encrypted**:
+
 - Trade-off between security and usability
 - Requires password on bot startup
 - More complex key management
 
 **Recommendation**:
+
 - Consider optional application-level encryption
 - Implement credential rotation
 - Monitor for unauthorized database access
@@ -707,16 +729,19 @@ NODE_TLS_REJECT_UNAUTHORIZED=0  # Disables certificate validation
 **Issue**: Only one project owner with administrative access.
 
 **Current Mitigation**:
+
 - Documented in GOVERNANCE.md
 - Access control matrix documented
 - GitHub branch protection prevents direct pushes
 
 **Risk**:
+
 - Single point of failure
 - Emergency response delays
 - No backup for critical operations
 
 **Recommendation**:
+
 - Add secondary administrator
 - Define handoff procedures
 - Document emergency contacts
@@ -728,11 +753,13 @@ NODE_TLS_REJECT_UNAUTHORIZED=0  # Disables certificate validation
 **Issue**: No automated monitoring of bot health or security events.
 
 **Current Status**:
+
 - Manual checking of bot status
 - No alerts on failures
 - No audit trail of suspicious activity
 
 **Recommendation**:
+
 - Implement health checks
 - Add monitoring for:
   - Bot uptime
@@ -865,11 +892,13 @@ None identified. Known SSL issue is accepted risk.
 ### Data Protection
 
 The bot handles:
+
 - **User Credentials** (user_id, hash) - Sensitive authentication data
 - **Code Redemption History** - Non-sensitive game data
 - **User Discord ID** - Required for bot functionality
 
 **Compliance Notes**:
+
 - No PII beyond Discord ID (GDPR consideration)
 - User controls credential storage (opt-in via `/setup`)
 - No automatic data collection
@@ -922,9 +951,9 @@ This assessment is updated when:
 
 ### Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-05-10 | Initial security assessment |
+| Version | Date       | Changes                     |
+| ------- | ---------- | --------------------------- |
+| 1.0     | 2026-05-10 | Initial security assessment |
 
 ---
 
@@ -941,6 +970,7 @@ This assessment is updated when:
 ## OSPS-SA-03.01 Compliance
 
 ✅ **Security Assessment Performed**:
+
 - Identified likely and impactful security threats
 - Assessed vulnerabilities in key areas
 - Evaluated existing mitigations
@@ -948,24 +978,28 @@ This assessment is updated when:
 - Documented for project members and consumers
 
 ✅ **Threat Analysis Complete**:
+
 - 7 major threat areas identified
 - Attack scenarios documented
 - Risk levels assessed
 - Mitigations evaluated
 
 ✅ **Risk Management**:
+
 - Risk matrix created
 - Controls matrix documented
 - Recommendations prioritized
 - Follow-up actions defined
 
 ✅ **Consumer Information**:
+
 - Known issues clearly documented
 - Mitigations explained
 - Best practices provided
 - Compliance considerations noted
 
 ✅ **Updated for Changes**:
+
 - Version tracking implemented
 - Update triggers defined
 - Breaking changes documented
@@ -983,6 +1017,7 @@ This assessment is updated when:
 The Idle Champions Code Redeemer Discord Bot implements strong security controls for a project of its scope and complexity. The most significant security issue is the known SSL certificate problem with the external Idle Champions API, which is mitigated through awareness and recommendations to users.
 
 The project demonstrates security awareness through:
+
 - Automated secret scanning (Gitleaks)
 - Code quality enforcement (ESLint, TypeScript strict mode)
 - Security scanning (CodeQL, dependency review)

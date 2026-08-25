@@ -137,25 +137,25 @@ The project uses the built-in **Bun test runner**. Tests use an in-memory SQLite
 ### Running Tests
 
 ```bash
-bun test            # Run all tests once
-bun test --watch    # Re-run on file changes
+bun test         # Run all tests once
+bun test --watch # Re-run on file changes
 ```
 
 ### Test Layout
 
-| File | What it tests |
-|------|---------------|
-| `src/bot/handlers/codeScanner.test.ts` | `extractCodesFromText` — regex, emoji stripping, case normalisation |
-| `src/bot/handlers/autoRedeemer.test.ts` | Queue serialization, DM sending, skip logic |
-| `src/bot/handlers/backfillHandler.test.ts` | Message history scanning, server swap handling |
-| `src/bot/database/codeManager.test.ts` | All `CodeManager` methods — per-user redemption, public/private, pending codes, loot totals |
-| `src/bot/database/userManager.test.ts` | All `UserManager` CRUD operations (with AES-256-GCM encryption) |
-| `src/bot/database/auditManager.test.ts` | Audit log operations |
-| `src/bot/database/backfillManager.test.ts` | Backfill rate limiting, global lock |
-| `src/bot/commands/notifications.test.ts` | `/notifications` command and preference updates |
-| `src/bot/commands/stats.test.ts` | `/stats` with empty/populated DB |
-| `src/bot/commands/logs.test.ts` | `/logs` command with mocked filesystem |
-| `src/bot/utils/apiRequestLogger.test.ts` | API log file cleanup, sensitive param masking |
+| File                                       | What it tests                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `src/bot/handlers/codeScanner.test.ts`     | `extractCodesFromText` — regex, emoji stripping, case normalisation                         |
+| `src/bot/handlers/autoRedeemer.test.ts`    | Queue serialization, DM sending, skip logic                                                 |
+| `src/bot/handlers/backfillHandler.test.ts` | Message history scanning, server swap handling                                              |
+| `src/bot/database/codeManager.test.ts`     | All `CodeManager` methods — per-user redemption, public/private, pending codes, loot totals |
+| `src/bot/database/userManager.test.ts`     | All `UserManager` CRUD operations (with AES-256-GCM encryption)                             |
+| `src/bot/database/auditManager.test.ts`    | Audit log operations                                                                        |
+| `src/bot/database/backfillManager.test.ts` | Backfill rate limiting, global lock                                                         |
+| `src/bot/commands/notifications.test.ts`   | `/notifications` command and preference updates                                             |
+| `src/bot/commands/stats.test.ts`           | `/stats` with empty/populated DB                                                            |
+| `src/bot/commands/logs.test.ts`            | `/logs` command with mocked filesystem                                                      |
+| `src/bot/utils/apiRequestLogger.test.ts`   | API log file cleanup, sensitive param masking                                               |
 
 ### How It Works
 
@@ -212,14 +212,14 @@ For development, Bun runs TypeScript directly — no compile step is needed.
 All tasks are run through Mise. Use `mise tasks` to see all available commands:
 
 ```bash
-mise run install      # Install dependencies
-mise run dev          # Start bot directly from TypeScript source
-mise run build        # Type-check only (noEmit: true)
-mise run prod:build   # Build self-contained production binary
-mise run lint         # Check code quality
-mise run lint:fix     # Auto-fix linting issues
-mise run audit        # Check for vulnerabilities
-mise run clean        # Clean build artifacts
+mise run install    # Install dependencies
+mise run dev        # Start bot directly from TypeScript source
+mise run build      # Type-check only (noEmit: true)
+mise run prod:build # Build self-contained production binary
+mise run lint       # Check code quality
+mise run lint:fix   # Auto-fix linting issues
+mise run audit      # Check for vulnerabilities
+mise run clean      # Clean build artifacts
 ```
 
 ## Database
@@ -229,8 +229,8 @@ SQLite database (`./data/idle.db`) managed with Drizzle ORM. Schema is defined i
 To regenerate migrations after schema changes:
 
 ```bash
-bun run db:generate   # Regenerate SQL migrations from schema
-bun run db:studio     # Open Drizzle Studio (visual DB browser)
+bun run db:generate # Regenerate SQL migrations from schema
+bun run db:studio   # Open Drizzle Studio (visual DB browser)
 ```
 
 ```mermaid
@@ -324,14 +324,14 @@ The bot saves API responses to `debug/` folder automatically:
 ## Environment Variables
 
 ```bash
-DISCORD_TOKEN      # Bot token from Discord Developer Portal
-DISCORD_GUILD_ID   # Server ID (for guild-specific commands)
-DISCORD_CHANNEL_ID # Channel ID (for auto code scanning)
+DISCORD_TOKEN          # Bot token from Discord Developer Portal
+DISCORD_GUILD_ID       # Server ID (for guild-specific commands)
+DISCORD_CHANNEL_ID     # Channel ID (for auto code scanning)
 DISCORD_CODE_AUTHOR_ID # User/bot ID that posts promo codes (filters backfill to that author only)
-ENCRYPTION_KEY     # Required — 64-char hex key (32 bytes) for AES-256-GCM credential encryption
-                   # Generate: openssl rand -hex 32
-                   # Note: users.user_id and users.user_hash are stored as AES-256-GCM
-                   # ciphertext (enc1:<iv>:<authTag>:<ct>), not as raw int/token values.
-DB_PATH            # Database file path (default: ./data/idle.db)
-NODE_ENV           # development or production
+ENCRYPTION_KEY         # Required — 64-char hex key (32 bytes) for AES-256-GCM credential encryption
+# Generate: openssl rand -hex 32
+# Note: users.user_id and users.user_hash are stored as AES-256-GCM
+# ciphertext (enc1:<iv>:<authTag>:<ct>), not as raw int/token values.
+DB_PATH  # Database file path (default: ./data/idle.db)
+NODE_ENV # development or production
 ```

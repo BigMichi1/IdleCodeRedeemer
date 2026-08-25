@@ -29,7 +29,6 @@ interface OpenChestsOptions {
   instanceId: string;
 }
 
-
 interface UseBlacksmithOptions {
   server: string;
   user_id: string;
@@ -414,7 +413,6 @@ class IdleChampionsApi {
     return new GenericResponse(ResponseStatus.Failed);
   }
 
-
   static async useBlacksmith(
     options: UseBlacksmithOptions
   ): Promise<GenericResponse | UseBlacksmithResponse> {
@@ -577,8 +575,6 @@ export enum ResponseStatus {
   SwitchServer,
 }
 
-
-
 type FailureOutcome =
   | { kind: 'code'; status: CodeSubmitStatus }
   | { kind: 'generic'; status: ResponseStatus };
@@ -600,22 +596,22 @@ type FailureOutcome =
 const FAILURE_OUTCOMES: Readonly<Record<string, FailureOutcome>> = {
   // from api/types/redeem_code_response.d.ts (generated from real responses)
   'outdated instance id': { kind: 'generic', status: ResponseStatus.OutdatedInstanceId },
-  'you_already_redeemed_combination': { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
-  'someone_already_redeemed_combination': { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
+  you_already_redeemed_combination: { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
+  someone_already_redeemed_combination: { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
   'invalid or incomplete parameters': { kind: 'code', status: CodeSubmitStatus.InvalidParameters },
-  'not_valid_combination': { kind: 'code', status: CodeSubmitStatus.NotValidCombo },
-  'offer_has_expired': { kind: 'code', status: CodeSubmitStatus.Expired },
+  not_valid_combination: { kind: 'code', status: CodeSubmitStatus.NotValidCombo },
+  offer_has_expired: { kind: 'code', status: CodeSubmitStatus.Expired },
   'not enough currency': { kind: 'generic', status: ResponseStatus.InsuficcientCurrency },
-  'can_not_redeem_combination': { kind: 'code', status: CodeSubmitStatus.CannotRedeem },
+  can_not_redeem_combination: { kind: 'code', status: CodeSubmitStatus.CannotRedeem },
   // from the former module-local enum
-  'already_redeemed': { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
-  'someone_already_redeemed': { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
-  'expired': { kind: 'code', status: CodeSubmitStatus.Expired },
-  'invalid_code_combo': { kind: 'code', status: CodeSubmitStatus.NotValidCombo },
-  'outdated_instance_id': { kind: 'generic', status: ResponseStatus.OutdatedInstanceId },
-  'invalid_parameters': { kind: 'code', status: CodeSubmitStatus.InvalidParameters },
-  'cannot_redeem': { kind: 'code', status: CodeSubmitStatus.CannotRedeem },
-  'insufficient_currency': { kind: 'generic', status: ResponseStatus.InsuficcientCurrency },
+  already_redeemed: { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
+  someone_already_redeemed: { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
+  expired: { kind: 'code', status: CodeSubmitStatus.Expired },
+  invalid_code_combo: { kind: 'code', status: CodeSubmitStatus.NotValidCombo },
+  outdated_instance_id: { kind: 'generic', status: ResponseStatus.OutdatedInstanceId },
+  invalid_parameters: { kind: 'code', status: CodeSubmitStatus.InvalidParameters },
+  cannot_redeem: { kind: 'code', status: CodeSubmitStatus.CannotRedeem },
+  insufficient_currency: { kind: 'generic', status: ResponseStatus.InsuficcientCurrency },
 };
 
 export function classifyFailureReason(reason: string): FailureOutcome | undefined {

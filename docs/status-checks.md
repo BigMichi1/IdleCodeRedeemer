@@ -6,7 +6,8 @@ This document describes the automated status checks that must pass before code c
 
 All commits to the primary branch (`main`) must pass automated status checks before merging. These checks cannot be bypassed without explicit acknowledgement and authorization by maintainers.
 
-**Branch Protection Policy**: 
+**Branch Protection Policy**:
+
 - ✅ All required checks MUST pass
 - ✅ Status checks cannot be bypassed without manual override
 - ✅ Manual bypasses require admin access and are logged
@@ -17,6 +18,7 @@ All commits to the primary branch (`main`) must pass automated status checks bef
 All of these checks must pass. If any fail, the pull request cannot be merged:
 
 ### 1. **DCO Sign-Off Check** (`dco-check`)
+
 - **Purpose**: Verify all commits are legally signed off
 - **Triggers**: Pull requests, pushes to main
 - **Requirement**: All commits must have "Signed-off-by" trailer [OSPS-LE-01.01]
@@ -27,10 +29,11 @@ All of these checks must pass. If any fail, the pull request cannot be merged:
 **Reference**: See [DCO.md](../DCO.md) for sign-off procedures
 
 ### 2. **Docker Build & Push** (`docker`)
+
 - **Purpose**: Build Docker images and publish to GitHub Container Registry
 - **Triggers**: Pushes to main and release tags
 - **Requirement**: Docker image builds successfully
-- **Pass Criteria**: 
+- **Pass Criteria**:
   - Multi-stage build completes without errors
   - Images published to ghcr.io/bigmichi1/idle-code-redeemer-bot
   - Images signed with Cosign keyless OIDC signatures
@@ -44,10 +47,11 @@ All of these checks must pass. If any fail, the pull request cannot be merged:
 **Reference**: See [docs/cryptographic-signing.md](cryptographic-signing.md) for signing details
 
 ### 3. **CodeQL Security Scanning** (`codeql`)
+
 - **Purpose**: Detect security vulnerabilities and code quality issues
 - **Triggers**: Pull requests, pushes to main
 - **Requirement**: No critical/high-severity CodeQL alerts introduced
-- **Pass Criteria**: 
+- **Pass Criteria**:
   - New code passes CodeQL analysis
   - No injection vulnerabilities
   - No hardcoded credentials
@@ -58,6 +62,7 @@ All of these checks must pass. If any fail, the pull request cannot be merged:
 **Reference**: [GitHub CodeQL Documentation](https://codeql.github.com/)
 
 ### 4. **Dependency Review** (`dependency-review`)
+
 - **Purpose**: Prevent introduction of vulnerable dependencies
 - **Triggers**: Pull requests with package.json changes
 - **Requirement**: No new vulnerable dependencies added
@@ -71,6 +76,7 @@ All of these checks must pass. If any fail, the pull request cannot be merged:
 **Reference**: See [docs/dependency-management.md](dependency-management.md)
 
 ### 5. **Secret Scanning** (`secrets`)
+
 - **Purpose**: Prevent accidental credential leaks
 - **Triggers**: All pushes and pull requests
 - **Requirement**: No secrets detected in code
@@ -86,6 +92,7 @@ All of these checks must pass. If any fail, the pull request cannot be merged:
 **Reference**: See [SECURITY.md](../SECURITY.md#data-protection) for secret protection
 
 ### 6. **OpenSSF Scorecards** (`scorecards`)
+
 - **Purpose**: Assess security practices and OpenSSF Best Practices compliance
 - **Triggers**: Scheduled weekly scans, can run on demand
 - **Requirement**: High security score maintained
@@ -126,14 +133,14 @@ Restrictions:
 
 ### Status Check Requirements
 
-| Check | Required | Bypass Allowed | Notes |
-|-------|----------|----------------|-------|
-| DCO Sign-Off | ✅ YES | ❌ NO | Every commit must be signed |
-| Docker Build | ✅ YES | ❌ NO | Must build successfully |
-| CodeQL | ✅ YES | ⚠️ MANUAL | High security priority |
-| Dependencies | ✅ YES | ⚠️ MANUAL | Vulnerability scan |
-| Secrets | ✅ YES | ❌ NO | No credentials leaked |
-| Scorecards | ⚠️ ADVISORY | N/A | Compliance tracking |
+| Check        | Required    | Bypass Allowed | Notes                       |
+| ------------ | ----------- | -------------- | --------------------------- |
+| DCO Sign-Off | ✅ YES      | ❌ NO          | Every commit must be signed |
+| Docker Build | ✅ YES      | ❌ NO          | Must build successfully     |
+| CodeQL       | ✅ YES      | ⚠️ MANUAL      | High security priority      |
+| Dependencies | ✅ YES      | ⚠️ MANUAL      | Vulnerability scan          |
+| Secrets      | ✅ YES      | ❌ NO          | No credentials leaked       |
+| Scorecards   | ⚠️ ADVISORY | N/A            | Compliance tracking         |
 
 **Key Principle**: Required checks cannot be bypassed by anyone except repository admins, and any admin override is logged in GitHub audit logs for compliance.
 
@@ -186,7 +193,8 @@ If any check fails, the commit is marked as failed in GitHub UI and is visible i
 └── ⓘ scorecards - Updated
 ```
 
-**Next Steps**: 
+**Next Steps**:
+
 1. View detailed failure logs
 2. Fix underlying issue
 3. Push corrections (new commits or amended commits)
@@ -205,6 +213,7 @@ If a status check must be bypassed (rare emergency situation):
 5. **Re-enable Check** - Revert branch protection if it was changed
 
 **Bypass Logging**:
+
 - All bypasses appear in GitHub Audit Log
 - Includes who bypassed, when, and what check
 - Cannot be hidden or deleted
@@ -232,6 +241,7 @@ This prevents "check fatigue" where developers bypass security checks due to fal
 ## Troubleshooting Failed Checks
 
 ### DCO Check Failed
+
 ```
 Error: Unsigned commits detected
 Fix: git commit --amend -s && git push --force-with-lease
@@ -239,6 +249,7 @@ Ref: DCO.md
 ```
 
 ### Docker Build Failed
+
 ```
 Error: Build failed
 Fix: Check Dockerfile syntax, base image availability
@@ -246,6 +257,7 @@ Ref: BUILD.md, Dockerfile
 ```
 
 ### CodeQL Failed
+
 ```
 Error: Security vulnerability detected
 Fix: Review CodeQL alert, fix vulnerability
@@ -253,6 +265,7 @@ Ref: GitHub Security tab for detailed alerts
 ```
 
 ### Dependency Failed
+
 ```
 Error: Vulnerable dependency detected
 Fix: Update to patched version
@@ -260,6 +273,7 @@ Ref: docs/dependency-management.md
 ```
 
 ### Secret Detected
+
 ```
 Error: Credential found in code
 Fix: Remove credential, commit to .env.example instead
@@ -268,14 +282,14 @@ Ref: SECURITY.md, .env.example
 
 ## OSPS-QA-03.01 Compliance
 
-| Requirement | Status | Evidence |
-|---|---|---|
-| **All status checks configured** | ✅ | 6 workflows: DCO, Docker, CodeQL, Dependencies, Secrets, Scorecards |
-| **Checks must pass or be bypassed** | ✅ | Branch protection: require status checks to pass |
-| **Bypass requires acknowledgement** | ✅ | GitHub Audit Log tracks all bypasses |
-| **Optional checks not blockers** | ✅ | Scorecards is advisory only, not required |
-| **Documented** | ✅ | This file (status-checks.md) and CONTRIBUTING.md |
-| **Enforced** | ✅ | Branch protection rules on main branch |
+| Requirement                         | Status | Evidence                                                            |
+| ----------------------------------- | ------ | ------------------------------------------------------------------- |
+| **All status checks configured**    | ✅     | 6 workflows: DCO, Docker, CodeQL, Dependencies, Secrets, Scorecards |
+| **Checks must pass or be bypassed** | ✅     | Branch protection: require status checks to pass                    |
+| **Bypass requires acknowledgement** | ✅     | GitHub Audit Log tracks all bypasses                                |
+| **Optional checks not blockers**    | ✅     | Scorecards is advisory only, not required                           |
+| **Documented**                      | ✅     | This file (status-checks.md) and CONTRIBUTING.md                    |
+| **Enforced**                        | ✅     | Branch protection rules on main branch                              |
 
 ## References
 

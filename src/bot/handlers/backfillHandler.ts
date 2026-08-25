@@ -11,7 +11,14 @@ import { errorMessage, sleep } from '../utils/async';
 
 const API_LOGS_DIR = path.join(process.cwd(), 'api-logs');
 
-type RawMessage = { id: string; author: string; authorId: string; bot: boolean; content: string; createdAt: string };
+type RawMessage = {
+  id: string;
+  author: string;
+  authorId: string;
+  bot: boolean;
+  content: string;
+  createdAt: string;
+};
 
 function dumpDiscordMessages(channelName: string, label: string, messages: RawMessage[]): void {
   if (messages.length === 0) return;
@@ -19,7 +26,10 @@ function dumpDiscordMessages(channelName: string, label: string, messages: RawMe
     fs.mkdirSync(API_LOGS_DIR, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = path.join(API_LOGS_DIR, `discord_${label}_${channelName}_${timestamp}.json`);
-    fs.writeFileSync(filename, JSON.stringify({ channel: channelName, label, count: messages.length, messages }, null, 2));
+    fs.writeFileSync(
+      filename,
+      JSON.stringify({ channel: channelName, label, count: messages.length, messages }, null, 2)
+    );
     logger.info(`[BACKFILL] Dumped ${messages.length} ${label} messages to ${filename}`);
   } catch (err) {
     logger.warn(`[BACKFILL] Failed to dump Discord messages: ${err}`);
@@ -101,9 +111,7 @@ export async function backfillChannelHistory(
 
           // If a code author is configured, only scan messages from that author;
           // otherwise fall back to scanning all messages.
-          const isCodeCandidate = codeAuthorId
-            ? message.author.id === codeAuthorId
-            : true;
+          const isCodeCandidate = codeAuthorId ? message.author.id === codeAuthorId : true;
 
           if (isCodeCandidate) {
             codeMessages.push(raw);

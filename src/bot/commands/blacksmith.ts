@@ -11,7 +11,6 @@ import { resolveGameSession } from './gameSession';
 import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
 
-
 export const data = new SlashCommandBuilder()
   .setName('blacksmith')
   .setDescription('Use blacksmith contracts to upgrade your heroes')

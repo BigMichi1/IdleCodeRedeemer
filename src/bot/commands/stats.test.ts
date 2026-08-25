@@ -64,8 +64,8 @@ describe('/stats – empty database', () => {
 
     const embed = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data;
     const fields = embed.fields as Array<{ name: string; value: string }>;
-    const codesField = fields.find(f => f.name.includes('Unique Codes'));
-    const usersField = fields.find(f => f.name.includes('Registered Users'));
+    const codesField = fields.find((f) => f.name.includes('Unique Codes'));
+    const usersField = fields.find((f) => f.name.includes('Registered Users'));
     expect(codesField?.value).toBe('0');
     expect(usersField?.value).toBe('0');
   });
@@ -77,7 +77,7 @@ describe('/stats – empty database', () => {
 
     const embed = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data;
     const fields = embed.fields as Array<{ name: string; value: string }>;
-    const lootField = fields.find(f => f.name.includes('Loot'));
+    const lootField = fields.find((f) => f.name.includes('Loot'));
     expect(lootField?.value).toBe('No loot data available');
   });
 });
@@ -90,8 +90,12 @@ describe('/stats – with redeemed codes and users', () => {
   beforeEach(async () => {
     await userManager.saveCredentials({ discordId: 'user-1', userId: '111', userHash: 'aaa' });
     await userManager.saveCredentials({ discordId: 'user-2', userId: '222', userHash: 'bbb' });
-    await codeManager.addRedeemedCode('CODE-A', 'user-1', 'Success', [{ chest_type_id: 1, count: 2 }] as any);
-    await codeManager.addRedeemedCode('CODE-B', 'user-2', 'Success', [{ chest_type_id: 2, count: 1 }] as any);
+    await codeManager.addRedeemedCode('CODE-A', 'user-1', 'Success', [
+      { chest_type_id: 1, count: 2 },
+    ] as any);
+    await codeManager.addRedeemedCode('CODE-B', 'user-2', 'Success', [
+      { chest_type_id: 2, count: 1 },
+    ] as any);
     await codeManager.addRedeemedCode('CODE-A', 'user-2', 'Success');
   });
 
@@ -100,8 +104,11 @@ describe('/stats – with redeemed codes and users', () => {
 
     await execute(interaction);
 
-    const fields = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data.fields as Array<{ name: string; value: string }>;
-    const codesField = fields.find(f => f.name.includes('Unique Codes'));
+    const fields = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data.fields as Array<{
+      name: string;
+      value: string;
+    }>;
+    const codesField = fields.find((f) => f.name.includes('Unique Codes'));
     expect(codesField?.value).toBe('2');
   });
 
@@ -110,8 +117,11 @@ describe('/stats – with redeemed codes and users', () => {
 
     await execute(interaction);
 
-    const fields = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data.fields as Array<{ name: string; value: string }>;
-    const redemptionsField = fields.find(f => f.name.includes('Total Redemptions'));
+    const fields = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data.fields as Array<{
+      name: string;
+      value: string;
+    }>;
+    const redemptionsField = fields.find((f) => f.name.includes('Total Redemptions'));
     expect(redemptionsField?.value).toBe('3');
   });
 
@@ -120,8 +130,11 @@ describe('/stats – with redeemed codes and users', () => {
 
     await execute(interaction);
 
-    const fields = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data.fields as Array<{ name: string; value: string }>;
-    const usersField = fields.find(f => f.name.includes('Registered Users'));
+    const fields = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data.fields as Array<{
+      name: string;
+      value: string;
+    }>;
+    const usersField = fields.find((f) => f.name.includes('Registered Users'));
     expect(usersField?.value).toBe('2');
   });
 
@@ -130,8 +143,11 @@ describe('/stats – with redeemed codes and users', () => {
 
     await execute(interaction);
 
-    const fields = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data.fields as Array<{ name: string; value: string }>;
-    const lootField = fields.find(f => f.name.includes('Loot'));
+    const fields = (editReplySpy.mock.calls[0]![0] as any).embeds[0].data.fields as Array<{
+      name: string;
+      value: string;
+    }>;
+    const lootField = fields.find((f) => f.name.includes('Loot'));
     expect(lootField?.value).toContain('Silver Chest: 2');
     expect(lootField?.value).toContain('Gold Chest: 1');
   });
@@ -142,7 +158,7 @@ describe('/stats – with redeemed codes and users', () => {
     await execute(interaction);
 
     const rows = db.select().from(auditLog).all();
-    const statsRow = rows.find(r => r.action === 'VIEWED_STATS');
+    const statsRow = rows.find((r) => r.action === 'VIEWED_STATS');
     expect(statsRow).toBeDefined();
     // discordId is null because /stats is public (no user registration required)
     expect(statsRow?.discordId).toBeNull();
@@ -159,7 +175,9 @@ describe('/stats – error handling', () => {
     const interaction = {
       user: { id: 'user-1', tag: 'user#1' },
       deferred: false,
-      deferReply: async () => { throw new Error('network failure'); },
+      deferReply: async () => {
+        throw new Error('network failure');
+      },
       editReply: editReplySpy,
     } as any;
 

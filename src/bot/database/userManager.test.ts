@@ -15,8 +15,6 @@ beforeEach(() => {
   db.delete(users).run();
 });
 
-
-
 // ---------------------------------------------------------------------------
 // saveCredentials
 // ---------------------------------------------------------------------------
@@ -250,10 +248,12 @@ describe('migratePlaintextCredentials', () => {
   });
 
   test('migrates multiple plaintext rows independently', async () => {
-    db.insert(users).values([
-      { discordId: 'user-1', userId: '111', userHash: 'hash-a' },
-      { discordId: 'user-2', userId: '222', userHash: 'hash-b' },
-    ]).run();
+    db.insert(users)
+      .values([
+        { discordId: 'user-1', userId: '111', userHash: 'hash-a' },
+        { discordId: 'user-2', userId: '222', userHash: 'hash-b' },
+      ])
+      .run();
 
     await userManager.migratePlaintextCredentials();
 
@@ -285,7 +285,9 @@ describe('migratePlaintextCredentials', () => {
   test('encrypts only the plaintext field in a mixed-state row', async () => {
     // Seed a row where userId is already encrypted but userHash is still plaintext
     const encryptedUserId = encrypt('111');
-    db.insert(users).values({ discordId: 'user-1', userId: encryptedUserId, userHash: 'hash-a' }).run();
+    db.insert(users)
+      .values({ discordId: 'user-1', userId: encryptedUserId, userHash: 'hash-a' })
+      .run();
 
     await userManager.migratePlaintextCredentials();
 

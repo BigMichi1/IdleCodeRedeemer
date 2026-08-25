@@ -16,7 +16,9 @@ import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
   .setName('deleteaccount')
-  .setDescription('Permanently delete all your data from this bot (credentials, code history, audit log)');
+  .setDescription(
+    'Permanently delete all your data from this bot (credentials, code history, audit log)'
+  );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   try {
@@ -139,7 +141,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const deletedCodesCount = await codeManager.deleteUserRedeemedCodes(interaction.user.id);
     const deletedLootCount = await codeManager.deleteUserLootTotals(interaction.user.id);
     await auditManager.deleteUserAuditLog(interaction.user.id);
-    const deletedBackfillCount = await backfillManager.deleteUserBackfillOperations(interaction.user.id);
+    const deletedBackfillCount = await backfillManager.deleteUserBackfillOperations(
+      interaction.user.id
+    );
     await userManager.deleteCredentials(interaction.user.id);
 
     // Log a non-identifying event — the user's credentials and ID are now gone

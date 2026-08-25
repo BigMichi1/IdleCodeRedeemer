@@ -73,27 +73,27 @@ When introducing a new dependency, the following criteria are evaluated:
 
 ### Current Production Dependencies
 
-| Package          | Version | Purpose                      | Selection Notes                   |
-| ---------------- | ------- | ---------------------------- | --------------------------------- |
-| **discord.js**   | 14.26.4 | Discord bot framework        | Standard, active, well-maintained |
-| **drizzle-orm**  | 0.45.2  | Type-safe ORM for SQLite     | Zero-query overhead, TS-first     |
-| **winston**      | 3.19.0  | Logging framework            | Structured logging, rotation      |
+| Package         | Version | Purpose                  | Selection Notes                   |
+| --------------- | ------- | ------------------------ | --------------------------------- |
+| **discord.js**  | 14.26.4 | Discord bot framework    | Standard, active, well-maintained |
+| **drizzle-orm** | 0.45.2  | Type-safe ORM for SQLite | Zero-query overhead, TS-first     |
+| **winston**     | 3.19.0  | Logging framework        | Structured logging, rotation      |
 
 > **Note:** `dotenv`, `node-fetch`, and `sqlite3` were removed. Bun loads `.env` natively, provides a built-in Fetch API, and includes `bun:sqlite` as a first-party module.
 
 ### Current Development Dependencies
 
-| Package                 | Purpose              | Rationale                        |
-| ----------------------- | -------------------- | -------------------------------- |
-| **@typescript-eslint/** | Code quality         | Mandatory for TypeScript linting |
-| **eslint**              | Linting              | Code consistency                 |
-| **prettier**            | Formatting           | Code style consistency           |
-| **typescript**          | Type-check only      | `noEmit: true`; Bun runs TS natively |
-| **@types/bun**          | Bun type definitions | Required for `bun:sqlite` types  |
+| Package                 | Purpose              | Rationale                              |
+| ----------------------- | -------------------- | -------------------------------------- |
+| **@typescript-eslint/** | Code quality         | Mandatory for TypeScript linting       |
+| **eslint**              | Linting              | Code consistency                       |
+| **prettier**            | Formatting           | Code style consistency                 |
+| **typescript**          | Type-check only      | `noEmit: true`; Bun runs TS natively   |
+| **@types/bun**          | Bun type definitions | Required for `bun:sqlite` types        |
 | **drizzle-kit**         | Schema management    | Generate SQL migrations from TS schema |
-| **husky**               | Git hooks            | Mandatory for pre-commit checks  |
-| **commitlint**          | Commit validation    | Enforce Conventional Commits     |
-| **lint-staged**         | Pre-commit linting   | Quality gates                    |
+| **husky**               | Git hooks            | Mandatory for pre-commit checks        |
+| **commitlint**          | Commit validation    | Enforce Conventional Commits           |
+| **lint-staged**         | Pre-commit linting   | Quality gates                          |
 
 ### Adding New Dependencies
 

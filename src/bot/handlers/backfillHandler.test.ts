@@ -19,7 +19,13 @@
 import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from 'bun:test';
 import { ChannelType } from 'discord.js';
 import { db, initializeDatabase } from '../database/db';
-import { users, redeemedCodes, pendingCodes, auditLog, backfillOperations } from '../database/schema/index';
+import {
+  users,
+  redeemedCodes,
+  pendingCodes,
+  auditLog,
+  backfillOperations,
+} from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import IdleChampionsApi from '../api/idleChampionsApi';

@@ -21,7 +21,9 @@ function loadKey(): Buffer {
     throw new Error('ENCRYPTION_KEY environment variable is not set');
   }
   if (!/^[0-9a-fA-F]{64}$/.test(raw)) {
-    throw new Error('ENCRYPTION_KEY must be exactly a 64-character hex string (32 bytes for AES-256)');
+    throw new Error(
+      'ENCRYPTION_KEY must be exactly a 64-character hex string (32 bytes for AES-256)'
+    );
   }
   return Buffer.from(raw, 'hex');
 }

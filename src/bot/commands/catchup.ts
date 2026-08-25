@@ -109,14 +109,17 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    let instanceId = userData.details.instance_id !== null && userData.details.instance_id !== undefined
-      ? String(userData.details.instance_id).trim()
-      : '';
+    let instanceId =
+      userData.details.instance_id !== null && userData.details.instance_id !== undefined
+        ? String(userData.details.instance_id).trim()
+        : '';
     if (!instanceId || instanceId === '0') {
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Error')
-        .setDescription('Could not determine your game instance. Please open the game and try again later.');
+        .setDescription(
+          'Could not determine your game instance. Please open the game and try again later.'
+        );
 
       await interaction.editReply({ embeds: [embed] });
       return;
@@ -153,9 +156,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             hash: credentials.userHash,
           });
           const refreshed = refreshResult as any;
-          const refreshedInstanceId = refreshed?.details?.instance_id !== null && refreshed?.details?.instance_id !== undefined
-            ? String(refreshed.details.instance_id).trim()
-            : '';
+          const refreshedInstanceId =
+            refreshed?.details?.instance_id !== null &&
+            refreshed?.details?.instance_id !== undefined
+              ? String(refreshed.details.instance_id).trim()
+              : '';
           if (refreshedInstanceId && refreshedInstanceId !== '0') {
             instanceId = refreshedInstanceId;
           }
@@ -252,9 +257,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Error')
-        .setDescription(
-          `An error occurred: ${errorMessage(error)}`
-        );
+        .setDescription(`An error occurred: ${errorMessage(error)}`);
 
       if (interaction.deferred) {
         await interaction.editReply({ embeds: [embed] });

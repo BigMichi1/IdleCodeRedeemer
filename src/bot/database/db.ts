@@ -29,7 +29,9 @@ try {
   ({ sqlite, db: _db } = createConnection());
   logger.debug('Connected to SQLite database');
 } catch (err: any) {
-  logger.error(`Failed to initialize SQLite database at ${DB_PATH}: ${err?.message || String(err)}`);
+  logger.error(
+    `Failed to initialize SQLite database at ${DB_PATH}: ${err?.message || String(err)}`
+  );
   process.exit(1);
 }
 

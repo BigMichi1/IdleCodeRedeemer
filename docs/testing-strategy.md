@@ -7,6 +7,7 @@ This document describes how automated tests are run in this project's CI/CD pipe
 All commits to the primary branch must be validated through automated test suites running in CI/CD pipelines. These tests verify that changes meet functional and quality expectations.
 
 **Key Principles:**
+
 - ✅ Tests run on every pull request and commit to main
 - ✅ Results are visible to all contributors
 - ✅ Tests run in consistent Docker environment
@@ -22,6 +23,7 @@ All commits to the primary branch must be validated through automated test suite
 **Type**: Automated compile-time validation
 
 **Command (Local)**:
+
 ```bash
 mise run build
 ```
@@ -29,6 +31,7 @@ mise run build
 **CI/CD Trigger**: Runs as part of docker.yml workflow on every push and PR
 
 **What It Checks**:
+
 - ✅ TypeScript strict mode compilation passes
 - ✅ No type errors or type safety issues
 - ✅ Valid JavaScript output generated
@@ -45,11 +48,13 @@ mise run build
 **Type**: Automated linting with ESLint
 
 **Command (Local)**:
+
 ```bash
 mise run lint
 ```
 
 **Command (Fix Issues)**:
+
 ```bash
 mise run lint:fix
 ```
@@ -57,6 +62,7 @@ mise run lint:fix
 **CI/CD Trigger**: Runs via pre-commit hooks and GitHub Actions on every push/PR
 
 **What It Checks**:
+
 - ✅ No undefined variables or unused imports
 - ✅ Proper error handling (try/catch on promises)
 - ✅ Code style consistency (naming conventions, formatting)
@@ -74,6 +80,7 @@ mise run lint:fix
 **Type**: Automated CodeQL analysis + Dependency scanning
 
 **Commands (Local)**:
+
 ```bash
 # Check for vulnerable dependencies
 bun audit
@@ -83,11 +90,13 @@ bun outdated
 ```
 
 **CI/CD Triggers**:
+
 - **CodeQL**: Runs on every PR and push to main (codeql.yml)
 - **Dependency Review**: Runs when package.json changes (dependency-review.yml)
 - **Secret Scanning**: Runs on every push and PR (secrets.yml)
 
 **What It Checks**:
+
 - ✅ No SQL injection vulnerabilities
 - ✅ No hardcoded credentials
 - ✅ No unsafe crypto usage
@@ -107,6 +116,7 @@ bun outdated
 **Configuration**: `tsconfig.bot.json` with `strict: true`
 
 **Command (Local)**:
+
 ```bash
 tsc -p tsconfig.bot.json --noEmit
 ```
@@ -114,6 +124,7 @@ tsc -p tsconfig.bot.json --noEmit
 **CI/CD Trigger**: Runs as part of docker.yml build process
 
 **What It Checks**:
+
 - ✅ All variables have explicit types
 - ✅ No implicit `any` types
 - ✅ Function parameters and returns are typed
@@ -131,11 +142,13 @@ tsc -p tsconfig.bot.json --noEmit
 **Type**: Prettier code formatter
 
 **Command (Local)**:
+
 ```bash
 mise run format
 ```
 
 **Command (Check Only)**:
+
 ```bash
 mise run format:check
 ```
@@ -143,6 +156,7 @@ mise run format:check
 **CI/CD Trigger**: Pre-commit hooks enforce formatting on every commit
 
 **What It Checks**:
+
 - ✅ Consistent indentation (2 spaces)
 - ✅ Line length (80 chars in some files)
 - ✅ Consistent quote style (single quotes in TS)
@@ -160,30 +174,32 @@ mise run format:check
 **Type**: Automated unit tests using the built-in Bun test runner
 
 **Command (Local)**:
+
 ```bash
 bun test
 ```
 
 **Watch Mode (Local)**:
+
 ```bash
 bun test --watch
 ```
 
 **What It Tests**:
 
-| File | Tests | Coverage |
-|------|-------|----------|
-| `src/bot/handlers/codeScanner.test.ts` | ~12 | `extractCodesFromText` — regex patterns, emoji stripping, case normalisation, edge cases |
-| `src/bot/handlers/autoRedeemer.test.ts` | ~10 | Queue serialization, DM sending, skip logic |
-| `src/bot/handlers/backfillHandler.test.ts` | ~8 | Message history scanning, code extraction, server swap handling |
-| `src/bot/database/codeManager.test.ts` | ~32 | All `CodeManager` methods — per-user redemption, public/private codes, pending codes, expiry, loot totals |
-| `src/bot/database/userManager.test.ts` | ~13 | All `UserManager` CRUD operations, AES-256-GCM encryption/decryption |
-| `src/bot/database/auditManager.test.ts` | ~8 | Audit log operations |
-| `src/bot/database/backfillManager.test.ts` | ~8 | Backfill rate limiting, global lock |
-| `src/bot/commands/notifications.test.ts` | ~6 | `/notifications` command, preference updates |
-| `src/bot/commands/stats.test.ts` | ~5 | `/stats` with empty/populated DB |
-| `src/bot/commands/logs.test.ts` | ~5 | `/logs` command with mocked filesystem |
-| `src/bot/utils/apiRequestLogger.test.ts` | ~6 | API log file cleanup, sensitive param masking |
+| File                                       | Tests | Coverage                                                                                                  |
+| ------------------------------------------ | ----- | --------------------------------------------------------------------------------------------------------- |
+| `src/bot/handlers/codeScanner.test.ts`     | ~12   | `extractCodesFromText` — regex patterns, emoji stripping, case normalisation, edge cases                  |
+| `src/bot/handlers/autoRedeemer.test.ts`    | ~10   | Queue serialization, DM sending, skip logic                                                               |
+| `src/bot/handlers/backfillHandler.test.ts` | ~8    | Message history scanning, code extraction, server swap handling                                           |
+| `src/bot/database/codeManager.test.ts`     | ~32   | All `CodeManager` methods — per-user redemption, public/private codes, pending codes, expiry, loot totals |
+| `src/bot/database/userManager.test.ts`     | ~13   | All `UserManager` CRUD operations, AES-256-GCM encryption/decryption                                      |
+| `src/bot/database/auditManager.test.ts`    | ~8    | Audit log operations                                                                                      |
+| `src/bot/database/backfillManager.test.ts` | ~8    | Backfill rate limiting, global lock                                                                       |
+| `src/bot/commands/notifications.test.ts`   | ~6    | `/notifications` command, preference updates                                                              |
+| `src/bot/commands/stats.test.ts`           | ~5    | `/stats` with empty/populated DB                                                                          |
+| `src/bot/commands/logs.test.ts`            | ~5    | `/logs` command with mocked filesystem                                                                    |
+| `src/bot/utils/apiRequestLogger.test.ts`   | ~6    | API log file cleanup, sensitive param masking                                                             |
 
 **Total**: 110+ tests across 11 files
 
@@ -257,6 +273,7 @@ echo "✅ All local tests passed!"
 ```
 
 Run with:
+
 ```bash
 chmod +x scripts/test-locally.sh
 ./scripts/test-locally.sh
@@ -295,14 +312,14 @@ When you open a pull request:
 
 ### Status Checks Required to Pass
 
-| Check | Workflow | Type | Blocking |
-|-------|----------|------|----------|
-| DCO Sign-Off | dco-check.yml | Legal | ✅ Yes |
-| Compilation | docker.yml | Build | ✅ Yes |
-| Linting | docker.yml | Quality | ✅ Yes |
-| CodeQL Security | codeql.yml | Security | ✅ Yes |
-| Dependencies | dependency-review.yml | Security | ✅ Yes |
-| Secrets | secrets.yml | Security | ✅ Yes |
+| Check           | Workflow              | Type     | Blocking |
+| --------------- | --------------------- | -------- | -------- |
+| DCO Sign-Off    | dco-check.yml         | Legal    | ✅ Yes   |
+| Compilation     | docker.yml            | Build    | ✅ Yes   |
+| Linting         | docker.yml            | Quality  | ✅ Yes   |
+| CodeQL Security | codeql.yml            | Security | ✅ Yes   |
+| Dependencies    | dependency-review.yml | Security | ✅ Yes   |
+| Secrets         | secrets.yml           | Security | ✅ Yes   |
 
 ### Test Environment
 
@@ -314,6 +331,7 @@ All CI/CD tests run in a consistent Docker environment:
 **Environment**: Ubuntu 24.04
 
 **Installed Tools**:
+
 - bun (package manager)
 - node (runtime)
 - TypeScript (compiler)
@@ -327,12 +345,14 @@ All CI/CD tests run in a consistent Docker environment:
 ### For Contributors
 
 Test results are visible:
+
 - ✅ In the pull request status checks section
 - ✅ In GitHub Actions tab (detailed logs)
 - ✅ In individual workflow runs
 - ✅ In commit status (if pushed directly)
 
 **Example PR Status**:
+
 ```
 ✅ Build (Docker build & compile) — Passed 15 mins ago
 ✅ CodeQL (codeql-analysis) — Passed 14 mins ago
@@ -344,12 +364,14 @@ Test results are visible:
 ### Detailed Logs
 
 Click "Details" on any failed check to see:
+
 - ✅ Exact error messages
 - ✅ File and line numbers
 - ✅ Recommended fixes
 - ✅ Full workflow logs
 
 **Example Error**:
+
 ```
 ❌ Build failed
 
@@ -364,9 +386,11 @@ Fix: Remove unused variable or use in code
 ### For All Contributors
 
 1. **Run Tests Before Submitting PR**
+
    ```bash
    ./scripts/test-locally.sh
    ```
+
    This catches issues early and speeds up PR review.
 
 2. **Review Test Failures Carefully**
@@ -409,6 +433,7 @@ Fix: Remove unused variable or use in code
 **Error**: `error TS2307: Cannot find module '@types/...'`
 
 **Fix**:
+
 ```bash
 bun install
 mise run build
@@ -423,6 +448,7 @@ mise run build
 **Error**: `error  'userId' is assigned a value but never used  no-unused-vars`
 
 **Fix**:
+
 ```bash
 # Option 1: Remove unused variable
 # Delete the line: const userId = ...
@@ -441,15 +467,18 @@ mise run lint:fix
 **Error**: `CodeQL: SQL Injection vulnerability in query`
 
 **Fix**:
+
 1. Review the vulnerable code in GitHub Security tab
 2. Use parameterized queries:
+
    ```typescript
    // ❌ Vulnerable
    db.exec(`SELECT * FROM users WHERE id = '${userId}'`);
-   
+
    // ✅ Safe
    db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
    ```
+
 3. Push fix and test will re-run
 
 ---
@@ -459,6 +488,7 @@ mise run lint:fix
 **Error**: `npm audit: High severity vulnerability in dependency@1.0.0`
 
 **Fix**:
+
 ```bash
 # Update to patched version
 bun add dependency@latest
@@ -480,6 +510,7 @@ git commit -m "chore: update dependencies for security"
 **Error**: `Secret scanning found: GitHub token in code`
 
 **Fix**:
+
 ```bash
 # Remove the secret from code
 # Put it in .env file instead
@@ -488,7 +519,7 @@ git commit -m "chore: update dependencies for security"
 GITHUB_TOKEN=ghp_...
 
 # code file
-const token = process.env.GITHUB_TOKEN;
+const token = process.env.GITHUB_TOKEN
 
 # Verify Gitleaks passes
 mise run gitleaks
@@ -496,15 +527,15 @@ mise run gitleaks
 
 ## OSPS-QA-06.01 Compliance
 
-| Requirement | Status | Evidence |
-|---|---|---|
-| **Automated test suite configured** | ✅ | 6 test suites documented, 6 CI/CD workflows + 57 unit tests |
-| **Tests run before every merge** | ✅ | Branch protection requires checks pass |
-| **Results visible to contributors** | ✅ | GitHub Actions logs, PR status checks |
-| **Consistent environment** | ✅ | Docker container with standardized tools |
-| **Local testing available** | ✅ | Test commands documented, scripts provided |
-| **Multiple test types** | ✅ | Build, linting, security, type checking, formatting, unit tests |
-| **Documented** | ✅ | This file (testing-strategy.md) and CONTRIBUTING.md |
+| Requirement                         | Status | Evidence                                                        |
+| ----------------------------------- | ------ | --------------------------------------------------------------- |
+| **Automated test suite configured** | ✅     | 6 test suites documented, 6 CI/CD workflows + 57 unit tests     |
+| **Tests run before every merge**    | ✅     | Branch protection requires checks pass                          |
+| **Results visible to contributors** | ✅     | GitHub Actions logs, PR status checks                           |
+| **Consistent environment**          | ✅     | Docker container with standardized tools                        |
+| **Local testing available**         | ✅     | Test commands documented, scripts provided                      |
+| **Multiple test types**             | ✅     | Build, linting, security, type checking, formatting, unit tests |
+| **Documented**                      | ✅     | This file (testing-strategy.md) and CONTRIBUTING.md             |
 
 ## References
 

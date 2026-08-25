@@ -1,4 +1,13 @@
-import { describe, test, expect, beforeAll, beforeEach, afterEach, afterAll, spyOn } from 'bun:test';
+import {
+  describe,
+  test,
+  expect,
+  beforeAll,
+  beforeEach,
+  afterEach,
+  afterAll,
+  spyOn,
+} from 'bun:test';
 import { db, initializeDatabase } from '../database/db';
 import { users, redeemedCodes, pendingCodes, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
@@ -49,12 +58,12 @@ let setTimeoutSpy: ReturnType<typeof spyOn>;
 beforeAll(() => {
   initializeDatabase();
   // Make randomDelay a no-op so tests don't wait 2–5 s per transition.
-  setTimeoutSpy = spyOn(globalThis, 'setTimeout').mockImplementation(
-    ((fn: (...args: unknown[]) => void) => {
-      if (typeof fn === 'function') fn();
-      return 0 as unknown as ReturnType<typeof setTimeout>;
-    }) as unknown as typeof setTimeout
-  );
+  setTimeoutSpy = spyOn(globalThis, 'setTimeout').mockImplementation(((
+    fn: (...args: unknown[]) => void
+  ) => {
+    if (typeof fn === 'function') fn();
+    return 0 as unknown as ReturnType<typeof setTimeout>;
+  }) as unknown as typeof setTimeout);
 });
 
 beforeEach(() => {
@@ -371,7 +380,9 @@ function makeMockClient() {
 }
 
 describe('autoRedeemForAllUsers – dmOnSuccess', () => {
-  afterEach(() => { setDiscordClient(null); });
+  afterEach(() => {
+    setDiscordClient(null);
+  });
 
   test('sends DM on success when dmOnSuccess is true (default)', async () => {
     const { mockClient, sendSpy } = makeMockClient();
@@ -403,7 +414,9 @@ describe('autoRedeemForAllUsers – dmOnSuccess', () => {
 });
 
 describe('autoRedeemForAllUsers – dmOnFailure', () => {
-  afterEach(() => { setDiscordClient(null); });
+  afterEach(() => {
+    setDiscordClient(null);
+  });
 
   test('sends failure DM when dmOnFailure is true', async () => {
     const { mockClient, sendSpy } = makeMockClient();

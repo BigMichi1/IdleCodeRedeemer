@@ -287,8 +287,9 @@ client.on(Events.MessageCreate, async (message) => {
                   const label = `New code${unredeemedCodes.length > 1 ? 's' : ''} detected: ${codeList}`;
                   const u = await client.users.fetch(id);
                   await u.send(`🔔 ${label}`);
-                } catch { /* DM delivery failure is non-critical */ }
-                finally {
+                } catch {
+                  /* DM delivery failure is non-critical */
+                } finally {
                   if (i < recipientIds.length - 1) {
                     await new Promise<void>((resolve) => setTimeout(resolve, 500));
                   }

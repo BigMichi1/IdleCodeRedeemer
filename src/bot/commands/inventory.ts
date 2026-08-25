@@ -50,7 +50,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     // Handle server switch
-    if (result instanceof Object && 'status' in result && (result as any).status === ResponseStatus.SwitchServer) {
+    if (
+      result instanceof Object &&
+      'status' in result &&
+      (result as any).status === ResponseStatus.SwitchServer
+    ) {
       // ResponseStatus.SwitchServer
       await userManager.updateServer(interaction.user.id, (result as any).newServer);
 

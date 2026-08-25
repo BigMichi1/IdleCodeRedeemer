@@ -31,7 +31,9 @@ let redeemQueue: Promise<void> = Promise.resolve();
 export function enqueueAutoRedeem(codes: string[]): void {
   redeemQueue = redeemQueue
     .then(() => autoRedeemForAllUsers(codes))
-    .catch((error) => { logger.error('[AUTO REDEEMER] Unhandled error during auto-redeem:', error); });
+    .catch((error) => {
+      logger.error('[AUTO REDEEMER] Unhandled error during auto-redeem:', error);
+    });
 }
 
 /**
@@ -176,7 +178,8 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
       logger.error(
         `[AUTO REDEEMER] submitCode returned GenericResponse status=${generic.status} for code ${code}, user ${discordId}`
       );
-      if (credentials.dmOnFailure) sendFailureDm(discordId, code, `Server Error (status ${generic.status})`);
+      if (credentials.dmOnFailure)
+        sendFailureDm(discordId, code, `Server Error (status ${generic.status})`);
       return;
     }
   }
@@ -193,9 +196,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
   const isAlreadyRedeemed = codeResponse.codeStatus === CodeSubmitStatus.AlreadyRedeemed;
   const isExpiredStatus = codeResponse.codeStatus === CodeSubmitStatus.Expired;
 
-  logger.info(
-    `[AUTO REDEEMER] Code ${code} → ${statusName} for user ${discordId}`
-  );
+  logger.info(`[AUTO REDEEMER] Code ${code} → ${statusName} for user ${discordId}`);
 
   if (isAlreadyRedeemed) {
     // Persist so isCodeRedeemedByUser() short-circuits on future runs

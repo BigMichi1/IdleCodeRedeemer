@@ -11,7 +11,6 @@ import { resolveGameSession } from './gameSession';
 import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
 
-
 export const data = new SlashCommandBuilder()
   .setName('open')
   .setDescription('Open chests in Idle Champions')
