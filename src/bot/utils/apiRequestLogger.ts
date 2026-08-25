@@ -72,7 +72,11 @@ class ApiRequestLogger {
   }
 
   /**
-   * Sanitize URL to remove sensitive parameters
+   * Mask sensitive query parameters in a URL.
+   *
+   * Scope note: this covers the URL only. The logged `userId` field and the
+   * request/response bodies are written verbatim, so files under api-logs/
+   * must be treated as sensitive regardless of this masking.
    */
   private sanitizeUrl(url: string): string {
     try {

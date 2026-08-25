@@ -92,7 +92,7 @@ When you push a git tag matching `v*` pattern:
      - `latest` - Only if tag is on main branch
 
 3. **GitHub Release** (Create Manually)
-   - Go to [GitHub Releases](https://github.com/BigMichi1/idle-code-redeemer/releases)
+   - Go to [GitHub Releases](https://github.com/BigMichi1/IdleCodeRedeemer/releases)
    - Click "Draft a new release"
    - Select the git tag you just pushed
    - **Title**: Use version: `2.1.0`
@@ -145,7 +145,7 @@ git tag -a v2.1.0 -m "Release version 2.1.0: Add /makepublic command"
 git push origin v2.1.0
 
 # 5. Create GitHub Release (manual, in web interface)
-# - Go to https://github.com/BigMichi1/idle-code-redeemer/releases/new
+# - Go to https://github.com/BigMichi1/IdleCodeRedeemer/releases/new
 # - Select tag: v2.1.0
 # - Title: 2.1.0
 # - Description: Copy from CHANGELOG.md [2.1.0] section:
@@ -155,7 +155,7 @@ git push origin v2.1.0
 # - Publish
 
 # 6. Verify
-# - Docker image published: ghcr.io/bigmichi1/idle-code-redeemer-bot:2.1.0
+# - Docker image published: ghcr.io/bigmichi1/idlecoderedeemer:2.1.0
 # - GitHub release visible on releases page
 # - CHANGELOG.md reflects new version
 ```
@@ -167,30 +167,30 @@ When a release is created, Docker images are automatically published with these 
 ### Main Branch Builds
 
 ```
-ghcr.io/bigmichi1/idle-code-redeemer-bot:main-<SHA>
-ghcr.io/bigmichi1/idle-code-redeemer-bot:latest
+ghcr.io/bigmichi1/idlecoderedeemer:main-<SHA>
+ghcr.io/bigmichi1/idlecoderedeemer:latest
 ```
 
 ### Version Tag Builds (Releases)
 
 ```
-ghcr.io/bigmichi1/idle-code-redeemer-bot:v2.1.0      # Full version
-ghcr.io/bigmichi1/idle-code-redeemer-bot:2.1         # Major.minor
-ghcr.io/bigmichi1/idle-code-redeemer-bot:2           # Major only
-ghcr.io/bigmichi1/idle-code-redeemer-bot:<SHA>       # Commit SHA
+ghcr.io/bigmichi1/idlecoderedeemer:v2.1.0      # Full version
+ghcr.io/bigmichi1/idlecoderedeemer:2.1         # Major.minor
+ghcr.io/bigmichi1/idlecoderedeemer:2           # Major only
+ghcr.io/bigmichi1/idlecoderedeemer:<SHA>       # Commit SHA
 ```
 
 ### Using Specific Versions
 
 ```bash
 # Pull a specific release
-docker pull ghcr.io/bigmichi1/idle-code-redeemer-bot:v2.1.0
+docker pull ghcr.io/bigmichi1/idlecoderedeemer:v2.1.0
 
 # Pull major.minor (gets latest patch)
-docker pull ghcr.io/bigmichi1/idle-code-redeemer-bot:2.1
+docker pull ghcr.io/bigmichi1/idlecoderedeemer:2.1
 
 # Pull latest stable
-docker pull ghcr.io/bigmichi1/idle-code-redeemer-bot:latest
+docker pull ghcr.io/bigmichi1/idlecoderedeemer:latest
 ```
 
 ## Release Changelog Integration
@@ -275,9 +275,9 @@ export COSIGN_EXPERIMENTAL=1
 
 # Verify image signed by our workflow
 cosign verify \
-  --certificate-identity-regexp "github.com/BigMichi1/idle-code-redeemer@refs/tags/v.*" \
+  --certificate-identity-regexp "github.com/BigMichi1/IdleCodeRedeemer@refs/tags/v.*" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  ghcr.io/bigmichi1/idle-code-redeemer-bot:2.1.0
+  ghcr.io/bigmichi1/idlecoderedeemer:2.1.0
 ```
 
 **Verify Attestation Files** (Download from GitHub Release):

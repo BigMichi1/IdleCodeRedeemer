@@ -138,7 +138,7 @@ This project recognizes and appreciates the work of security researchers. Report
 ### Contact Information for Security Issues
 
 **Preferred Method**: GitHub Security Advisory
-- Go to [Security](https://github.com/BigMichi1/idle-code-redeemer/security) tab
+- Go to [Security](https://github.com/BigMichi1/IdleCodeRedeemer/security) tab
 - Click **"Report a vulnerability"**
 - Fill in vulnerability details
 - Submit report (ensures direct maintainer contact)
@@ -294,7 +294,7 @@ Instead, report security issues privately using one of the methods below:
 
 Use GitHub's private vulnerability reporting feature:
 
-1. Go to the [Security](https://github.com/BigMichi1/idle-code-redeemer/security) tab of this repository
+1. Go to the [Security](https://github.com/BigMichi1/IdleCodeRedeemer/security) tab of this repository
 2. Click **"Report a vulnerability"**
 3. Fill in the vulnerability details
 4. Submit the report
@@ -341,7 +341,7 @@ When running this Discord bot, follow these security practices:
 ### Deployment
 
 - **Use HTTPS** when deploying to production
-- **Keep dependencies updated** - Run `mise run update` regularly
+- **Keep dependencies updated** - Run `./bin/mise run update` regularly
 - **Enable branch protection** - Require reviews before merging code
 - **Scan for secrets** - Pre-commit hooks automatically scan for exposed credentials (Gitleaks + TruffleHog)
 
@@ -390,7 +390,7 @@ This project implements the following security controls:
 
 ### Dependencies [OSPS-QA-02.01]
 
-- ✅ All dependencies tracked in package.json and bun.lock (with frozen-lockfile CI verification)
+- ✅ All dependencies tracked in package.json and bun.lock (the image build verifies against the lockfile)
 - ✅ Dependabot monitors for vulnerable packages
 - ✅ Dependency review required on PRs
 
@@ -406,8 +406,8 @@ Standardized tooling is used for all dependency ingestion:
 
 - **Package Manager**: Bun (standardized for Node.js ecosystem)
 - **Manifests**: `package.json` (declares dependencies), `bun.lock` (ensures reproducibility)
-- **CI/CD**: All workflows use `--frozen-lockfile` to prevent unexpected dependency changes
-- **Vulnerability Scanning**: `bun audit` on every push detects known vulnerabilities
+- **CI/CD**: The Docker image build installs with `--frozen-lockfile`, so it fails rather than silently drifting from `bun.lock`. The test workflow installs without the flag.
+- **Vulnerability Scanning**: Dependabot and the `dependency-review` workflow flag vulnerable dependencies on pull requests. `bun audit` is available as a local check (`./bin/mise run audit`) but is not run automatically.
 - **Lock File Tracking**: `bun.lock` is tracked in git for bit-for-bit reproducible builds
 - **Container Builds**: Docker uses frozen lock files to guarantee identical runtime environments
 - **Update Process**: Documented safe dependency update procedures in [docs/dependency-management.md](docs/dependency-management.md)
@@ -428,9 +428,9 @@ All official releases are cryptographically signed using **Cosign (Keyless OIDC)
 ### Release Assets Signed
 
 1. **Docker Images** (Published to GHCR)
-   - Full version tag: `ghcr.io/bigmichi1/idle-code-redeemer-bot:2.0.0`
-   - Major.minor tag: `ghcr.io/bigmichi1/idle-code-redeemer-bot:2.0`
-   - Major tag: `ghcr.io/bigmichi1/idle-code-redeemer-bot:2`
+   - Full version tag: `ghcr.io/bigmichi1/IdleCodeRedeemer-bot:2.0.0`
+   - Major.minor tag: `ghcr.io/bigmichi1/IdleCodeRedeemer-bot:2.0`
+   - Major tag: `ghcr.io/bigmichi1/IdleCodeRedeemer-bot:2`
    - All images signed using Cosign keyless method
 
 2. **Release Attestation** (Attached to GitHub Release)
@@ -449,7 +449,7 @@ chmod +x cosign
 export COSIGN_EXPERIMENTAL=1
 
 # Verify Docker image
-cosign verify ghcr.io/bigmichi1/idle-code-redeemer-bot:2.0.0
+cosign verify ghcr.io/bigmichi1/IdleCodeRedeemer-bot:2.0.0
 
 # Verify attestation files (available in GitHub release)
 cosign verify-blob \
@@ -482,7 +482,7 @@ Documented selection criteria in [docs/dependency-management.md](docs/dependency
 - **Manifests**:
   - `package.json` - Declares all dependencies (production + dev)
   - `bun.lock` - Locks exact versions for reproducibility
-- **Verification**: `bun audit` scans for vulnerabilities on every push
+- **Verification**: `dependency-review` runs on pull requests; `bun audit` is a local check
 - **Automation**: Dependabot creates PRs for dependency updates weekly
 
 ### How Dependencies Are Tracked
@@ -578,17 +578,17 @@ All code is validated through automated test suites running in CI/CD pipelines b
 - ✅ Troubleshooting failed tests [OSPS-QA-06.01]
 
 **Test Suites Required to Pass:**
-1. Build & Compilation (TypeScript strict mode) - `mise run build`
-2. Code Quality/Linting (ESLint) - `mise run lint`
+1. Build & Compilation (TypeScript strict mode) - `./bin/mise run build`
+2. Code Quality/Linting (ESLint) - `./bin/mise run lint`
 3. Security Scanning (CodeQL, dependencies, secrets)
 4. Type Safety (TypeScript strict mode) - part of build
-5. Code Formatting (Prettier) - `mise run format`
+5. Code Formatting (Prettier) - `./bin/mise run format`
 
 **Local Testing Before PR:**
 ```bash
-mise run build      # Compile and check types
-mise run lint:fix   # Fix linting issues
-mise run format     # Format code
+./bin/mise run build      # Compile and check types
+./bin/mise run lint:fix   # Fix linting issues
+./bin/mise run format     # Format code
 bun audit           # Check for vulnerabilities
 ```
 
@@ -705,10 +705,10 @@ This project provides comprehensive instructions on how to build the software fr
 
 ```bash
 # Install all required dependencies
-mise run install
+./bin/mise run install
 
 # Build the production binary
-mise run prod:build
+./bin/mise run prod:build
 
 # Run the bot
 ./dist-bundle/bot

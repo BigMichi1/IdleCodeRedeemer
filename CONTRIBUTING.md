@@ -18,7 +18,9 @@ Thank you for your interest in contributing to the Idle Champions Code Redeemer 
 
 ## Code of Conduct
 
-This project adheres to a Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+This project expects respectful, professional conduct from everyone taking part. Harassment, personal attacks and other unacceptable behaviour are not tolerated. Report concerns to the project maintainers via the contacts in [SECURITY_CONTACTS.md](SECURITY_CONTACTS.md).
+
+There is no separate `CODE_OF_CONDUCT.md`; this section is the policy.
 
 ## Developer Certificate of Origin
 
@@ -67,7 +69,7 @@ git config --global alias.cs 'commit -s'
 This project enforces DCO via:
 
 - ✅ **GitHub Actions** - Status check verifies all commits are signed off
-- ✅ **Pre-commit Hooks** - Warn about unsigned commits
+- ✅ **Pre-push Hook** - Blocks a push when any commit being pushed lacks a sign-off
 - ✅ **Pull Request Requirements** - Blocks merging if commits lack sign-offs
 
 **If a commit is missing a sign-off, the pull request will fail CI/CD checks and cannot be merged.**
@@ -100,10 +102,10 @@ All contributions must meet the following requirements to be accepted. This sect
 Every code contribution must:
 
 ✅ **Lint & Format**
-- Pass ESLint checks (`mise run lint`)
-- Follow Prettier formatting (`mise run format`)
-- No linting warnings or errors
-- Automated pre-commit hooks enforce this
+- Pass ESLint checks (`./bin/mise run lint`)
+- Follow Prettier formatting (`./bin/mise run format`)
+- No new linting warnings (one pre-existing `eqeqeq` warning is known) or errors
+- The pre-commit hook runs ESLint; Prettier is not automated, so run `./bin/mise run format` before pushing
 
 ✅ **Type Safety**
 - Use TypeScript strict mode (`strict: true`)
@@ -141,7 +143,7 @@ Every contribution must include appropriate testing:
 ✅ **Unit Tests**
 - Add tests for new functions and classes
 - Add tests for bug fixes (regression tests)
-- Tests must pass (`mise run test`)
+- Tests must pass (`./bin/mise run test`)
 - Aim for adequate coverage of changed code
 - Tests must be maintainable and clear
 
@@ -152,7 +154,7 @@ Every contribution must include appropriate testing:
 - Document test setup in PR description
 
 ✅ **Manual Testing**
-- Test in development environment (`mise run dev`)
+- Test in development environment (`./bin/mise run dev`)
 - Test in Discord server before submitting
 - Include testing steps in PR description
 - For database changes: verify data integrity
@@ -203,8 +205,8 @@ Every pull request must:
 - Include screenshots if UI changes
 
 ✅ **PR Checklist**
-- Code builds successfully (`mise run build`)
-- Passes linting (`mise run lint`)
+- Code builds successfully (`./bin/mise run build`)
+- Passes linting (`./bin/mise run lint`)
 - Passes security scans (Gitleaks)
 - Tests pass and are included
 - CHANGELOG.md updated
@@ -266,7 +268,7 @@ A contribution is ready to merge when it meets ALL of the following:
 | **Documentation** | ✅ | CHANGELOG updated, comments present, docs updated |
 | **Review** | ✅ | At least one maintainer approval |
 | **CI/CD** | ✅ | All automated checks pass |
-| **Builds** | ✅ | `mise run build` succeeds |
+| **Builds** | ✅ | `./bin/mise run build` succeeds |
 | **Tested** | ✅ | Verified to work locally |
 
 **If ANY criterion is not met, the PR cannot be merged.** Requesters must address feedback before re-review.
@@ -339,26 +341,26 @@ Before you start, you need:
 
 ```bash
 # 1. Fork the repository
-# Go to https://github.com/BigMichi1/idle-code-redeemer
+# Go to https://github.com/BigMichi1/IdleCodeRedeemer
 # Click "Fork" button
 
 # 2. Clone your fork
-git clone https://github.com/YOUR_USERNAME/idle-code-redeemer.git
-cd idle-code-redeemer
+git clone https://github.com/YOUR_USERNAME/IdleCodeRedeemer.git
+cd IdleCodeRedeemer
 
 # 3. Add upstream remote (for staying in sync)
-git remote add upstream https://github.com/BigMichi1/idle-code-redeemer.git
+git remote add upstream https://github.com/BigMichi1/IdleCodeRedeemer.git
 
 # 4. Set up Mise
 mise trust
-mise run install
+./bin/mise run install
 
 # 5. Configure environment
 cp .env.example .env
 # Edit .env with your DISCORD_TOKEN for testing
 
 # 6. Verify setup
-mise tasks
+./bin/mise tasks
 ```
 
 ## Building the Project
@@ -376,13 +378,13 @@ See [BUILD.md](BUILD.md) for complete build documentation including:
 
 ```bash
 # Install dependencies
-mise run install
+./bin/mise run install
 
 # Development build (type-check only)
-mise run build
+./bin/mise run build
 
 # Production build (self-contained binary)
-mise run prod:build
+./bin/mise run prod:build
 
 # Run the bot
 ./dist-bundle/bot
@@ -415,13 +417,13 @@ git checkout -b feature/your-feature-name
 ```bash
 # Edit files
 # Run linting
-mise run lint:fix
+./bin/mise run lint:fix
 
 # Format code
-mise run format
+./bin/mise run format
 
 # Build to verify
-mise run build
+./bin/mise run build
 ```
 
 ### 3. Update CHANGELOG
@@ -470,17 +472,17 @@ mise run build
 
 ```bash
 # Run linting
-mise run lint
+./bin/mise run lint
 
 # Run audits
-mise run audit
+./bin/mise run audit
 
 # Manual testing
-mise run dev
+./bin/mise run dev
 # Test your changes in Discord
 
 # Production build test
-mise run prod:build
+./bin/mise run prod:build
 ```
 
 ### 5. Commit Changes
@@ -512,21 +514,29 @@ git commit -m "type(scope): description"
 
 ### Git Hooks (Automatic Checks)
 
-When you commit, the following checks run automatically:
+On `git commit`:
 
 1. **Gitleaks** - Detects secrets and credentials
-2. **ESLint** - Code quality checks
-3. **Prettier** - Code formatting
-4. **Commitlint** - Validates commit message format
+2. **ESLint** (`lint:fix`) - Note that this *rewrites* files; the fixes are not
+   re-staged, so re-check `git status` if it reports changes
+3. **Commitlint** (`commit-msg` hook) - Validates the commit message format
+
+On `git push`:
+
+4. **DCO check** - Blocks the push if any commit being pushed lacks a
+   `Signed-off-by` trailer
+
+Prettier is **not** run by a hook. Run `./bin/mise run format` yourself, or
+`./bin/mise run format:check` to verify without writing.
 
 If checks fail:
 
 ```bash
 # Fix linting issues
-mise run lint:fix
+./bin/mise run lint:fix
 
 # Fix formatting
-mise run format
+./bin/mise run format
 
 # Try committing again
 git commit -m "type(scope): message"
@@ -543,16 +553,16 @@ Before any code is merged to the primary branch, automated test suites run in CI
 1. **Build & Compilation Tests** - TypeScript strict mode compilation
    ```bash
    # Local: Compile your code
-   mise run build
+   ./bin/mise run build
    ```
 
 2. **Code Quality & Linting Tests** - ESLint validates code standards
    ```bash
    # Local: Run linting
-   mise run lint
+   ./bin/mise run lint
    
    # Local: Fix auto-fixable linting issues
-   mise run lint:fix
+   ./bin/mise run lint:fix
    ```
 
 3. **Security Vulnerability Scanning** - CodeQL, dependencies, secrets
@@ -568,10 +578,10 @@ Before any code is merged to the primary branch, automated test suites run in CI
 5. **Code Formatting Tests** - Prettier enforces consistent formatting
    ```bash
    # Local: Format your code
-   mise run format
+   ./bin/mise run format
    
    # Local: Check formatting without changing
-   mise run format:check
+   ./bin/mise run format:check
    ```
 
 **These tests run on every PR and must pass before merging. All contributors can see test results in the pull request status checks.**
@@ -582,16 +592,16 @@ Run these commands locally to catch issues before submission:
 
 ```bash
 # Install dependencies
-mise run install
+./bin/mise run install
 
 # Build and compile code
-mise run build
+./bin/mise run build
 
 # Fix linting issues
-mise run lint:fix
+./bin/mise run lint:fix
 
 # Format code
-mise run format
+./bin/mise run format
 
 # Check for vulnerabilities
 bun audit
@@ -606,7 +616,7 @@ For Discord bot features, test manually:
 
 ```bash
 # Start development bot
-mise run dev
+./bin/mise run dev
 
 # In your test Discord server:
 # /setup user_id:YOUR_USER_ID user_hash:YOUR_HASH
@@ -630,11 +640,11 @@ If a test fails in CI/CD:
 4. **Push corrections** - tests automatically re-run
 5. **Verify all pass** before requesting review
 
-For detailed troubleshooting, see [docs/testing-strategy.md](../../docs/testing-strategy.md#troubleshooting-failed-tests).
+For detailed troubleshooting, see [docs/testing-strategy.md](docs/testing-strategy.md#troubleshooting-failed-tests).
 
 ### For More Information
 
-See [docs/testing-strategy.md](../../docs/testing-strategy.md) for complete testing documentation, including:
+See [docs/testing-strategy.md](docs/testing-strategy.md) for complete testing documentation, including:
 - All test suites and what they verify
 - How to run tests locally
 - CI/CD pipeline flow
@@ -711,16 +721,16 @@ Run these locally to catch issues early:
 
 ```bash
 # Lint your code
-mise run lint
+./bin/mise run lint
 
 # Format your code
-mise run format
+./bin/mise run format
 
 # Build to verify
-mise run build
+./bin/mise run build
 
 # Run tests
-mise run test
+./bin/mise run test
 
 # Sign off on commits
 git commit -s -m "message"
@@ -745,7 +755,7 @@ See [docs/status-checks.md](docs/status-checks.md) for complete details on:
 git push origin feature/your-feature-name
 
 # Go to GitHub and create a Pull Request
-# https://github.com/YOUR_USERNAME/idle-code-redeemer/pulls
+# https://github.com/YOUR_USERNAME/IdleCodeRedeemer/pulls
 ```
 
 ### PR Title and Description
@@ -785,8 +795,8 @@ Screenshots of UI changes
 
 ## Checklist
 
-- [x] Builds successfully (`mise run build`)
-- [x] Passes linting (`mise run lint`)
+- [x] Builds successfully (`./bin/mise run build`)
+- [x] Passes linting (`./bin/mise run lint`)
 - [x] Updated CHANGELOG.md
 - [x] Added tests (if applicable)
 - [x] Tested locally
@@ -934,7 +944,7 @@ await interaction.reply(JSON.stringify(result)); // Takes too long, no deferral
 ### Dependency Updates
 
 - Review dependency changelogs before updating
-- Run `mise run audit` after updates
+- Run `./bin/mise run audit` after updates
 - Test thoroughly with new versions
 
 ### API Security

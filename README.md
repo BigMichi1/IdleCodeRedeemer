@@ -32,7 +32,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ```bash
 # 1. Install dependencies
-mise run install
+./bin/mise run install
 
 # 2. Configure environment
 cp .env.example .env
@@ -40,7 +40,7 @@ cp .env.example .env
 #   openssl rand -hex 32  → paste result as ENCRYPTION_KEY
 
 # 3. Start the bot
-mise run dev
+./bin/mise run dev
 ```
 
 **Don't have Mise?** [Install it first](https://mise.jdx.dev/getting-started.html)
@@ -79,8 +79,9 @@ See [docker-compose.example.yml](docker-compose.example.yml) for all available c
 **Pull specific versions:**
 
 - `ghcr.io/bigmichi1/idlecoderedeemer:latest` - Latest main branch build
-- `ghcr.io/bigmichi1/idlecoderedeemer:v1.0.0` - Specific release
-- `ghcr.io/bigmichi1/idlecoderedeemer:main-<sha>` - Specific commit
+- `ghcr.io/bigmichi1/idlecoderedeemer:1.0.0` / `:1.0` - Specific release
+- `ghcr.io/bigmichi1/idlecoderedeemer:sha-<short-sha>` - Specific commit
+- `ghcr.io/bigmichi1/idlecoderedeemer:main` - Latest main branch build
 
 ## ✨ Features
 

@@ -20,6 +20,9 @@ ENV PATH="/app/.mise/shims:$PATH"
 # Copy configuration files for Mise and project
 COPY .mise.toml ./
 COPY package.json ./
+# bun.lock must be present for the frozen install below; without it the image
+# silently resolves fresh versions and drifts from the committed lockfile.
+COPY bun.lock ./
 COPY .env.example .env
 COPY bin/mise ./bin/mise
 
@@ -29,8 +32,8 @@ RUN bin/mise trust
 # Install tools and dependencies via Mise
 RUN bin/mise install
 
-# Install all dependencies (including dev) for building
-RUN bin/mise run install
+# Install all dependencies (including dev) for building, pinned to the lockfile
+RUN bin/mise run ci:install
 
 # Copy TypeScript source files
 COPY tsconfig.bot.json ./

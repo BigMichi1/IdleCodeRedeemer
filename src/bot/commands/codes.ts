@@ -37,10 +37,12 @@ export async function buildCodesPage(
     return { embeds: [embed], components: [] };
   }
 
-  // Fetch page data; aggregate loot only on page 0 to avoid repeated O(N) full-table scans during pagination
+  // Aggregate loot is a page-0-only header, so skip the loot_totals lookup on later pages.
   const [redeemedCodes, lootSummary] = await Promise.all([
     codeManager.getRedeemedCodeDetails(discordId, PAGE_SIZE, offset),
-    safePage === 0 ? codeManager.getAggregateLoot(discordId) : Promise.resolve<LootSummary>({ chests: {}, items: {} }),
+    safePage === 0
+      ? codeManager.getAggregateLoot(discordId)
+      : Promise.resolve<LootSummary>({ chests: {}, items: {} }),
   ]);
 
   const embed = new EmbedBuilder()
@@ -81,7 +83,8 @@ export async function buildCodesPage(
               const countVal = Number(item.count);
               if (!Number.isFinite(countVal) || countVal <= 0) return null;
               if (item.chest_type_id !== undefined) {
-                const name = CHEST_TYPE_NAMES[item.chest_type_id as number] ?? `Chest ${item.chest_type_id}`;
+                const name =
+                  CHEST_TYPE_NAMES[item.chest_type_id as number] ?? `Chest ${item.chest_type_id}`;
                 return `${name}: +${countVal}`;
               } else if (item.loot_item) {
                 return `${(item.loot_item as string).replace(/_/g, ' ')}: x${countVal}`;
