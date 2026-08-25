@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-08-25
+
 ### Added
 
 - **`/stats` command** - Server-wide statistics and aggregate loot totals
@@ -383,6 +385,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **BREAKING: `ENCRYPTION_KEY` is now required** - The bot exits at startup if the
+  variable is unset or is not a 64-character hex string. Existing 2.x deployments
+  must generate a key (`openssl rand -hex 32`) before upgrading. Once a database
+  holds encrypted credentials the key must never change, or those rows become
+  unreadable and affected users have to run `/setup` again.
 - Docker workflow now includes Cosign signing step for all published images
 - Release process now includes automatic attestation generation and signing
 - Release notes now include dependency management section with vulnerability scan results
@@ -596,9 +603,10 @@ Security changes require special attention:
 
 ## Version History
 
-| Version | Release Date | Category               | Key Changes                                             |
-| ------- | ------------ | ---------------------- | ------------------------------------------------------- |
-| 2.0.0   | 2026-05-09   | Initial Public Release | Complete rewrite as Discord bot with security hardening |
+| Version | Release Date | Category               | Key Changes                                                    |
+| ------- | ------------ | ---------------------- | -------------------------------------------------------------- |
+| 3.0.0   | 2026-08-25   | Major Release          | Encrypted credentials, nine new commands, supply-chain signing |
+| 2.0.0   | 2026-05-09   | Initial Public Release | Complete rewrite as Discord bot with security hardening        |
 
 ---
 

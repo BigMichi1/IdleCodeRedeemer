@@ -116,6 +116,7 @@ When you push a git tag matching `v*` pattern:
 
        See CHANGELOG.md for dependency updates in this release.
        ```
+
    - Publish the release
    - The `release-attestation.yml` workflow automatically:
      - Generates attestation.json with release metadata
@@ -330,9 +331,10 @@ The Docker metadata action automatically generates tags based on git tags:
 
 ## Version History
 
-| Version | Date     | Changes                               |
-| ------- | -------- | ------------------------------------- |
-| 2.0.0   | May 2026 | Initial public release as Discord bot |
+| Version | Date     | Changes                                                   |
+| ------- | -------- | --------------------------------------------------------- |
+| 3.0.0   | Aug 2026 | Encrypted credentials, nine new commands, signed releases |
+| 2.0.0   | May 2026 | Initial public release as Discord bot                     |
 
 ## References
 
