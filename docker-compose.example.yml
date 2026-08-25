@@ -12,10 +12,10 @@ services:
   idle-code-redeemer:
     # Use the pre-built image from GitHub Container Registry
     # Available tags:
-    #   - latest         (latest main branch build)
-    #   - main           (main branch builds)
-    #   - v1.0.0         (specific version/release)
-    #   - main-<sha>     (specific commit)
+    #   - latest            (latest default-branch build)
+    #   - main              (main branch builds)
+    #   - 1.0.0 / 1.0       (specific release)
+    #   - sha-<short-sha>   (specific commit)
     image: ghcr.io/bigmichi1/idlecoderedeemer:latest
     
     container_name: idle-code-redeemer

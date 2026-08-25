@@ -493,14 +493,14 @@ Future security advisories published here will follow this format:
 ### GitHub Security Advisories
 
 Enable notifications:
-1. Go to [Security Advisories](https://github.com/BigMichi1/idle-code-redeemer/security/advisories)
+1. Go to [Security Advisories](https://github.com/BigMichi1/IdleCodeRedeemer/security/advisories)
 2. Click "Watch" button
 3. Select "Security alerts"
 
 ### GitHub Releases
 
 Subscribe to release notifications:
-1. Go to [Releases](https://github.com/BigMichi1/idle-code-redeemer/releases)
+1. Go to [Releases](https://github.com/BigMichi1/IdleCodeRedeemer/releases)
 2. Click "Watch" → "Releases only"
 3. Get notified when new versions are released
 
@@ -514,7 +514,7 @@ Subscribe to release notifications:
 
 Subscribe to repository RSS feed:
 ```
-https://github.com/BigMichi1/idle-code-redeemer/releases.atom
+https://github.com/BigMichi1/IdleCodeRedeemer/releases.atom
 ```
 
 ---

@@ -80,7 +80,7 @@ These roles are reserved for future maintainers as the project grows:
 - ✅ Access control configuration
 
 **Details:**
-- Repository: https://github.com/BigMichi1/idle-code-redeemer
+- Repository: https://github.com/BigMichi1/IdleCodeRedeemer
 - Visibility: Public
 - Protection: Branch protection on `main` (1 approval required, no admin bypass)
 
@@ -93,7 +93,7 @@ These roles are reserved for future maintainers as the project grows:
 - ✅ Visibility settings
 
 **Details:**
-- Registry: `ghcr.io/bigmichi1/idle-code-redeemer-bot`
+- Registry: `ghcr.io/bigmichi1/idlecoderedeemer`
 - Authentication: GitHub OIDC tokens via Actions
 - Signing: All images signed with Cosign keyless method
 - Images publicly available for verification
@@ -251,12 +251,12 @@ These roles are reserved for future maintainers as the project grows:
 ### Contact Methods
 
 **Security Issues** (PRIVATE):
-- GitHub Security Advisory: https://github.com/BigMichi1/idle-code-redeemer/security
+- GitHub Security Advisory: https://github.com/BigMichi1/IdleCodeRedeemer/security
 - Email: michael@bigmichi1.de
 
 **General Questions & Bugs**:
-- GitHub Issues: https://github.com/BigMichi1/idle-code-redeemer/issues
-- GitHub Discussions: https://github.com/BigMichi1/idle-code-redeemer/discussions
+- GitHub Issues: https://github.com/BigMichi1/IdleCodeRedeemer/issues
+- GitHub Discussions: https://github.com/BigMichi1/IdleCodeRedeemer/discussions
 
 **Response Times**:
 - 🔴 Security vulnerabilities: 3 business days maximum

@@ -39,7 +39,7 @@ Bun is installed and managed automatically by Mise. No manual installation requi
 
 ```bash
 # Mise will install Bun automatically
-mise run install
+./bin/mise run install
 
 # Verify Bun works
 bun --version # Should be 1.3.14+
@@ -116,8 +116,8 @@ All dependencies are defined in `package.json` and locked in `bun.lock` for repr
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/BigMichi1/idle-code-redeemer.git
-cd idle-code-redeemer
+git clone https://github.com/BigMichi1/IdleCodeRedeemer.git
+cd IdleCodeRedeemer
 ```
 
 ### Step 2: Install Mise (if not already installed)
@@ -136,12 +136,12 @@ curl https://mise.jdx.dev/install.sh | sh
 mise trust # Trust the .mise.toml configuration
 
 # Install all dependencies
-mise run install
+./bin/mise run install
 ```
 
 This will:
 
-1. ✅ Install Bun 1.3.14 (if not present)
+1. ✅ Install Bun 1.4.0 (if not present)
 2. ✅ Install Gitleaks 8.30.1 (secret scanning)
 3. ✅ Install all dependencies (production + development)
 4. ✅ Create `node_modules/` directory
@@ -154,9 +154,13 @@ This will:
 cp .env.example .env
 
 # Edit .env with your configuration
-# At minimum, set:
+# Required - the bot exits at startup without either of these:
 # - DISCORD_TOKEN=your_bot_token
-# - DB_PATH=./data/idle.db (optional)
+# - ENCRYPTION_KEY=<64 hex chars>   generate with: openssl rand -hex 32
+# Optional:
+# - DB_PATH=./data/idle.db
+# - DISCORD_CHANNEL_ID / DISCORD_GUILD_ID / DISCORD_CODE_AUTHOR_ID
+# - LOG_LEVEL=debug   to see per-request API logging
 ```
 
 See [.env.example](.env.example) for all available configuration options.
@@ -167,10 +171,10 @@ See [.env.example](.env.example) for all available configuration options.
 
 ```bash
 # List all available Mise tasks
-mise tasks
+./bin/mise tasks
 ```
 
-Output shows all available commands like `install`, `dev`, `build`, `watch`, `lint`, etc.
+Output shows all available tasks, such as `install`, `dev`, `build`, `typecheck`, `test`, `lint` and `format`.
 
 ### Development Build (Type Check Only)
 
@@ -178,10 +182,10 @@ Output shows all available commands like `install`, `dev`, `build`, `watch`, `li
 
 ```bash
 # Type-check only (no output files)
-mise run typecheck  # alias for: bun run typecheck
+./bin/mise run typecheck  # alias for: bun run typecheck
 
 # Run bot directly from TypeScript source
-mise run dev
+./bin/mise run dev
 ```
 
 **Output**:
@@ -195,7 +199,7 @@ mise run dev
 
 ```bash
 # Build self-contained production binary
-mise run prod:build
+./bin/mise run prod:build
 ```
 
 **Output**:
@@ -213,21 +217,21 @@ dist-bundle/
 
 ### Development Server
 
-**Purpose**: Run bot in development mode with TypeScript support and auto-restart.
+**Purpose**: Run the bot from TypeScript source, without a build step.
 
 ```bash
-mise run dev
+./bin/mise run dev
 ```
 
 This runs:
 
-1. TypeScript compiler in watch mode
-2. Discord bot with auto-restart on file changes
+1. Bun executing `src/bot/bot.ts` directly
+2. No watch mode -- restart manually after editing (`bun --watch` is not used)
 3. Full debugging support
 
 **Requirements**:
 
-- `.env` file configured with DISCORD_TOKEN
+- `.env` file configured with DISCORD_TOKEN and ENCRYPTION_KEY
 - Discord bot application created (https://discord.com/developers)
 
 ### Running the Bot
@@ -236,10 +240,10 @@ After building, run the bot:
 
 ```bash
 # Start production binary
-mise run prod:start
+./bin/mise run prod:start
 
 # OR via Mise start task
-mise run start
+./bin/mise run start
 
 # OR directly (no Bun needed at runtime)
 ./dist-bundle/bot
@@ -253,20 +257,20 @@ mise run start
 
 ```bash
 # Install dependencies
-mise run install
+./bin/mise run install
 
 # Run bot directly from TypeScript source (no compile step needed)
-mise run dev
+./bin/mise run dev
 
 # Type-check only (no output files)
-mise run build
+./bin/mise run build
 ```
 
 **Characteristics**:
 
 - Bun runs TypeScript natively — no compilation step required for development
 - `tsc` used for type-checking only (`noEmit: true`)
-- Automatic restart on file changes via `bun --watch`
+- No automatic restart; stop and re-run after editing
 - Good for development
 
 ### 2. Production Build
@@ -275,10 +279,10 @@ mise run build
 
 ```bash
 # Install dependencies (includes dev deps for type-checking and drizzle-kit)
-mise run install
+./bin/mise run install
 
 # Production-optimized binary
-mise run prod:build
+./bin/mise run prod:build
 
 # Run the bot
 ./dist-bundle/bot
@@ -298,17 +302,17 @@ mise run prod:build
 
 ```bash
 # Build Docker image
-docker build -t idle-code-redeemer:latest .
+docker build -t IdleCodeRedeemer:latest .
 
 # OR using Mise task
-mise run docker-build
+./bin/mise run docker-build
 
 # Run container
-docker run -e DISCORD_TOKEN=your_token idle-code-redeemer:latest
+docker run -e DISCORD_TOKEN=your_token IdleCodeRedeemer:latest
 
 # OR with Docker Compose
-mise run docker-up
-docker logs -f idle-code-redeemer
+./bin/mise run docker-up
+docker logs -f IdleCodeRedeemer
 ```
 
 **Dockerfile**:
@@ -326,8 +330,8 @@ See [Dockerfile](Dockerfile) for details.
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/BigMichi1/idle-code-redeemer.git
-cd idle-code-redeemer
+git clone https://github.com/BigMichi1/IdleCodeRedeemer.git
+cd IdleCodeRedeemer
 
 # 2. Set up Mise
 curl https://mise.jdx.dev/install.sh | sh
@@ -338,17 +342,17 @@ mise --version
 
 # 4. Install tools and dependencies
 mise trust
-mise run install
+./bin/mise run install
 
 # 5. Configure environment
 cp .env.example .env
 # Edit .env with your DISCORD_TOKEN
 
 # 6. Type-check the project
-mise run build
+./bin/mise run build
 
 # 7. Build production binary
-mise run prod:build
+./bin/mise run prod:build
 
 # 8. Verify binary was created
 ls -la dist-bundle/bot
@@ -363,16 +367,16 @@ ls -la dist-bundle/bot
 
 ```bash
 # Run ESLint to check for issues
-mise run lint
+./bin/mise run lint
 
 # Automatically fix issues
-mise run lint:fix
+./bin/mise run lint:fix
 
 # Check formatting
-mise run format:check
+./bin/mise run format:check
 
 # Auto-format code
-mise run format
+./bin/mise run format
 ```
 
 ### Git Hooks (Pre-commit Checks)
@@ -388,7 +392,7 @@ Husky automatically runs checks before commits:
 # 4. Commitlint validation
 
 # If a check fails, fix the issue and try again
-mise run lint:fix
+./bin/mise run lint:fix
 git add .
 git commit -m "type(scope): message"
 ```
@@ -399,10 +403,10 @@ git commit -m "type(scope): message"
 
 ```bash
 # Audit dependencies for known vulnerabilities
-mise run audit
+./bin/mise run audit
 
 # Update vulnerable dependencies
-mise run update
+./bin/mise run update
 ```
 
 **Output**:
@@ -417,7 +421,7 @@ mise run update
 
 ```bash
 # Clean all build artifacts
-mise run clean
+./bin/mise run clean
 
 # This removes:
 # - dist/ directory
@@ -425,7 +429,7 @@ mise run clean
 # - node_modules/ directory
 
 # Rebuilding after clean
-mise run install && mise run prod:build
+./bin/mise run install && mise run prod:build
 ```
 
 ## Troubleshooting
@@ -457,10 +461,10 @@ mise --version
 ```bash
 # Mise should handle this automatically
 # Try refreshing Mise
-mise install
+./bin/mise install
 
 # Or run through Mise
-mise run build
+./bin/mise run build
 ```
 
 ### Issue: "Cannot find module 'discord.js'"
@@ -469,14 +473,14 @@ mise run build
 
 ```bash
 # Install dependencies
-mise run install
+./bin/mise run install
 
 # Verify installation
 ls -la node_modules/discord.js
 
 # If still failing, clean and reinstall
-mise run clean
-mise run install
+./bin/mise run clean
+./bin/mise run install
 ```
 
 ### Issue: Build fails with TypeScript errors
@@ -485,7 +489,7 @@ mise run install
 
 ```bash
 # Check for errors
-mise run build
+./bin/mise run build
 
 # Fix errors indicated by compiler
 # Common issues:
@@ -494,7 +498,7 @@ mise run build
 # - Undefined variables: ensure imports
 
 # Re-run build
-mise run build
+./bin/mise run build
 ```
 
 ### Issue: "DISCORD_TOKEN not set"
@@ -535,16 +539,16 @@ This is set before any HTTPS requests. If you still see SSL errors:
 
 ```bash
 # Build with verbose output
-docker build -t idle-code-redeemer . --progress=plain
+docker build -t IdleCodeRedeemer . --progress=plain
 
 # Check Dockerfile for issues
 cat Dockerfile | grep -E "^RUN|^COPY"
 
 # Ensure .mise.toml is valid
-mise validate
+./bin/mise run typecheck
 
 # Try building directly with mise
-mise run prod:build
+./bin/mise run prod:build
 ```
 
 ### Issue: Git hooks not running
@@ -556,7 +560,7 @@ mise run prod:build
 bun run prepare
 
 # Or reinstall all dependencies
-mise run install
+./bin/mise run install
 
 # Verify hooks exist
 ls -la .husky/
@@ -578,9 +582,9 @@ If you encounter issues building:
 1. Check this BUILD.md file
 2. See [Troubleshooting](#troubleshooting) section above
 3. Check [.instructions.md](.instructions.md) for project-specific constraints
-4. Review GitHub Issues: https://github.com/BigMichi1/idle-code-redeemer/issues
+4. Review GitHub Issues: https://github.com/BigMichi1/IdleCodeRedeemer/issues
 5. Open a new issue with:
    - OS and version
    - Build command you ran
    - Full error output
-   - Contents of `mise tasks` output
+   - Contents of `./bin/mise tasks` output

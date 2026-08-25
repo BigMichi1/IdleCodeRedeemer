@@ -4,7 +4,6 @@ description = "Gitleaks allowlist configuration"
 # Allow specific paths (example files, documentation, configs)
 paths = [
     ".env.example",
-    "src/bot/.env.example",
     "README.md",
     "docs/",
     ".github/workflows/",

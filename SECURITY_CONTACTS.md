@@ -24,7 +24,7 @@ Security vulnerabilities should NEVER be reported through public channels (GitHu
 GitHub's built-in private vulnerability reporting feature ensures direct, secure communication with maintainers.
 
 **Steps**:
-1. Go to the [Security](https://github.com/BigMichi1/idle-code-redeemer/security) tab
+1. Go to the [Security](https://github.com/BigMichi1/IdleCodeRedeemer/security) tab
 2. Click **"Report a vulnerability"**
 3. Fill in vulnerability details:
    - **Title**: Brief description of vulnerability
@@ -206,7 +206,7 @@ After submitting a vulnerability report, you can track its status:
 
 **Via GitHub Security Advisory**:
 - Log into GitHub
-- Navigate to [Security](https://github.com/BigMichi1/idle-code-redeemer/security)
+- Navigate to [Security](https://github.com/BigMichi1/IdleCodeRedeemer/security)
 - View "Report a vulnerability" tab for submission history
 - Status visible: "Draft", "Awaiting maintainer", "Acknowledged", etc.
 

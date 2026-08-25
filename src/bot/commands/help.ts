@@ -32,17 +32,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         },
         {
           name: '🔄 Catch Up',
-          value: '`/catchup`\nRedeem all known valid codes you have not yet claimed (e.g. after joining the server).',
+          value:
+            '`/catchup`\nRedeem all known valid codes you have not yet claimed (e.g. after joining the server).',
           inline: false,
         },
         {
           name: '🤖 Auto-Redeem',
-          value: '`/autoredeem enabled:<on|off>`\nToggle automatic redemption of new codes when they appear in the channel.',
+          value:
+            '`/autoredeem enabled:<on|off>`\nToggle automatic redemption of new codes when they appear in the channel.',
           inline: false,
         },
         {
           name: '📋 Code History',
-          value: '`/codes [count:<count>]`\nView your redeemed codes history (last 10 by default).',
+          value: '`/codes`\nView your redeemed codes history, 5 per page with Prev/Next buttons.',
           inline: false,
         },
         {
@@ -74,12 +76,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         },
         {
           name: '⏮️ Backfill',
-          value: '`/backfill [channel:<channel>]`\nRecover missed codes from message history (admin only).',
+          value:
+            '`/backfill [channel:<channel>]`\nRecover missed codes from message history (admin only).',
           inline: false,
         },
         {
           name: '📋 Logs',
-          value: '`/logs [lines:<n>]`\nShow the last N lines of the bot log (admin only, default 20, max 100).',
+          value:
+            '`/logs [lines:<n>]`\nShow the last N lines of the bot log (admin only, default 20, max 100).',
           inline: false,
         },
         {
@@ -90,7 +94,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         },
         {
           name: '📊 Server Stats',
-          value: '`/stats`\nShow server-wide statistics: unique codes successfully redeemed, total redemptions across all users, registered users, and aggregate loot earned.',
+          value:
+            '`/stats`\nShow server-wide statistics: unique codes successfully redeemed, total redemptions across all users, registered users, and aggregate loot earned.',
           inline: false,
         }
       )
@@ -98,7 +103,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         {
           name: '🤖 Automatic Code Detection',
           value:
-            'The bot automatically scans the #combinations channel for new codes and redeems them for you (if you have set up credentials and auto-redeem is enabled).',
+            'The bot automatically scans the code channel configured by the server admin for new codes and redeems them for you (if you have set up credentials and auto-redeem is enabled).',
           inline: false,
         },
         {

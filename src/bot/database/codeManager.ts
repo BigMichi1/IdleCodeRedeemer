@@ -6,7 +6,6 @@ import type { CodeSubmitStatus } from '../api/idleChampionsApi';
 
 type RedeemedCodeRow = typeof redeemedCodes.$inferSelect;
 
-
 /**
  * Converts a raw codeStatus value (number, numeric string, or canonical string)
  * to the canonical status string stored in the database.
@@ -125,7 +124,12 @@ class CodeManager {
     const result = db
       .select({ code: redeemedCodes.code })
       .from(redeemedCodes)
-      .where(and(eq(redeemedCodes.code, code), or(eq(redeemedCodes.status, 'Success'), eq(redeemedCodes.status, 'Code Expired'))))
+      .where(
+        and(
+          eq(redeemedCodes.code, code),
+          or(eq(redeemedCodes.status, 'Success'), eq(redeemedCodes.status, 'Code Expired'))
+        )
+      )
       .get();
     return result !== undefined;
   }
@@ -234,10 +238,7 @@ class CodeManager {
       .selectDistinct({ code: redeemedCodes.code })
       .from(redeemedCodes)
       .where(
-        and(
-          eq(redeemedCodes.status, 'Success'),
-          notInArray(redeemedCodes.code, expiredSubquery)
-        )
+        and(eq(redeemedCodes.status, 'Success'), notInArray(redeemedCodes.code, expiredSubquery))
       )
       .all();
     return rows.map((r) => r.code);
@@ -256,7 +257,13 @@ class CodeManager {
     const result = db
       .select({ code: redeemedCodes.code })
       .from(redeemedCodes)
-      .where(and(eq(redeemedCodes.code, code), ne(redeemedCodes.discordId, discordId), eq(redeemedCodes.status, 'Success')))
+      .where(
+        and(
+          eq(redeemedCodes.code, code),
+          ne(redeemedCodes.discordId, discordId),
+          eq(redeemedCodes.status, 'Success')
+        )
+      )
       .get();
     return result !== undefined;
   }
@@ -315,8 +322,17 @@ class CodeManager {
 
   async getPendingCodes(discordId?: string): Promise<string[]> {
     const results = discordId
-      ? db.select({ code: pendingCodes.code }).from(pendingCodes).where(eq(pendingCodes.discordId, discordId)).orderBy(sql`${pendingCodes.foundAt} ASC`).all()
-      : db.select({ code: pendingCodes.code }).from(pendingCodes).orderBy(sql`${pendingCodes.foundAt} ASC`).all();
+      ? db
+          .select({ code: pendingCodes.code })
+          .from(pendingCodes)
+          .where(eq(pendingCodes.discordId, discordId))
+          .orderBy(sql`${pendingCodes.foundAt} ASC`)
+          .all()
+      : db
+          .select({ code: pendingCodes.code })
+          .from(pendingCodes)
+          .orderBy(sql`${pendingCodes.foundAt} ASC`)
+          .all();
     return results.map((r) => r.code);
   }
 
@@ -329,9 +345,13 @@ class CodeManager {
    * anonymised aggregate and is deliberately left intact.
    */
   async deleteUserLootTotals(discordId: string): Promise<number> {
-    return db.delete(lootTotals).where(eq(lootTotals.scope, discordId)).returning({
-      lootKey: lootTotals.lootKey,
-    }).all().length;
+    return db
+      .delete(lootTotals)
+      .where(eq(lootTotals.scope, discordId))
+      .returning({
+        lootKey: lootTotals.lootKey,
+      })
+      .all().length;
   }
 
   async clearPendingCodes(discordId?: string): Promise<void> {
@@ -345,12 +365,13 @@ class CodeManager {
   /**
    * Bulk-insert pending codes, skipping any that are already present.
    * Returns only the codes that were newly inserted.
-   * Uses a single INSERT … ON CONFLICT DO NOTHING RETURNING to avoid N+1
+   * Uses as few INSERTs as the SQLite bound-parameter budget allows … ON CONFLICT DO NOTHING RETURNING to avoid N+1
    * queries and race conditions between pre-read and insert.
    */
   async addNewPendingCodes(codes: string[]): Promise<string[]> {
     if (codes.length === 0) return [];
     // pendingCodes has 2 columns (code, discordId) → 2 bound params per row.
+    // 999 is a conservative floor; SQLite has allowed 32766 since 3.32.
     const CHUNK_SIZE = Math.floor(999 / 2); // = 499
     const result: string[] = [];
     for (let i = 0; i < codes.length; i += CHUNK_SIZE) {
@@ -369,7 +390,7 @@ class CodeManager {
   /**
    * Returns the subset of `codes` that already have at least one
    * Success or Code Expired row in redeemed_codes (i.e. globally redeemed).
-   * Uses a single IN query — suitable for bulk pre-filter before addNewPendingCodes.
+   * Uses as few IN queries as the SQLite bound-parameter budget allows — suitable for bulk pre-filter before addNewPendingCodes.
    */
   async getRedeemedCodesFromList(codes: string[]): Promise<Set<string>> {
     if (codes.length === 0) return new Set();
