@@ -59,9 +59,19 @@ describe('normalizeCodeStatus', () => {
   test('normalizes numeric string "4" to Code Expired', () => {
     expect(normalizeCodeStatus('4')).toBe('Code Expired');
   });
-  test('treats partial-numeric strings as canonical (not parsed as int)', () => {
-    expect(normalizeCodeStatus('4foo')).toBe('4foo');
-    expect(normalizeCodeStatus('0bar')).toBe('0bar');
+  test('does not parse partial-numeric strings as an integer status', () => {
+    // '4foo' must NOT become 'Code Expired'.
+    expect(normalizeCodeStatus('4foo')).not.toBe('Code Expired');
+    expect(normalizeCodeStatus('0bar')).not.toBe('Success');
+  });
+
+  test('maps an unrecognised status to Unknown Status instead of storing it verbatim', () => {
+    // Every query compares status against a canonical literal, so a row holding
+    // an arbitrary string is invisible to every lookup and the code would be
+    // redeemed again on every run.
+    expect(normalizeCodeStatus('sucess')).toBe('Unknown Status');
+    expect(normalizeCodeStatus('4foo')).toBe('Unknown Status');
+    expect(normalizeCodeStatus(99)).toBe('Unknown Status');
   });
 });
 

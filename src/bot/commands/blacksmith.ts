@@ -150,7 +150,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         blacksmithResponse.actions.length > 0
       ) {
         const actionSummary = blacksmithResponse.actions
-          .map((action: any) => `• ${action.description || JSON.stringify(action)}`)
+          // BlacksmithAction has no `description` field, so the previous
+          // `action.description || JSON.stringify(action)` always rendered raw JSON.
+          .map((action: any) => {
+            if (!action?.action) return `• ${JSON.stringify(action)}`;
+            const amount = action.amount ? ` (${action.amount})` : '';
+            return `• ${action.action}${amount}`;
+          })
           .join('\n')
           .substring(0, 1024);
 

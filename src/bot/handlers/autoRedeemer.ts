@@ -2,7 +2,7 @@ import type { Client } from 'discord.js';
 import { userManager, type UserCredentials } from '../database/userManager';
 import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi from '../api/idleChampionsApi';
+import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
 import logger from '../utils/logger';
 import { sleep } from '../utils/async';
 
@@ -96,7 +96,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
   if (
     userResult instanceof Object &&
     'status' in userResult &&
-    (userResult as any).status === 4
+    (userResult as any).status === ResponseStatus.SwitchServer
   ) {
     const newServer = (userResult as any).newServer;
     if (!newServer) {
@@ -138,7 +138,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
   if (submitResponse instanceof Object && 'status' in submitResponse) {
     const generic = submitResponse as any;
 
-    if (generic.status === 4 && generic.newServer) {
+    if (generic.status === ResponseStatus.SwitchServer && generic.newServer) {
       // Server switched mid-session
       server = generic.newServer as string;
       await userManager.updateServer(discordId, server);
@@ -150,7 +150,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
         hash: credentials.userHash,
         instanceId,
       });
-    } else if (generic.status === 1) {
+    } else if (generic.status === ResponseStatus.OutdatedInstanceId) {
       // Stale instance_id — fetch fresh user details to get current one
       logger.info(`[AUTO REDEEMER] Outdated instance_id for user ${discordId}, refreshing`);
       const refreshResult = await IdleChampionsApi.getUserDetails({
@@ -189,9 +189,9 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
 
   const codeResponse = submitResponse as any;
   const statusName = normalizeCodeStatus(codeResponse.codeStatus);
-  const isSuccess = codeResponse.codeStatus === 0;
-  const isAlreadyRedeemed = codeResponse.codeStatus === 1;
-  const isExpiredStatus = codeResponse.codeStatus === 4;
+  const isSuccess = codeResponse.codeStatus === CodeSubmitStatus.Success;
+  const isAlreadyRedeemed = codeResponse.codeStatus === CodeSubmitStatus.AlreadyRedeemed;
+  const isExpiredStatus = codeResponse.codeStatus === CodeSubmitStatus.Expired;
 
   logger.info(
     `[AUTO REDEEMER] Code ${code} → ${statusName} for user ${discordId}`
