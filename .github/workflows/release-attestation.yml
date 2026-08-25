@@ -206,7 +206,12 @@ jobs:
           asset_name: attestation.crt
           asset_content_type: application/x-x509-ca-cert
 
-      - name: Create Release Comment with Signatures
+      # Appends the verification block to the release body. This used to call
+      # issues.createComment with the release id as an issue number, which the
+      # API answers with a 404: releases are not issues and have no comment
+      # thread. The marker check keeps a re-run from appending a second copy,
+      # and leaves a hand-written verification section alone.
+      - name: Append Verification Instructions to Release
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
@@ -217,8 +222,10 @@ jobs:
             const releaseId = Number(process.env.RELEASE_ID);
             const tag = process.env.RELEASE_TAG;
             const version = tag.replace(/^v/, '');
+            const MARKER = '<!-- release-attestation -->';
 
-            const comment = `## 🔐 Release Signed & Verified
+            const comment = `${MARKER}
+            ## 🔐 Release Signed & Verified
 
             This release has been cryptographically signed using **Cosign (Keyless OIDC)**.
 
@@ -261,9 +268,21 @@ jobs:
 
             For security information, see [SECURITY.md](https://github.com/${{ github.repository }}/blob/${tag}/SECURITY.md)`;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number || releaseId,
+            const { data: release } = await github.rest.repos.getRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: comment
+              release_id: releaseId
             });
+
+            if (release.body && release.body.includes(MARKER)) {
+              core.info('Release body already carries the attestation block; leaving it unchanged.');
+              return;
+            }
+
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              body: `${release.body ?? ''}\n\n${comment}`
+            });
+            core.info(`Appended verification instructions to ${tag}.`);

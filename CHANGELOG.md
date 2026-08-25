@@ -33,6 +33,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`format` and `format:check` tasks no longer fail on startup** - Syncpack 15 removed
   the `--source` flag and renamed `list-mismatches` to `lint`. Both tasks aborted before
   Prettier ever ran, so formatting drift accumulated unnoticed across 37 files.
+- **Verification instructions now reach the release instead of 404ing** - The final step
+  called `issues.createComment` with the release id as an issue number; releases have no
+  comment thread, so the API answered 404 and the step failed on every release. It now
+  appends the block to the release body, guarded by a marker so a re-run does not duplicate
+  it.
 - **Release attestations are generated with `jq` instead of a quoted heredoc** - The
   heredoc used `<< 'EOF'`, which suppresses expansion, so `$RELEASE_TAG`, `$VERSION` and
   `$(date ...)` were written literally and the date format's inner quotes produced invalid
