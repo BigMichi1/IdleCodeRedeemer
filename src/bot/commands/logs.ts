@@ -8,17 +8,14 @@ import {
 import fs from 'fs';
 import path from 'path';
 import logger from '../utils/logger';
+import { redactSensitive } from '../utils/redact';
 
 const LOG_FILE = path.join(process.cwd(), 'logs', 'combined.log');
 const MAX_LINES = 100;
 const EMBED_DESCRIPTION_LIMIT = 4096;
 
-// Patterns that must never be shown in Discord (credentials logged by bot.ts command handler)
-const SENSITIVE_PATTERN = /\b(user_hash|user_id|hash|token)=\S+/gi;
-
-function redactSensitive(line: string): string {
-  return line.replace(SENSITIVE_PATTERN, (_, key: string) => `${key}=[REDACTED]`);
-}
+// Safety net only. Credentials are now redacted at write time in bot.ts, so no
+// new log line should contain any; this still scrubs lines written before that fix.
 
 function readLastLines(filePath: string, n: number): string[] {
   if (!fs.existsSync(filePath)) return [];

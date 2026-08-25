@@ -41,8 +41,22 @@ function rowToCredentials(user: typeof users.$inferSelect): UserCredentials {
 }
 
 class UserManager {
+  /**
+   * Insert or update a user's credentials.
+   *
+   * Notification preferences are optional: they are applied only when supplied,
+   * so re-running /setup does not silently reset a user's existing choices.
+   * (They were previously declared on the parameter type and then dropped on
+   * the floor -- passing autoRedeem:false type-checked and did nothing.)
+   */
   async saveCredentials(credentials: UserCredentials): Promise<void> {
     const { discordId, userId, userHash, server, instanceId } = credentials;
+    const prefs = {
+      ...(credentials.autoRedeem !== undefined && { autoRedeem: credentials.autoRedeem }),
+      ...(credentials.dmOnCode !== undefined && { dmOnCode: credentials.dmOnCode }),
+      ...(credentials.dmOnSuccess !== undefined && { dmOnSuccess: credentials.dmOnSuccess }),
+      ...(credentials.dmOnFailure !== undefined && { dmOnFailure: credentials.dmOnFailure }),
+    };
     if (!userId || !userHash) {
       throw new Error('userId and userHash must not be empty');
     }
@@ -56,6 +70,7 @@ class UserManager {
         userHash: encryptedUserHash,
         server: server ?? null,
         instanceId: instanceId ?? null,
+        ...prefs,
       })
       .onConflictDoUpdate({
         target: users.discordId,
@@ -64,6 +79,7 @@ class UserManager {
           userHash: encryptedUserHash,
           server: server ?? null,
           instanceId: instanceId ?? null,
+          ...prefs,
           updatedAt: sql`CURRENT_TIMESTAMP`,
         },
       })

@@ -20,9 +20,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const code = interaction.options.getString('code', true).toUpperCase().replaceAll('-', '');
 
-    // Check if user has redeemed this code
-    const userCodes = await codeManager.getRedeemedCodes(interaction.user.id);
-    if (!userCodes.includes(code)) {
+    // Verify this user has a successful redemption row for this code
+    const ownsCode = await codeManager.hasSuccessfulRedemption(code, interaction.user.id);
+    if (!ownsCode) {
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
         .setTitle('❌ Code Not Found')
@@ -35,7 +35,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     // Mark code as public
-    await codeManager.markCodeAsPublic(code);
+    await codeManager.markCodeAsPublic(code, interaction.user.id);
 
     // Log action
     await auditManager.logAction(interaction.user.id, 'CODE_MADE_PUBLIC', { code });

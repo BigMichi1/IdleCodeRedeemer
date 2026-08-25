@@ -204,15 +204,20 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         autoPublic: shouldBePublic,
       });
     } else {
-      // For invalid/already redeemed codes - check if the code was explicitly made public
-      // If so, switch it back to private (might be a mistake)
-      const codeWasPublic = await codeManager.isCodePublic(code);
+      // Demote a shared code only when the API says it is genuinely bad.
+      // "Already Redeemed" (1) is a normal outcome for a code that works fine
+      // for everyone else, and must not un-share it. Only 2 (Invalid
+      // Parameters), 3 (Not a Valid Code) and 5 (Cannot Redeem) qualify.
+      const isInvalidStatus = [2, 3, 5].includes(codeResponse.codeStatus);
+      const codeWasPublic = isInvalidStatus && (await codeManager.isCodePublic(code));
 
       if (codeWasPublic) {
         logger.warn(
           `[REDEEM] Code ${code} was public but is now invalid - switching back to private`
         );
-        await codeManager.markCodeAsPrivate(code);
+        // Scoped to this user's row: one user's failure must not un-share
+        // another user's working code.
+        await codeManager.markCodeAsPrivate(code, interaction.user.id);
       }
 
       // Log failed redeem

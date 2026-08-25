@@ -16,8 +16,6 @@ ENV MISE_CONFIG_DIR="/app/.mise/config"
 ENV MISE_CACHE_DIR="/app/.mise/cache"
 ENV MISE_INSTALL_PATH="/usr/local/bin/mise"
 ENV PATH="/app/.mise/shims:$PATH"
-# Disable SSL cert validation for Idle Champions API (expired certificate)
-ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 
 # Copy configuration files for Mise and project
 COPY .mise.toml ./
@@ -46,14 +44,17 @@ FROM debian:13.5-slim@sha256:28de0877c2189802884ccd20f15ee41c203573bd87bb6b883f5
 
 WORKDIR /app
 
-# Install only ca-certificates for HTTPS (the bot calls external APIs)
+# ca-certificates for outbound HTTPS; procps for the pgrep healthcheck below
 RUN apt-get update \
   && apt-get -y --no-install-recommends install \
     ca-certificates procps \
   && rm -rf /var/lib/apt/lists/*
 
-# Disable SSL cert validation for Idle Champions API (expired certificate)
-ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+# Certificate validation stays ON. If the Idle Champions host is serving an
+# expired certificate again, set IDLE_CHAMPIONS_INSECURE_TLS=1 -- that scopes
+# the exception to that host's requests instead of disabling validation
+# process-wide, which would also cover the Discord gateway and DISCORD_TOKEN.
+# ENV IDLE_CHAMPIONS_INSECURE_TLS=1
 
 # Copy the self-contained compiled executable from builder
 COPY --from=builder /app/dist-bundle/bot ./dist-bundle/bot
@@ -61,7 +62,7 @@ COPY --from=builder /app/dist-bundle/bot ./dist-bundle/bot
 # Copy database migrations (required at runtime for schema setup)
 COPY --from=builder /app/src/bot/database/migrations ./dist-bundle/migrations
 
-# Create data and logs directories
+# Create runtime data + API log directories (logs/ is created by logger.ts at startup)
 RUN mkdir -p /app/data /app/api-logs
 
 # Health check

@@ -127,17 +127,24 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    // Perform deletion — order matters for FK constraints:
-    // pending_codes.discord_id → users.discord_id (no cascade), so clear it first
-    await codeManager.clearPendingCodes(interaction.user.id);
+    // Perform deletion — order matters for FK constraints. pending_codes,
+    // redeemed_codes and audit_log all reference users.discord_id with no
+    // ON DELETE CASCADE (the foreign_keys pragma is ON in db.ts), so the users
+    // row must go last.
+    //
+    // No clearPendingCodes() call here: pending codes are inserted globally
+    // (discordId is always null), so the previous per-user delete matched zero
+    // rows every time while telling the user their pending codes were removed.
+    // A pending code is not personal data and is not the user's to delete.
     const deletedCodesCount = await codeManager.deleteUserRedeemedCodes(interaction.user.id);
+    const deletedLootCount = await codeManager.deleteUserLootTotals(interaction.user.id);
     await auditManager.deleteUserAuditLog(interaction.user.id);
     const deletedBackfillCount = await backfillManager.deleteUserBackfillOperations(interaction.user.id);
     await userManager.deleteCredentials(interaction.user.id);
 
     // Log a non-identifying event — the user's credentials and ID are now gone
     logger.info(
-      `[DELETE ACCOUNT] Account deletion completed. Removed ${deletedCodesCount} redeemed code record(s) and ${deletedBackfillCount} backfill operation record(s).`
+      `[DELETE ACCOUNT] Account deletion completed. Removed ${deletedCodesCount} redeemed code record(s), ${deletedLootCount} loot total record(s) and ${deletedBackfillCount} backfill operation record(s).`
     );
 
     await interaction.editReply({
@@ -149,6 +156,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             'All your data has been permanently removed:\n\n' +
               `• Credentials deleted\n` +
               `• ${deletedCodesCount} code record(s) deleted\n` +
+              `• ${deletedLootCount} personal loot total(s) deleted\n` +
               '• Audit log entries deleted\n' +
               `• ${deletedBackfillCount} backfill operation record(s) deleted\n\n` +
               'If you want to use the bot again in the future, simply run `/setup`.'

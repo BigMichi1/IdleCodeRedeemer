@@ -191,7 +191,7 @@ describe('isCodeExpired', () => {
 
   test('returns true after markCodeAsExpired', async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
-    await codeManager.markCodeAsExpired('CODE1234ABCD');
+    await codeManager.markCodeAsExpired('CODE1234ABCD', USER_A);
     expect(await codeManager.isCodeExpired('CODE1234ABCD')).toBe(true);
   });
 
@@ -239,7 +239,7 @@ describe('getAllValidCodes', () => {
 
   test('excludes codes that are expired', async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
-    await codeManager.markCodeAsExpired('CODE1234ABCD');
+    await codeManager.markCodeAsExpired('CODE1234ABCD', USER_A);
     expect(await codeManager.getAllValidCodes()).toEqual([]);
   });
 
@@ -264,13 +264,13 @@ describe('public/private code management', () => {
 
   test('markCodeAsPublic makes the code public', async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
-    await codeManager.markCodeAsPublic('CODE1234ABCD');
+    await codeManager.markCodeAsPublic('CODE1234ABCD', USER_A);
     expect(await codeManager.isCodePublic('CODE1234ABCD')).toBe(true);
   });
 
   test('markCodeAsPrivate reverts a public code', async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', undefined, true);
-    await codeManager.markCodeAsPrivate('CODE1234ABCD');
+    await codeManager.markCodeAsPrivate('CODE1234ABCD', USER_A);
     expect(await codeManager.isCodePublic('CODE1234ABCD')).toBe(false);
   });
 });
@@ -651,7 +651,7 @@ describe('getPublicUnexpiredCodes', () => {
 
   test('does not return expired public codes', async () => {
     await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', undefined, true);
-    await codeManager.markCodeAsExpired('CODE1234ABCD');
+    await codeManager.markCodeAsExpired('CODE1234ABCD', USER_A);
     expect(await codeManager.getPublicUnexpiredCodes()).toEqual([]);
   });
 
@@ -873,3 +873,111 @@ describe('backfillLootTotals', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Cross-user isolation of the mark* methods
+//
+// Regression: these were unscoped UPDATE ... WHERE code = ?, so one user's
+// /catchup rewrote every other user's row for that code -- destroying their
+// recorded Success status and loot history.
+// ---------------------------------------------------------------------------
+describe('mark* methods are scoped to one user', () => {
+  test('markCodeAsExpired does not clobber another user\'s successful redemption', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_B, 'Success');
+
+    await codeManager.markCodeAsExpired('CODE1234ABCD', USER_A);
+
+    // USER_B keeps their successful redemption...
+    expect(await codeManager.isCodeRedeemedByUser('CODE1234ABCD', USER_B)).toBe(true);
+    const bRows = await codeManager.getRedeemedCodeDetails(USER_B, 100);
+    expect(bRows.find((r) => r.code === 'CODE1234ABCD')?.status).toBe('Success');
+
+    // ...while the code is still globally recognised as expired.
+    expect(await codeManager.isCodeExpired('CODE1234ABCD')).toBe(true);
+  });
+
+  test('markCodeAsPrivate does not un-share another user\'s copy', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', undefined, true);
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_B, 'Success', undefined, true);
+
+    await codeManager.markCodeAsPrivate('CODE1234ABCD', USER_A);
+
+    // USER_B still shares it, so the code remains public overall.
+    expect(await codeManager.isCodePublic('CODE1234ABCD')).toBe(true);
+  });
+
+  test('markCodeAsPublic on one row still makes the code public globally', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_B, 'Success');
+
+    await codeManager.markCodeAsPublic('CODE1234ABCD', USER_A);
+
+    expect(await codeManager.isCodePublic('CODE1234ABCD')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hasSuccessfulRedemption()
+//
+// Ownership checks previously went through getRedeemedCodes(), which is capped
+// at LIMIT 100 and applies no status filter.
+// ---------------------------------------------------------------------------
+describe('hasSuccessfulRedemption', () => {
+  test('true for the user who successfully redeemed the code', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    expect(await codeManager.hasSuccessfulRedemption('CODE1234ABCD', USER_A)).toBe(true);
+  });
+
+  test('false for a different user', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success');
+    expect(await codeManager.hasSuccessfulRedemption('CODE1234ABCD', USER_B)).toBe(false);
+  });
+
+  test('false when the redemption was not successful', async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Not a Valid Code');
+    expect(await codeManager.hasSuccessfulRedemption('CODE1234ABCD', USER_A)).toBe(false);
+  });
+
+  test('finds a code older than the 100-row getRedeemedCodes() window', async () => {
+    // The regression: a user with more than 100 redemptions was told they had
+    // never redeemed a code they demonstrably had.
+    await codeManager.addRedeemedCode('OLDC0DE12345', USER_A, 'Success');
+    for (let i = 0; i < 105; i++) {
+      await codeManager.addRedeemedCode(`FILLERCODE${String(i).padStart(3, '0')}`, USER_A, 'Success');
+    }
+
+    // getRedeemedCodes is capped at 100 rows, so it cannot see every code this
+    // user owns. (Which 100 it returns depends on same-second redeemedAt
+    // ordering, so only the cap itself is asserted here.)
+    expect(await codeManager.getRedeemedCodeCount(USER_A)).toBe(106);
+    expect(await codeManager.getRedeemedCodes(USER_A)).toHaveLength(100);
+
+    // The targeted query is unaffected by the window.
+    expect(await codeManager.hasSuccessfulRedemption('OLDC0DE12345', USER_A)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deleteUserLootTotals()
+// ---------------------------------------------------------------------------
+describe('deleteUserLootTotals', () => {
+  test("removes the user's personal totals but keeps the server aggregate", async () => {
+    await codeManager.addRedeemedCode('CODE1234ABCD', USER_A, 'Success', [
+      { chest_type_id: 1, count: 3 },
+    ] as any);
+
+    const beforeUser = await codeManager.getAggregateLoot(USER_A);
+    expect(Object.keys(beforeUser.chests).length).toBeGreaterThan(0);
+
+    const removed = await codeManager.deleteUserLootTotals(USER_A);
+    expect(removed).toBeGreaterThan(0);
+
+    expect(await codeManager.getAggregateLoot(USER_A)).toEqual({ chests: {}, items: {} });
+    // The anonymised '__server__' scope is deliberately retained.
+    expect(Object.keys((await codeManager.getAggregateLoot()).chests).length).toBeGreaterThan(0);
+  });
+
+  test('is a no-op for a user with no loot', async () => {
+    expect(await codeManager.deleteUserLootTotals(USER_B)).toBe(0);
+  });
+});

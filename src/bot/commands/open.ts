@@ -6,7 +6,8 @@ import {
 } from 'discord.js';
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi from '../api/idleChampionsApi';
+import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
+import logger from '../utils/logger';
 
 enum ChestType {
   Copper = 1,
@@ -159,7 +160,34 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       instanceId,
     });
 
-    // Log action
+    // The API returns GenericResponse for network errors, non-2xx responses,
+    // unparseable bodies and stale sessions. Check before claiming success:
+    // reporting "Chests Opened Successfully" on a failure both misleads the user and writes an audit
+    // entry for an operation that never happened.
+    if (IdleChampionsApi.isGenericResponse(response)) {
+      const reason =
+        response.status === ResponseStatus.OutdatedInstanceId
+          ? 'Your game session has expired. Open the game and try again.'
+          : response.status === ResponseStatus.SwitchServer
+            ? 'The game moved your account to another server. Please retry.'
+            : response.status === ResponseStatus.InsuficcientCurrency
+              ? 'You do not have enough currency for this action.'
+              : 'The game server rejected the request. Please try again later.';
+
+      logger.error(`[OPEN] openChests failed with status ${response.status}`);
+
+      await interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xff0000)
+            .setTitle('❌ Could Not Open Chests')
+            .setDescription(reason),
+        ],
+      });
+      return;
+    }
+
+    // Log action (only after confirming the API actually did the work)
     await auditManager.logAction(interaction.user.id, 'CHESTS_OPENED', {
       chestType: chestName,
       count,

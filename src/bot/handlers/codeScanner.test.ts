@@ -6,6 +6,49 @@ import { codeManager } from '../database/codeManager';
 import type { Message } from 'discord.js';
 
 describe('extractCodesFromText', () => {
+  // Regression: the pattern had no word boundaries and the input is uppercased
+  // before matching, so any 12+ letter English word became a "code". Each false
+  // positive costs one live redeemcoupon call against every registered user's
+  // game account.
+  describe('does not treat English prose as codes', () => {
+    const prose = [
+      'Congratulations everyone on the new update!',
+      'This is a wonderful accomplishment',
+      'hey check out characterization stuff',
+      'Thanks for the recommendation',
+      'What an extraordinary achievement today',
+      'ACCOMPLISHED',
+      'CHARACTERIZATION',
+      'LONGWORDWITHNODIGITS',
+    ];
+
+    for (const text of prose) {
+      test(`no codes in: ${text}`, () => {
+        expect(extractCodesFromText(text)).toEqual([]);
+      });
+    }
+  });
+
+  describe('still matches every real code shape', () => {
+    test('dash-grouped all-letter code (no digits at all)', () => {
+      expect(extractCodesFromText('LATU-EGIS-TOCK')).toEqual(['LATUEGISTOCK']);
+    });
+
+    test('undashed code containing digits', () => {
+      expect(extractCodesFromText('ABCD1234EFGH')).toEqual(['ABCD1234EFGH']);
+    });
+
+    test('16-char dash-grouped code', () => {
+      expect(extractCodesFromText('ABCD-1234-EFGH-5678')).toEqual(['ABCD1234EFGH5678']);
+    });
+
+    test('a code embedded in a normal sentence', () => {
+      expect(extractCodesFromText('Grab LATU-EGIS-TOCK before it expires!')).toEqual([
+        'LATUEGISTOCK',
+      ]);
+    });
+  });
+
   describe('12-character codes', () => {
     test('matches a plain 12-char alphanumeric code', () => {
       expect(extractCodesFromText('ABCD1234EFGH')).toEqual(['ABCD1234EFGH']);

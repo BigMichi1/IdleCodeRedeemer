@@ -200,7 +200,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           alreadyHad++;
         } else if (codeStatus === 4) {
           // Expired - update DB
-          await codeManager.markCodeAsExpired(code);
+          await codeManager.markCodeAsExpired(code, interaction.user.id);
           expired++;
           await auditManager.logAction(interaction.user.id, 'CATCHUP_REDEEM_FAILED', {
             code,

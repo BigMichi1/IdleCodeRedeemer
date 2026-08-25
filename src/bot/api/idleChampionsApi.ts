@@ -54,6 +54,36 @@ declare const enum ContractType {
   Large = 34,
 }
 
+/**
+ * Every outbound call gets a timeout. Bun's fetch has no default, and
+ * submitCode runs inside a serialized redeem queue -- one hung request there
+ * stalls auto-redemption for every subsequent code and every user, silently.
+ */
+const REQUEST_TIMEOUT_MS = 15_000;
+
+/**
+ * The Idle Champions host has served an expired certificate in the past.
+ * Scope that exception to this one host rather than setting
+ * NODE_TLS_REJECT_UNAUTHORIZED=0, which disables validation process-wide --
+ * including for the Discord gateway, exposing DISCORD_TOKEN.
+ *
+ * Set IDLE_CHAMPIONS_INSECURE_TLS=1 only if the certificate is actually broken;
+ * verify first, since it may since have been renewed.
+ */
+const ALLOW_INSECURE_TLS =
+  process.env.IDLE_CHAMPIONS_INSECURE_TLS === '1' ||
+  process.env.IDLE_CHAMPIONS_INSECURE_TLS === 'true';
+
+function apiFetch(url: string): Promise<Response> {
+  const init: RequestInit & { tls?: { rejectUnauthorized: boolean } } = {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  };
+  if (ALLOW_INSECURE_TLS) {
+    init.tls = { rejectUnauthorized: false };
+  }
+  return fetch(url, init);
+}
+
 class IdleChampionsApi {
   private static readonly CLIENT_VERSION = '999';
   private static readonly NETWORK_ID = '21';
@@ -73,7 +103,7 @@ class IdleChampionsApi {
     request.searchParams.append('localization_aware', 'true');
 
     try {
-      const response = await fetch(request.toString());
+      const response = await apiFetch(request.toString());
       const body = await IdleChampionsApi.tryToJson(response.clone());
 
       apiRequestLogger.log(
@@ -142,7 +172,7 @@ class IdleChampionsApi {
     logger.debug(`Submitting code to: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
-      const response = await fetch(request.toString());
+      const response = await apiFetch(request.toString());
       const redeemResponse: RedeemCodeResponse = await IdleChampionsApi.tryToJson(response.clone());
 
       apiRequestLogger.log(
@@ -174,38 +204,34 @@ class IdleChampionsApi {
         const failureReason = redeemResponse.failure_reason
           ? String(redeemResponse.failure_reason)
           : '';
-        const reason = failureReason.toLowerCase();
 
-        if (reason.includes('already') || reason.includes('someone')) {
-          return new CodeSubmitResponse(CodeSubmitStatus.AlreadyRedeemed);
-        }
-        if (reason.includes('expired')) {
-          return new CodeSubmitResponse(CodeSubmitStatus.Expired);
-        }
-        if (
-          reason.includes('combo') ||
-          reason.includes('invalid') ||
-          reason.includes('valid_combination')
-        ) {
-          logger.warn(`[REDEEM API] Invalid code combination: ${failureReason}`);
+        if (failureReason) {
+          const outcome = classifyFailureReason(failureReason);
+          if (outcome) {
+            return outcome.kind === 'code'
+              ? new CodeSubmitResponse(outcome.status)
+              : new GenericResponse(outcome.status);
+          }
+          // Unknown wire value. Logged at error (not warn) so it reaches
+          // logs/error.log -- an upstream wording change would otherwise tell
+          // every user that every valid code is invalid, with no visible trace.
+          logger.error(
+            `[REDEEM API] Unrecognized failure_reason "${failureReason}" - falling back to NotValidCombo. The API contract may have changed.`
+          );
           return new CodeSubmitResponse(CodeSubmitStatus.NotValidCombo);
         }
-        if (reason.includes('outdated')) {
-          return new GenericResponse(ResponseStatus.OutdatedInstanceId);
-        }
-        if (reason.includes('parameter')) {
-          return new CodeSubmitResponse(CodeSubmitStatus.InvalidParameters);
-        }
-        if (reason.includes('cannot')) {
-          return new CodeSubmitResponse(CodeSubmitStatus.CannotRedeem);
-        }
+
         if (redeemResponse.success && redeemResponse.okay) {
           return new CodeSubmitResponse(CodeSubmitStatus.Success, redeemResponse?.loot_details);
         }
-        // Default to NotValidCombo for any unrecognized failure reason
-        logger.warn(`[REDEEM API] Unrecognized failure reason: ${failureReason}`);
+
+        logger.error('[REDEEM API] Response had neither failure_reason nor success/okay');
         return new CodeSubmitResponse(CodeSubmitStatus.NotValidCombo);
       }
+
+      logger.error(
+        `[REDEEM API] redeemcoupon returned HTTP ${response.status} ${response.statusText}`
+      );
     } catch (error) {
       logger.error('Error submitting code:', error);
       apiRequestLogger.log(
@@ -244,12 +270,9 @@ class IdleChampionsApi {
     request.searchParams.append('localization_aware', 'true');
 
     try {
-      const fetchPromise = fetch(request.toString());
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('API request timeout after 5s')), 5000)
-      );
-
-      const response = (await Promise.race([fetchPromise, timeoutPromise])) as any;
+      // AbortSignal.timeout replaces a Promise.race that never cleared its timer
+      // and never aborted the losing request.
+      const response = await apiFetch(request.toString());
 
       if (response.ok) {
         const playerData: PlayerData = await IdleChampionsApi.tryToJson(response.clone());
@@ -339,7 +362,7 @@ class IdleChampionsApi {
     logger.debug(`Opening chests from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
-      const response = await fetch(request.toString());
+      const response = await apiFetch(request.toString());
       const openGenericChestResponse: OpenGenericChestResponse = await IdleChampionsApi.tryToJson(
         response.clone()
       );
@@ -421,7 +444,7 @@ class IdleChampionsApi {
     logger.debug(`Purchasing chests from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
-      const response = await fetch(request.toString());
+      const response = await apiFetch(request.toString());
       const purchaseResponse: PurchaseChestResponse = await IdleChampionsApi.tryToJson(
         response.clone()
       );
@@ -451,7 +474,7 @@ class IdleChampionsApi {
             purchaseResponse.switch_play_server
           );
         }
-        if (purchaseResponse.failure_reason === FailureReason.NotEnoughCurrency) {
+        if (classifyFailureReason(String(purchaseResponse.failure_reason ?? ''))?.status === ResponseStatus.InsuficcientCurrency) {
           return new GenericResponse(ResponseStatus.InsuficcientCurrency);
         }
         if (purchaseResponse.success && purchaseResponse.okay) {
@@ -504,7 +527,7 @@ class IdleChampionsApi {
     logger.debug(`Using blacksmith from: ${request.toString().split('hash=')[0]}hash=***`);
 
     try {
-      const response = await fetch(request.toString());
+      const response = await apiFetch(request.toString());
       const useServerBuffResponse: UseServerBuffResponse = await IdleChampionsApi.tryToJson(
         response.clone()
       );
@@ -623,7 +646,7 @@ class UseBlacksmithResponse {
   }
 }
 
-enum CodeSubmitStatus {
+export enum CodeSubmitStatus {
   Success,
   AlreadyRedeemed,
   InvalidParameters,
@@ -632,7 +655,7 @@ enum CodeSubmitStatus {
   CannotRedeem,
 }
 
-enum ResponseStatus {
+export enum ResponseStatus {
   Success,
   OutdatedInstanceId,
   Failed,
@@ -640,15 +663,49 @@ enum ResponseStatus {
   SwitchServer,
 }
 
-enum FailureReason {
-  AlreadyRedeemed = 'already_redeemed',
-  SomeoneAlreadyRedeemed = 'someone_already_redeemed',
-  Expired = 'expired',
-  NotValidCombo = 'invalid_code_combo',
-  OutdatedInstanceId = 'outdated_instance_id',
-  InvalidParameters = 'invalid_parameters',
-  CannotRedeem = 'cannot_redeem',
-  NotEnoughCurrency = 'insufficient_currency',
+
+
+type FailureOutcome =
+  | { kind: 'code'; status: CodeSubmitStatus }
+  | { kind: 'generic'; status: ResponseStatus };
+
+/**
+ * Exact failure_reason -> outcome mapping.
+ *
+ * This replaces an ordered chain of substring tests in which
+ * `includes('invalid')` shadowed the later `includes('parameter')` test and
+ * `'can_not_redeem_combination'` never matched `includes('cannot')`, making
+ * InvalidParameters and CannotRedeem unreachable -- a credentials problem was
+ * reported to the user as "Not a Valid Code".
+ *
+ * Two sets of wire values were in the tree: the generated declaration in
+ * api/types/redeem_code_response.d.ts and a module-local enum with different
+ * strings that shadowed it. Both are accepted here rather than guessing which
+ * the live API currently emits. Keys are lowercased at lookup.
+ */
+const FAILURE_OUTCOMES: Readonly<Record<string, FailureOutcome>> = {
+  // from api/types/redeem_code_response.d.ts (generated from real responses)
+  'outdated instance id': { kind: 'generic', status: ResponseStatus.OutdatedInstanceId },
+  'you_already_redeemed_combination': { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
+  'someone_already_redeemed_combination': { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
+  'invalid or incomplete parameters': { kind: 'code', status: CodeSubmitStatus.InvalidParameters },
+  'not_valid_combination': { kind: 'code', status: CodeSubmitStatus.NotValidCombo },
+  'offer_has_expired': { kind: 'code', status: CodeSubmitStatus.Expired },
+  'not enough currency': { kind: 'generic', status: ResponseStatus.InsuficcientCurrency },
+  'can_not_redeem_combination': { kind: 'code', status: CodeSubmitStatus.CannotRedeem },
+  // from the former module-local enum
+  'already_redeemed': { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
+  'someone_already_redeemed': { kind: 'code', status: CodeSubmitStatus.AlreadyRedeemed },
+  'expired': { kind: 'code', status: CodeSubmitStatus.Expired },
+  'invalid_code_combo': { kind: 'code', status: CodeSubmitStatus.NotValidCombo },
+  'outdated_instance_id': { kind: 'generic', status: ResponseStatus.OutdatedInstanceId },
+  'invalid_parameters': { kind: 'code', status: CodeSubmitStatus.InvalidParameters },
+  'cannot_redeem': { kind: 'code', status: CodeSubmitStatus.CannotRedeem },
+  'insufficient_currency': { kind: 'generic', status: ResponseStatus.InsuficcientCurrency },
+};
+
+export function classifyFailureReason(reason: string): FailureOutcome | undefined {
+  return FAILURE_OUTCOMES[reason.trim().toLowerCase()];
 }
 
 export default IdleChampionsApi;
