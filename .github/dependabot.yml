@@ -8,6 +8,23 @@ updates:
       day: monday
       time: "03:00"
     open-pull-requests-limit: 5
+    # Packages in these families must move together. When Dependabot bumped
+    # @commitlint/config-conventional on its own, the newer config pulled an
+    # ESM-only dependency the pinned CLI could not require and every commit
+    # failed; @typescript-eslint/parser and its plugin sat two minors apart for
+    # the same reason. Grouping makes each family one PR.
+    groups:
+      commitlint:
+        patterns:
+          - "commitlint"
+          - "@commitlint/*"
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+      prettier:
+        patterns:
+          - "prettier"
+          - "prettier-plugin-*"
     reviewers:
       - BigMichi1
       - Copilot

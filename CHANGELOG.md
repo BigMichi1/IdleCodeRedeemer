@@ -76,6 +76,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **`lint` fails on warnings (`--max-warnings 0`)** - A warning that never fails anything is
+  a warning nobody fixes. `eqeqeq` is now configured with `{ null: 'ignore' }`, since
+  `x == null` is the deliberate null-or-undefined check and was the only standing warning.
+  `lint:fix`, which the pre-commit hook runs, stays lenient so a warning cannot block a
+  commit mid-change.
+- **`lint` and `format:check` run in CI** - Neither had ever run in a workflow. ESLint
+  violations surfaced only in the pre-commit hook, so anything merged by Dependabot or
+  pushed from a machine with hooks disabled went unchecked, and a Prettier minor bump landed
+  on `main` red without CI objecting.
+- **Dependabot groups for the commitlint, typescript-eslint and prettier families** - Each
+  family is now one pull request. Bumping `@commitlint/config-conventional` alone pulled an
+  ESM-only dependency its pinned CLI could not require and broke every commit; parser and
+  plugin drifted two minors apart the same way. Syncpack cannot express this: it compares one
+  dependency across several manifests, and these are differently named packages in a single
+  manifest, so a `versionGroup` with `policy: sameRange` does not flag the skew (verified by
+  planting a mismatch and watching `syncpack lint` pass).
+
 - **Dependency tree submission to GitHub's dependency graph** - `scripts/dependency-snapshot.ts`
   parses `bun.lock` and submits the resolved tree via the dependency submission API, run by
   the new `Dependency Submission` workflow on every push to `main` and weekly before the

@@ -48,7 +48,9 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       'no-console': 'off',
-      'eqeqeq': ['warn', 'always'],
+      // `x == null` is the deliberate null-or-undefined check; flagging it
+      // pushed callers toward two comparisons that mean the same thing.
+      'eqeqeq': ['warn', 'always', { null: 'ignore' }],
       'prefer-const': 'warn',
       'no-var': 'warn',
       'semi': ['error', 'always'],

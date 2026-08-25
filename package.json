@@ -13,7 +13,7 @@
     "dev": "bun run --bun src/bot/bot.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "lint": "eslint src scripts --ext .ts",
+    "lint": "eslint src scripts --ext .ts --max-warnings 0",
     "lint:fix": "eslint src scripts --ext .ts --fix",
     "format": "syncpack fix && prettier --write \"src/**/*.{ts,md}\" \"scripts/**/*.ts\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
     "format:check": "syncpack lint && prettier --check \"src/**/*.{ts,md}\" \"scripts/**/*.ts\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" \".mise.toml\" \"Dockerfile*\" \"*.json\"",
