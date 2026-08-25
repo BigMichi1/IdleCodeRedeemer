@@ -333,6 +333,7 @@ The Docker metadata action automatically generates tags based on git tags:
 
 | Version | Date     | Changes                                                   |
 | ------- | -------- | --------------------------------------------------------- |
+| 3.0.2   | Aug 2026 | Publishes the major-version Docker tag                     |
 | 3.0.1   | Aug 2026 | Dependency security fixes, repaired CI and commit tooling |
 | 3.0.0   | Aug 2026 | Encrypted credentials, nine new commands, signed releases |
 | 2.0.0   | May 2026 | Initial public release as Discord bot                     |

@@ -6,13 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [3.0.2] - 2026-08-25
+
 ### Fixed
 
 - **The major-version Docker tag now exists** - `VERSIONING.md` and every release note
   advertised `ghcr.io/bigmichi1/idlecoderedeemer:3`, but the metadata action was never
   configured to emit `{{major}}`: `:3.0.1`, `:3.0` and `:latest` resolve while `:3` returned
-  404. Added the pattern, so the tag is published from 3.0.2 onward; images already pushed
-  cannot gain it retroactively.
+  404. Added the pattern; this is the first release that publishes it, and images pushed
+  before it cannot gain the tag retroactively.
 - **Documentation no longer advertises `v`-prefixed image tags** - `:v3.0.1` was never
   produced either. The published tags are `{{version}}`, `{{major}}.{{minor}}`, `sha-<short>`
   and `latest`.
@@ -731,6 +733,7 @@ Security changes require special attention:
 
 | Version | Release Date | Category               | Key Changes                                                    |
 | ------- | ------------ | ---------------------- | -------------------------------------------------------------- |
+| 3.0.2   | 2026-08-25   | Patch Release          | Publishes the major-version Docker tag the documentation promised |
 | 3.0.1   | 2026-08-25   | Patch Release          | Dependency security fixes and repaired CI and commit tooling   |
 | 3.0.0   | 2026-08-25   | Major Release          | Encrypted credentials, nine new commands, supply-chain signing |
 | 2.0.0   | 2026-05-09   | Initial Public Release | Complete rewrite as Discord bot with security hardening        |
