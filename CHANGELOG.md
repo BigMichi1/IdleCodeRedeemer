@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-08-25
+
 ### Security
 
 - **Cleared every advisory on the production dependency path** - `bun audit` reported 20
@@ -718,6 +720,7 @@ Security changes require special attention:
 
 | Version | Release Date | Category               | Key Changes                                                    |
 | ------- | ------------ | ---------------------- | -------------------------------------------------------------- |
+| 3.0.1   | 2026-08-25   | Patch Release          | Dependency security fixes and repaired CI and commit tooling   |
 | 3.0.0   | 2026-08-25   | Major Release          | Encrypted credentials, nine new commands, supply-chain signing |
 | 2.0.0   | 2026-05-09   | Initial Public Release | Complete rewrite as Discord bot with security hardening        |
 

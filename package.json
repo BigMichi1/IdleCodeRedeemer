@@ -1,6 +1,6 @@
 {
   "name": "idle-code-redeemer-bot",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Discord bot for Idle Champions code scanning and redemption",
   "main": "dist/bot/bot.js",
   "docs": "docs",
