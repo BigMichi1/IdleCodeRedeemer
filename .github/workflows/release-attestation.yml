@@ -299,15 +299,25 @@ jobs:
               release_id: releaseId
             });
 
-            if (release.body && release.body.includes(MARKER)) {
-              core.info('Release body already carries the attestation block; leaving it unchanged.');
-              return;
-            }
+            // Replace an existing block rather than skipping, so a re-attestation
+            // corrects stale details instead of leaving them published. Skipping
+            // left v3.0.0 quoting a commit the corrected attestation no longer
+            // named.
+            const existing = release.body ?? '';
+            const markerAt = existing.indexOf(MARKER);
+            const body =
+              markerAt === -1
+                ? `${existing}\n\n${comment}`
+                : `${existing.slice(0, markerAt).trimEnd()}\n\n${comment}`;
 
             await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: releaseId,
-              body: `${release.body ?? ''}\n\n${comment}`
+              body
             });
-            core.info(`Appended verification instructions to ${tag}.`);
+            core.info(
+              markerAt === -1
+                ? `Appended verification instructions to ${tag}.`
+                : `Replaced the verification block on ${tag}.`
+            );
