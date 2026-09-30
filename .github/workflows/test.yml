@@ -61,7 +61,7 @@ jobs:
       # Stores lcov-baseline artifact on main; retrieves it and posts a coverage
       # diff comment on PRs. Falls back to summary-only on first run or fork PRs.
       - name: Report coverage
-        uses: pento/lcov-coverage-check@d462675abef32751c997e5581b9d9ce7408181be # v3.1.1
+        uses: pento/lcov-coverage-check@2cab51dfe13b23eb37aaec0c8963869c25e139d9 # v3.2.0
         with:
           path: "src/"
           ignore-patterns: |
