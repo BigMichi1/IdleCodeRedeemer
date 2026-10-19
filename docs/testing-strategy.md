@@ -118,7 +118,7 @@ bun outdated
 **Command (Local)**:
 
 ```bash
-tsc -p tsconfig.bot.json --noEmit
+./bin/mise run typecheck # bun check -p tsconfig.bot.json
 ```
 
 **CI/CD Trigger**: Runs as part of docker.yml build process

@@ -9,7 +9,7 @@ All tasks run through the vendored Mise launcher `./bin/mise` (it pins Bun/gitle
 ```bash
 ./bin/mise run install       # bun install
 ./bin/mise run dev           # run bot from source (bun run --bun src/bot/bot.ts)
-./bin/mise run typecheck     # tsc -p tsconfig.bot.json (noEmit)
+./bin/mise run typecheck     # bun check -p tsconfig.bot.json
 ./bin/mise run test          # bun test
 ./bin/mise run test:coverage # lcov -> coverage/lcov.info
 ./bin/mise run lint          # eslint src
@@ -36,7 +36,7 @@ Database migrations are generated, never hand-written first: edit `src/bot/datab
 
 ## Architecture
 
-A Discord bot (discord.js 14) that watches a channel for Idle Champions promo codes and redeems them against the game's HTTP API on behalf of registered users. Runtime is Bun; TypeScript is never emitted (`tsc` is typecheck-only, production is a `bun build --compile` binary).
+A Discord bot (discord.js 14) that watches a channel for Idle Champions promo codes and redeems them against the game's HTTP API on behalf of registered users. Runtime is Bun; TypeScript is never emitted (`bun check` is typecheck-only; the `typescript` package stays for typed ESLint; production is a `bun build --compile` binary).
 
 ### Layers
 
