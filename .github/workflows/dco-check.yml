@@ -44,7 +44,10 @@ jobs:
             if ! git log --format=%B -n 1 "$commit" | grep -q "^Signed-off-by:"; then
               unsigned_commits+=("$commit")
             fi
-          done < <(git rev-list "$COMMIT_RANGE")
+          # Merge commits are skipped: Kodiak brings PR branches up to date by
+          # merging main in, and those merge commits carry no Signed-off-by.
+          # They add no authored content; the commits they merge are checked.
+          done < <(git rev-list --no-merges "$COMMIT_RANGE")
 
           if [ ${#unsigned_commits[@]} -gt 0 ]; then
             echo "❌ DCO Check Failed"
