@@ -178,7 +178,7 @@ Output shows all available tasks, such as `install`, `dev`, `build`, `typecheck`
 
 ### Development Build (Type Check Only)
 
-**Purpose**: TypeScript is not compiled to JavaScript for development — the bot runs directly from `.ts` source via Bun. `tsc` is type-check only (`noEmit: true`).
+**Purpose**: TypeScript is not compiled to JavaScript for development — the bot runs directly from `.ts` source via Bun. `bun check` (Bun's built-in type checker) is type-check only.
 
 ```bash
 # Type-check only (no output files)
@@ -269,7 +269,7 @@ After building, run the bot:
 **Characteristics**:
 
 - Bun runs TypeScript natively — no compilation step required for development
-- `tsc` used for type-checking only (`noEmit: true`)
+- `bun check` used for type-checking only
 - No automatic restart; stop and re-run after editing
 - Good for development
 
