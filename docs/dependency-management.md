@@ -629,20 +629,20 @@ All pass security audit (bun audit).
 
 ```toml
 [tasks.install]
-description = "Install dependencies with Bun"
-run = "bun install"
+description = 'Install dependencies with Bun'
+run = 'bun install'
 
-[tasks."prod:install"]
-description = "Install production dependencies only"
-run = "bun install --production --frozen-lockfile --ignore-scripts"
+[tasks.'prod:install']
+description = 'Install production dependencies only'
+run = 'bun install --production --frozen-lockfile --ignore-scripts'
 
 [tasks.audit]
-description = "Audit dependencies for vulnerabilities"
-run = "bun audit"
+description = 'Audit dependencies for vulnerabilities'
+run = 'bun audit'
 
 [tasks.update]
-description = "Update all dependencies"
-run = "bun update"
+description = 'Update all dependencies'
+run = 'bun update'
 ```
 
 ### ESLint Configuration
