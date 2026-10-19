@@ -163,7 +163,7 @@ bun test --watch # Re-run on file changes
 
 ```toml
 [test]
-preload = ["./src/test/setup.ts"]
+preload = ['./src/test/setup.ts']
 ```
 
 `src/test/setup.ts` sets environment variables before any module is imported:
