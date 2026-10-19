@@ -142,7 +142,7 @@ Now when you `cd` into the project, tools and environment variables load automat
 
 ```toml
 [tools]
-bun = '1.3.14' # Pinned version for reproducibility
+bun = '1.3.14'  # Pinned version for reproducibility
 ```
 
 ## Troubleshooting
