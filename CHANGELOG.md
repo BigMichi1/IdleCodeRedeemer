@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [3.0.3] - 2026-10-19
+
+### Security
+
+- **Cleared new transitive advisories** - `bun.lock` refreshed within existing ranges:
+  `undici` 6.28.1 (GHSA-3wwx-pv8p-q78v, GHSA-r53p-7pc4-xj5r, GHSA-rfgv-xxqx-mfg5),
+  `brace-expansion` 5.0.12 (GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p, GHSA-q2hr-2g5m-vwhr)
+  and `fast-uri` 3.1.8 (GHSA-hrr3-gc8f-f4qj).
+
+### Changed
+
+- **Runtime dependencies** - `drizzle-orm` 0.45.2 → 0.45.4; Debian base image 13.5-slim →
+  13.7-slim; the compiled binary is built with Bun 1.4.3 (was 1.4.2).
+- **Type checking uses `bun check`** instead of `tsc`. The `typescript` package stays as a
+  devDependency because typed ESLint needs it.
+- **Prettier TOML formatting** - `prettier-plugin-toml` 3 applies `singleQuote` to TOML;
+  `.prettierrc` now keeps TOML files on double quotes so strings keep escape semantics.
+- **Dependabot PRs merge automatically** - Kodiak now brings Dependabot branches up to date,
+  the DCO check skips the merge commits that creates, and `Test & Coverage` is a required
+  status check so no red update can land.
+- Development and CI dependency updates (eslint, typescript-eslint, commitlint, prettier,
+  lint-staged, drizzle-kit, GitHub Actions).
+
 ## [3.0.2] - 2026-08-25
 
 ### Fixed
@@ -733,6 +756,7 @@ Security changes require special attention:
 
 | Version | Release Date | Category               | Key Changes                                                    |
 | ------- | ------------ | ---------------------- | -------------------------------------------------------------- |
+| 3.0.3   | 2026-10-19   | Patch Release          | Transitive advisory fixes and dependency updates               |
 | 3.0.2   | 2026-08-25   | Patch Release          | Publishes the major-version Docker tag the documentation promised |
 | 3.0.1   | 2026-08-25   | Patch Release          | Dependency security fixes and repaired CI and commit tooling   |
 | 3.0.0   | 2026-08-25   | Major Release          | Encrypted credentials, nine new commands, supply-chain signing |
