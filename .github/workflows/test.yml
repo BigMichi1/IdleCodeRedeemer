@@ -53,7 +53,17 @@ jobs:
         # The dependency graph cannot see bun.lock transitives, so Dependabot
         # alerts never fired on them. This is the gate that actually catches a
         # vulnerable transitive package before it merges.
-        run: ./bin/mise run audit:ci
+        #
+        # Only on PRs, and only for advisories the PR adds: a new advisory
+        # against a package already on main used to fail every open PR at once,
+        # and on a push to main it skipped the coverage baseline upload below.
+        # The full audit runs in audit.yml.
+        if: github.event_name == 'pull_request'
+        env:
+          AUDIT_BASE_REF: origin/${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=1 origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+          ./bin/mise run audit:pr
 
       - name: Run tests with coverage
         run: ./bin/mise run test:coverage
