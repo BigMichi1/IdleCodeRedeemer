@@ -6,6 +6,17 @@
 # that host's own requests via IDLE_CHAMPIONS_INSECURE_TLS (see
 # src/bot/api/idleChampionsApi.ts).
 
+[vars]
+# Both IDs are esbuild development-server issues reaching the tree only through
+# drizzle-kit 0.31.10 (already the latest release), which pins the affected
+# copies via tsx and the deprecated @esbuild-kit/core-utils. esbuild is a
+# build-time bundler here and is not present in the runtime image.
+#
+# minimatch is not listed: eslint and typescript-eslint pin ^10, which every
+# fixed release excludes, so package.json overrides it to 11.x instead. Drop
+# that override once both accept minimatch 11.
+audit_ignores = "--ignore GHSA-67mh-4wv8-2f99 --ignore GHSA-g7r4-m6w7-qqqr"
+
 [tools]
 # Bun runtime and package manager
 bun = "1.4.3"
@@ -137,14 +148,18 @@ run = "bun audit"
 
 [tasks."audit:ci"]
 # Gate on every severity rather than a threshold, with known-unfixable findings
-# named explicitly so a new advisory of any level still fails the build.
-#
-# Both ignored IDs are esbuild development-server issues reaching the tree only
-# through drizzle-kit 0.31.10 (already the latest release), which pins the
-# affected copies via tsx and the deprecated @esbuild-kit/core-utils. esbuild is
-# a build-time bundler here and is not present in the runtime image.
+# named explicitly (vars.audit_ignores) so a new advisory of any level still
+# fails the build. Runs from .github/workflows/audit.yml on main and daily.
 description = "Fail on any dependency advisory that is not a known upstream-blocked exception"
-run = "bun audit --ignore GHSA-67mh-4wv8-2f99 --ignore GHSA-g7r4-m6w7-qqqr"
+run = "bun audit {{vars.audit_ignores}}"
+
+[tasks."audit:pr"]
+# Run on pull requests instead of audit:ci. A fresh advisory against a package
+# already on main used to fail every open PR at once, so Dependabot PRs for
+# unrelated packages sat red and never auto-merged. This only fails on
+# advisories the PR's own tree adds; see scripts/audit-pr.ts.
+description = "Fail only on dependency advisories not already present on the base branch"
+run = "bun run scripts/audit-pr.ts --base ${AUDIT_BASE_REF:-origin/main} {{vars.audit_ignores}}"
 
 [tasks.outdated]
 description = "Check for outdated dependencies"
