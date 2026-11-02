@@ -93,6 +93,8 @@ bun outdated
 
 - **CodeQL**: Runs on every PR and push to main (codeql.yml)
 - **Dependency Review**: Runs when package.json changes (dependency-review.yml)
+- **Dependency Audit (PR)**: `mise run audit:pr` in test.yml fails only on advisories the PR adds compared to its base branch, so an advisory against a package already on main does not block unrelated PRs
+- **Dependency Audit (full)**: `mise run audit:ci` runs on push to main, daily, and on demand (audit.yml); this is where an advisory against main shows up
 - **Secret Scanning**: Runs on every push and PR (secrets.yml)
 
 **What It Checks**:
