@@ -68,5 +68,8 @@
     "*.json": [
       "prettier --write"
     ]
+  },
+  "overrides": {
+    "minimatch": "11.0.3"
   }
 }
