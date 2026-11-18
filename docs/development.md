@@ -104,13 +104,12 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 
 ### Instance ID Problem
 
-When calling game APIs (redeem, open chests, blacksmith), you must:
+When calling game APIs that change state (redeem, open chests, blacksmith), you must:
 
-1. Fetch fresh user details via `getUserDetails()`
-2. Extract `instance_id` from `details.instance_id`
-3. Pass it to the API call
+1. Resolve a fresh session with `resolveGameSession(discordId, credentials)` from `src/bot/api/gameSession.ts`
+2. Pass its `server` and `instanceId` to the API call
 
-This prevents "Outdated instance id" errors from the server.
+This prevents "Outdated instance id" errors from the server. The resolver also follows the `SwitchServer` redirect when the game moves an account to another play server, and persists the new server. For read-only access (such as `/inventory`) use `resolvePlayerData()` from the same file. Do not call `IdleChampionsApi.getUserDetails()` directly: the copies that did drifted apart, and one of them skipped every moved account.
 
 ## Logging
 

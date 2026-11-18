@@ -179,25 +179,27 @@ export async function backfillChannelHistory(
             continue;
           }
 
-          try {
-            // Fetch a fresh instance_id before redeeming. resolveGameSession
-            // also follows the SwitchServer redirect: reading getUserDetails
-            // directly here reported a moved account as "invalid credentials"
-            // and skipped every user the game had moved to a new play server.
-            const session = await resolveGameSession(user.discordId, { ...user, server });
-            if (!session.ok) {
-              // Break rather than continue: this fails per-user, not per-code.
-              // Continuing retried the same dead credentials once per code and
-              // left stats.errors empty, so the run was still recorded as
-              // "completed" while redeeming nothing.
-              const msg = `Could not start a game session for ${user.discordId} (${session.description}) - skipping their remaining codes`;
-              logger.error(`[BACKFILL] ${msg}`);
-              stats.errors.push(msg);
-              break;
-            }
-            server = session.server;
-            const instanceId = session.instanceId;
+          // Fetch a fresh instance_id before redeeming, following any
+          // SwitchServer redirect (see api/gameSession.ts). Deliberately
+          // outside the per-code try below: a throw here (e.g. the DB write
+          // persisting a new server) is per-user, so it must reach the per-user
+          // catch and be recorded in stats.errors, not be downgraded to a
+          // per-code warning and retried for every remaining code.
+          const session = await resolveGameSession(user.discordId, { ...user, server });
+          if (!session.ok) {
+            // Break rather than continue: this fails per-user, not per-code.
+            // Continuing retried the same dead credentials once per code and
+            // left stats.errors empty, so the run was still recorded as
+            // "completed" while redeeming nothing.
+            const msg = `Could not start a game session for ${user.discordId}: ${session.description} Skipping their remaining codes.`;
+            logger.error(`[BACKFILL] ${msg}`);
+            stats.errors.push(msg);
+            break;
+          }
+          server = session.server;
+          const instanceId = session.instanceId;
 
+          try {
             const response = await IdleChampionsApi.submitCode({
               server,
               code,

@@ -76,7 +76,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const session = await resolveGameSession(interaction.user.id, credentials);
     if (!session.ok) {
-      await replyWithError(interaction, session.title, session.description);
+      await replyWithError(interaction, '❌ Error', session.description);
       return;
     }
     const { server, instanceId } = session;
