@@ -45,8 +45,9 @@ export const SETTLED_STATUSES = [
 
 /**
  * Log-friendly name for a redeemcoupon code status (e.g. 'Code Expired' for 4).
- * Unlike normalizeCodeStatus(), an unknown value keeps its number rather than
- * collapsing to 'Unknown Status', so a new game status stays identifiable.
+ * Unlike normalizeCodeStatus(), an unknown or non-numeric value is rendered as
+ * `status <value>` rather than collapsing to 'Unknown Status', so a new game
+ * status stays identifiable.
  */
 export function describeCodeStatus(status: unknown): string {
   const name = typeof status === 'number' ? CODE_STATUS_MAP[status as CodeSubmitStatus] : undefined;

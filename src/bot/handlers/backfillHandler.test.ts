@@ -28,7 +28,7 @@ import {
 } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
-import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
+import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
 import { backfillChannelHistory } from './backfillHandler';
 import logger from '../utils/logger';
 
@@ -384,7 +384,7 @@ describe('backfill respects user preferences and counts honestly', () => {
       userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
-    submitCodeSpy.mockResolvedValue({ codeStatus: 4 } as any); // Expired
+    submitCodeSpy.mockResolvedValue({ codeStatus: CodeSubmitStatus.Expired } as any);
     const infoSpy = spyOn(logger, 'info');
     try {
       await backfillChannelHistory(makeChannel([CODE_A]));
@@ -395,20 +395,6 @@ describe('backfill respects user preferences and counts honestly', () => {
     } finally {
       infoSpy.mockRestore();
     }
-  });
-
-  test('names the API status in a recorded infrastructure failure', async () => {
-    await userManager.saveCredentials({
-      discordId: USER,
-      userId: TEST_USER_ID,
-      userHash: TEST_USER_HASH,
-      server: MOCK_SERVER,
-    });
-    submitCodeSpy.mockResolvedValue({ status: 2 } as any); // GenericResponse(Failed)
-
-    const stats = await backfillChannelHistory(makeChannel([CODE_A]));
-
-    expect(stats.errors[0]).toContain('the API returned Failed');
   });
 
   test('records an error when the API returns an infrastructure failure', async () => {
@@ -426,6 +412,7 @@ describe('backfill respects user preferences and counts honestly', () => {
 
     expect(stats.codesRedeemed).toBe(0);
     expect(stats.errors.length).toBeGreaterThan(0);
+    expect(stats.errors[0]).toContain('the API returned Failed');
   });
 });
 

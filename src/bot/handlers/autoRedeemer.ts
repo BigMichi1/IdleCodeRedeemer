@@ -178,18 +178,24 @@ async function redeemCodeForUser(
       logger.error(
         `[AUTO REDEEMER] submitCode returned GenericResponse ${describeResponseStatus(generic.status)} for code ${code}, user ${discordId}`
       );
+      // The status name goes to the log only: enum identifiers such as
+      // InsuficcientCurrency (sic) mean nothing to a user.
       if (credentials.dmOnFailure)
-        sendFailureDm(
-          discordId,
-          [code],
-          `Server Error (${describeResponseStatus(generic.status)})`
-        );
+        sendFailureDm(discordId, [code], 'The game server rejected the request');
       return;
     }
   }
 
   if (!(submitResponse instanceof Object && 'codeStatus' in submitResponse)) {
-    logger.error(`[AUTO REDEEMER] Unexpected response for code ${code}, user ${discordId}`);
+    // Reached when the retry after a server switch or stale instance_id also
+    // fails; name the status so that failure reason is not lost.
+    const status =
+      submitResponse instanceof Object && 'status' in submitResponse
+        ? describeResponseStatus((submitResponse as any).status)
+        : 'no status';
+    logger.error(
+      `[AUTO REDEEMER] Unexpected response for code ${code}, user ${discordId} (${status})`
+    );
     if (credentials.dmOnFailure) sendFailureDm(discordId, [code], 'Unexpected API Response');
     return;
   }

@@ -108,5 +108,7 @@ describe('describeCodeStatus', () => {
   test('keeps the number for an unknown status instead of hiding it', () => {
     expect(describeCodeStatus(99)).toBe('status 99');
     expect(describeCodeStatus(undefined)).toBe('status undefined');
+    // A raw JSON string is not mapped: it shows as-is rather than being guessed at.
+    expect(describeCodeStatus('4')).toBe('status 4');
   });
 });
