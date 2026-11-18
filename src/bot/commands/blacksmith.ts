@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
+import IdleChampionsApi, { ResponseStatus, describeResponseStatus } from '../api/idleChampionsApi';
 import { resolveGameSession } from '../api/gameSession';
 import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
@@ -100,7 +100,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
               ? 'You do not have enough currency for this action.'
               : 'The game server rejected the request. Please try again later.';
 
-      logger.error(`[BLACKSMITH] useBlacksmith failed with status ${response.status}`);
+      logger.error(`[BLACKSMITH] useBlacksmith failed: ${describeResponseStatus(response.status)}`);
 
       await interaction.editReply({
         embeds: [

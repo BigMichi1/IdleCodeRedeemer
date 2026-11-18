@@ -10,7 +10,11 @@
 // Failures are returned as a message instead of replied directly so the caller
 // keeps control of how and when it responds.
 
-import IdleChampionsApi, { ResponseStatus, type GenericResponse } from './idleChampionsApi';
+import IdleChampionsApi, {
+  ResponseStatus,
+  describeResponseStatus,
+  type GenericResponse,
+} from './idleChampionsApi';
 import { userManager, type UserCredentials } from '../database/userManager';
 import logger from '../utils/logger';
 
@@ -98,9 +102,9 @@ export async function resolvePlayerData(
     // success:false) into one status; the logged response body (or error) is
     // in api-logs/.
     const status = isGenericResponse(userResult)
-      ? (ResponseStatus[userResult.status] ?? userResult.status)
+      ? describeResponseStatus(userResult.status)
       : 'no details';
-    logger.warn(`[GAME SESSION] getuserdetails failed for user ${discordId} (status ${status})`);
+    logger.warn(`[GAME SESSION] getuserdetails failed for user ${discordId} (${status})`);
     // Neutral wording: this is also what a game outage looks like, and telling
     // every user their credentials are wrong would send them to re-enter
     // correct ones.

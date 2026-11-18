@@ -5,7 +5,11 @@ import { ChannelType } from 'discord.js';
 import { scanMessageForCodes } from './codeScanner';
 import { codeManager } from '../database/codeManager';
 import { userManager } from '../database/userManager';
-import IdleChampionsApi, { CodeSubmitStatus } from '../api/idleChampionsApi';
+import IdleChampionsApi, {
+  CodeSubmitStatus,
+  describeResponseStatus,
+} from '../api/idleChampionsApi';
+import { describeCodeStatus } from '../database/codeStatus';
 import { resolveGameSession } from '../api/gameSession';
 import logger from '../utils/logger';
 import { errorMessage, sleep } from '../utils/async';
@@ -228,7 +232,7 @@ export async function backfillChannelHistory(
                 );
               } else {
                 logger.info(
-                  `[BACKFILL] Code ${code} not redeemed for user ${user.discordId} (status ${codeResponse.codeStatus})`
+                  `[BACKFILL] Code ${code} not redeemed for user ${user.discordId} (${describeCodeStatus(codeResponse.codeStatus)})`
                 );
               }
             } else {
@@ -237,7 +241,7 @@ export async function backfillChannelHistory(
               // with no log and no error recorded, so the operation was written
               // as "completed" despite redeeming nothing.
               const genericStatus = (response as any)?.status;
-              const msg = `Code ${code} for user ${user.discordId} failed with API status ${genericStatus}`;
+              const msg = `Code ${code} for user ${user.discordId} failed: the API returned ${describeResponseStatus(genericStatus)}`;
               logger.error(`[BACKFILL] ${msg}`);
               stats.errors.push(msg);
             }

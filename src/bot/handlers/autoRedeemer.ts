@@ -2,7 +2,11 @@ import type { Client } from 'discord.js';
 import { userManager, type UserCredentials } from '../database/userManager';
 import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
+import IdleChampionsApi, {
+  CodeSubmitStatus,
+  ResponseStatus,
+  describeResponseStatus,
+} from '../api/idleChampionsApi';
 import logger from '../utils/logger';
 import { errorMessage, sleep } from '../utils/async';
 import { resolveGameSession, type Failure } from '../api/gameSession';
@@ -172,10 +176,14 @@ async function redeemCodeForUser(
       });
     } else {
       logger.error(
-        `[AUTO REDEEMER] submitCode returned GenericResponse status=${generic.status} for code ${code}, user ${discordId}`
+        `[AUTO REDEEMER] submitCode returned GenericResponse ${describeResponseStatus(generic.status)} for code ${code}, user ${discordId}`
       );
       if (credentials.dmOnFailure)
-        sendFailureDm(discordId, [code], `Server Error (status ${generic.status})`);
+        sendFailureDm(
+          discordId,
+          [code],
+          `Server Error (${describeResponseStatus(generic.status)})`
+        );
       return;
     }
   }
