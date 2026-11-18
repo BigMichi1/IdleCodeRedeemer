@@ -9,6 +9,7 @@ import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { CodeSubmitStatus } from '../api/idleChampionsApi';
 import { resolveGameSession } from '../api/gameSession';
+import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
 import { errorMessage, sleep } from '../utils/async';
 
@@ -54,12 +55,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const session = await resolveGameSession(interaction.user.id, credentials);
     if (!session.ok) {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle(session.title)
-        .setDescription(session.description);
-
-      await interaction.editReply({ embeds: [embed] });
+      logger.warn(`[CATCHUP] ${session.description} (user ${interaction.user.id})`);
+      await replyWithError(interaction, '❌ Error', session.description);
       return;
     }
     // instance_id is refreshed every 10 submissions below; the server can
@@ -96,12 +93,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             ...credentials,
             server,
           });
-          // A failed refresh keeps the current instance_id and carries on, as
-          // before: if that session is really gone, the following submissions
-          // are counted as failed rather than aborting the whole run.
+          // A failed refresh keeps the current instance_id and carries on: if
+          // that session is really gone, the following submissions are counted
+          // as failed rather than aborting the whole run.
           if (refreshed.ok) {
             server = refreshed.server;
             instanceId = refreshed.instanceId;
+          } else {
+            logger.warn(
+              `[CATCHUP] instance_id refresh failed for user ${interaction.user.id}: ${refreshed.description} Keeping the current session.`
+            );
           }
         }
 
@@ -192,19 +193,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   } catch (error) {
     logger.error('[CATCHUP] Command error:', error);
 
-    try {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription(`An error occurred: ${errorMessage(error)}`);
-
-      if (interaction.deferred) {
-        await interaction.editReply({ embeds: [embed] });
-      } else {
-        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
-      }
-    } catch (replyError) {
-      logger.error('[CATCHUP] Failed to send error reply:', replyError);
-    }
+    await replyWithError(interaction, '❌ Error', `An error occurred: ${errorMessage(error)}`);
   }
 }

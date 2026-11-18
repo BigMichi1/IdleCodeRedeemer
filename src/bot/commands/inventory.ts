@@ -7,6 +7,7 @@ import {
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
 import { resolvePlayerData } from '../api/gameSession';
+import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
@@ -31,13 +32,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const result = await resolvePlayerData(interaction.user.id, credentials);
     if (!result.ok) {
-      logger.error(`[INVENTORY] ${result.description}`);
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle(result.title)
-        .setDescription(result.description);
-
-      await interaction.editReply({ embeds: [embed] });
+      logger.warn(`[INVENTORY] ${result.description} (user ${interaction.user.id})`);
+      await replyWithError(interaction, '❌ Error', result.description);
       return;
     }
 
@@ -175,8 +171,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     logger.error('[INVENTORY COMMAND] Error:', error);
-    await interaction.editReply({
-      content: '❌ An error occurred while retrieving your inventory.',
-    });
+    await replyWithError(
+      interaction,
+      '❌ Error',
+      'An error occurred while retrieving your inventory.'
+    );
   }
 }

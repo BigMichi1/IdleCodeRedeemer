@@ -40,6 +40,8 @@ const CODE_B = 'WXYZ5678IJKL';
 const USER = 'discord-e2e-user';
 const MOCK_SERVER = 'test.idlechampions.com';
 const MOCK_INSTANCE = 'inst-e2e-abc';
+const TEST_USER_ID = '12345';
+const TEST_USER_HASH = 'test-user-hash';
 
 // ---------------------------------------------------------------------------
 // Fake Discord channel
@@ -161,8 +163,8 @@ describe('Scenario 1: startup backfill with no users → setup → catchup', () 
     // Phase 2 — user registers (/setup).
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
 
@@ -188,8 +190,8 @@ describe('Scenario 1: startup backfill with no users → setup → catchup', () 
     // User is already registered before the backfill this time.
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
 
@@ -219,8 +221,8 @@ describe('Scenario 2: backfill with API failure → codes stay pending for catch
   test('stores codes as pending when getUserDetails returns an invalid response', async () => {
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
 
@@ -241,8 +243,8 @@ describe('Scenario 2: backfill with API failure → codes stay pending for catch
   test('/catchup sees codes pending from a failed backfill and can redeem them', async () => {
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
 
@@ -286,25 +288,30 @@ describe('Scenario 3: duplicate backfill runs do not create duplicate pending co
 });
 
 // ---------------------------------------------------------------------------
-// Scenario 4 — invalid instance_id skips submission but stores codes as pending
+// Scenario 4 — invalid instance_id aborts that user (recorded in stats.errors)
+// but stores codes as pending
 // ---------------------------------------------------------------------------
 
-describe('Scenario 4: invalid instance_id skips code submission', () => {
+describe('Scenario 4: invalid instance_id aborts the user', () => {
   test('codes become pending when instance_id is missing from user details', async () => {
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
 
-    // details object exists but instance_id is absent (falsy → treated as '0')
+    // details object exists but instance_id is absent → resolveGameSession rejects it
     getUserDetailsSpy.mockResolvedValue({ details: {} } as any);
 
     const stats = await backfillChannelHistory(makeChannel([CODE_A, CODE_B]));
 
     expect(stats.codesRedeemed).toBe(0);
     expect(submitCodeSpy).not.toHaveBeenCalled();
+    // Per-user, not per-code: one lookup, one recorded error, not one per code.
+    expect(getUserDetailsSpy).toHaveBeenCalledTimes(1);
+    expect(stats.errors).toHaveLength(1);
+    expect(stats.errors[0]).toContain('Could not find an active game session');
 
     const pending = await codeManager.getPendingCodes();
     expect(pending).toContain(CODE_A);
@@ -323,8 +330,8 @@ describe('backfill respects user preferences and counts honestly', () => {
     // every startup backfill and every admin /backfill.
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
     await userManager.setAutoRedeem(USER, false);
@@ -340,8 +347,8 @@ describe('backfill respects user preferences and counts honestly', () => {
   test('still redeems for a user who left auto-redeem on', async () => {
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
 
@@ -356,8 +363,8 @@ describe('backfill respects user preferences and counts honestly', () => {
     // them all reported "Codes Redeemed: N" for a run that redeemed nothing.
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
     submitCodeSpy.mockResolvedValue({ codeStatus: 3 } as any); // Not a Valid Code
@@ -373,8 +380,8 @@ describe('backfill respects user preferences and counts honestly', () => {
     // operation was written as "completed" despite redeeming nothing.
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
     submitCodeSpy.mockResolvedValue({ status: 2 } as any); // GenericResponse(Failed)
@@ -389,15 +396,14 @@ describe('backfill respects user preferences and counts honestly', () => {
 describe('backfill follows a play-server switch', () => {
   // Regression: backfill read getUserDetails itself and only checked for
   // `details`, so a SwitchServer redirect was logged as "invalid credentials
-  // or API failure" and every registered user was skipped. The game had moved
-  // both production accounts to a new play server at the same time.
+  // or API failure" and every registered user was skipped.
   const NEW_SERVER = 'https://pslt1.idlechampions.com/~idledragons/post.php';
 
   test('redeems on the new server and persists it', async () => {
     await userManager.saveCredentials({
       discordId: USER,
-      userId: '316463',
-      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
       server: MOCK_SERVER,
     });
     getUserDetailsSpy
@@ -412,5 +418,95 @@ describe('backfill follows a play-server switch', () => {
       expect(call[0].server).toBe(NEW_SERVER);
     }
     expect((await userManager.getCredentials(USER))?.server).toBe(NEW_SERVER);
+  });
+
+  test('each user keeps their own server when only one was moved', async () => {
+    // `server` is per-user state; hoisting it out of the user loop would send
+    // the second user's codes to the first user's new server.
+    const OTHER = 'discord-e2e-other';
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
+      server: MOCK_SERVER,
+    });
+    await userManager.saveCredentials({
+      discordId: OTHER,
+      userId: '67890',
+      userHash: 'other-user-hash',
+      server: MOCK_SERVER,
+    });
+    getUserDetailsSpy.mockImplementation((async (opts: any) =>
+      opts.user_id === TEST_USER_ID && opts.server === MOCK_SERVER
+        ? { status: ResponseStatus.SwitchServer, newServer: NEW_SERVER }
+        : { details: { instance_id: MOCK_INSTANCE } }) as any);
+
+    await backfillChannelHistory(makeChannel([CODE_A]));
+
+    const serverFor = (userId: string) =>
+      submitCodeSpy.mock.calls.find((c) => c[0].user_id === userId)?.[0].server;
+    expect(serverFor(TEST_USER_ID)).toBe(NEW_SERVER);
+    expect(serverFor('67890')).toBe(MOCK_SERVER);
+  });
+});
+
+describe('backfill session failures', () => {
+  test('looks a missing server up once and carries it across codes', async () => {
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
+    });
+
+    const stats = await backfillChannelHistory(makeChannel([CODE_A, CODE_B]));
+
+    expect(getServerSpy).toHaveBeenCalledTimes(1);
+    expect(stats.codesRedeemed).toBe(2);
+    expect((await userManager.getCredentials(USER))?.server).toBe(MOCK_SERVER);
+  });
+
+  test('records an error when no server can be determined', async () => {
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
+    });
+    getServerSpy.mockResolvedValue(undefined as any);
+
+    const stats = await backfillChannelHistory(makeChannel([CODE_A, CODE_B]));
+
+    expect(getServerSpy).toHaveBeenCalledTimes(1);
+    expect(submitCodeSpy).not.toHaveBeenCalled();
+    expect(stats.errors).toHaveLength(1);
+  });
+
+  test('a thrown session error is recorded once per user, not retried per code', async () => {
+    // Regression guard: resolving inside the per-code try turned a DB failure
+    // while persisting a new server into a per-code warning, retried for every
+    // code, with stats.errors left empty.
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
+      server: MOCK_SERVER,
+    });
+    getUserDetailsSpy.mockResolvedValue({
+      status: ResponseStatus.SwitchServer,
+      newServer: 'https://moved.example.com/post.php',
+    } as any);
+    const updateServerSpy = spyOn(userManager, 'updateServer').mockRejectedValue(
+      new Error('database is locked')
+    );
+
+    try {
+      const stats = await backfillChannelHistory(makeChannel([CODE_A, CODE_B]));
+
+      expect(updateServerSpy).toHaveBeenCalledTimes(1);
+      expect(submitCodeSpy).not.toHaveBeenCalled();
+      expect(stats.errors).toHaveLength(1);
+      expect(stats.errors[0]).toContain('database is locked');
+    } finally {
+      updateServerSpy.mockRestore();
+    }
   });
 });

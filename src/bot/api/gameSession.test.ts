@@ -6,10 +6,12 @@ import { userManager } from '../database/userManager';
 import { users, redeemedCodes, pendingCodes } from '../database/schema/index';
 
 // ---------------------------------------------------------------------------
-// resolveGameSession() replaces a ~70-line block that was duplicated verbatim
-// across /redeem, /open and /blacksmith. These tests pin the behaviour of the
-// code it replaced: server fallback, persistence, the one-shot server-switch
-// retry, and each failure branch.
+// resolvePlayerData() and resolveGameSession() are the only getuserdetails
+// callers. They replaced a block copied verbatim across /redeem, /open and
+// /blacksmith, plus drifted copies in /catchup, /inventory, the auto-redeemer
+// and the backfill. These tests pin server fallback, persistence, the one-shot
+// server-switch retry, the instance_id check (resolveGameSession only), and
+// each failure branch.
 // ---------------------------------------------------------------------------
 
 const USER = 'discord-session-user';
@@ -100,7 +102,9 @@ describe('resolveGameSession', () => {
       const session = await resolveGameSession(USER, creds(CACHED_SERVER));
 
       expect(session.ok).toBe(false);
-      expect(session).toMatchObject({ description: 'Server switch failed.' });
+      expect(session).toMatchObject({
+        description: 'The game asked to switch servers but named none. Try again later.',
+      });
       // Regression: /inventory passed undefined straight into updateServer and
       // then into new URL(), throwing instead of reporting.
       expect(getUserDetailsSpy).toHaveBeenCalledTimes(1);
@@ -115,7 +119,7 @@ describe('resolveGameSession', () => {
 
       expect(session).toMatchObject({
         ok: false,
-        description: 'Could not determine game server.',
+        description: 'Could not determine the game server. Try again later.',
       });
       expect(getUserDetailsSpy).not.toHaveBeenCalled();
     });
@@ -125,7 +129,11 @@ describe('resolveGameSession', () => {
 
       const session = await resolveGameSession(USER, creds(CACHED_SERVER));
 
-      expect(session).toMatchObject({ ok: false, description: 'Could not retrieve user data.' });
+      expect(session).toMatchObject({
+        ok: false,
+        description:
+          'Could not retrieve your account from the game server. Check your credentials with `/setup`.',
+      });
     });
 
     test('reports when the response is null', async () => {
@@ -133,7 +141,11 @@ describe('resolveGameSession', () => {
 
       const session = await resolveGameSession(USER, creds(CACHED_SERVER));
 
-      expect(session).toMatchObject({ ok: false, description: 'Could not retrieve user data.' });
+      expect(session).toMatchObject({
+        ok: false,
+        description:
+          'Could not retrieve your account from the game server. Check your credentials with `/setup`.',
+      });
     });
 
     test("rejects the API's '0' no-session sentinel", async () => {
@@ -143,7 +155,7 @@ describe('resolveGameSession', () => {
 
       expect(session).toMatchObject({
         ok: false,
-        description: 'Could not retrieve valid instance ID from server.',
+        description: 'Could not find an active game session. Open Idle Champions and try again.',
       });
     });
 
@@ -163,12 +175,12 @@ describe('resolveGameSession', () => {
       expect(session).toMatchObject({ ok: true, instanceId: '998877' });
     });
 
-    test('every failure carries a title so callers can render it directly', async () => {
+    test('every failure carries a description callers can show the user', async () => {
       getUserDetailsSpy.mockResolvedValue({ status: 2 } as any);
       const session = await resolveGameSession(USER, creds(CACHED_SERVER));
       expect(session.ok).toBe(false);
       if (!session.ok) {
-        expect(session.title).toBe('❌ Error');
+        expect(session.description).toContain('/setup');
       }
     });
   });
@@ -202,6 +214,19 @@ describe('resolvePlayerData', () => {
 
     const result = await resolvePlayerData(USER, creds(CACHED_SERVER));
 
-    expect(result).toMatchObject({ ok: false, description: 'Could not retrieve user data.' });
+    expect(result).toMatchObject({ ok: false });
+    if (!result.ok) expect(result.description).toContain('Check your credentials');
+  });
+
+  test('does not follow a second redirect in a row, and says so', async () => {
+    // One-shot by design: following redirects unboundedly could loop. A second
+    // redirect gets its own message so it is not mistaken for bad credentials.
+    getUserDetailsSpy.mockResolvedValue({ status: 4, newServer: SWITCHED_SERVER } as any);
+
+    const result = await resolvePlayerData(USER, creds(CACHED_SERVER));
+
+    expect(getUserDetailsSpy).toHaveBeenCalledTimes(2);
+    expect(result).toMatchObject({ ok: false });
+    if (!result.ok) expect(result.description).toContain('twice in a row');
   });
 });

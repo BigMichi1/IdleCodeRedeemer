@@ -40,14 +40,18 @@ export function enqueueAutoRedeem(codes: string[]): void {
 /**
  * Fire-and-forget DM to notify a user that a code could not be redeemed.
  * Called from the GenericResponse failure path, the unexpected-shape guard, and
- * the codeStatus else-branch (non-success, non-already-redeemed, non-expired statuses).
- * Infrastructure failures (no server, invalid instance_id, etc.) do not trigger this.
+ * the codeStatus else-branch (non-success, non-already-redeemed, non-expired statuses),
+ * and when no game session can be started: bad credentials or a closed game are
+ * the failures a user can actually fix, and they otherwise never learn of them.
  */
 function sendFailureDm(discordId: string, code: string, reason: string): void {
   if (!discordClient) return;
   discordClient.users
     .fetch(discordId)
-    .then((user) => user.send(`❌ Code \`${code}\` could not be redeemed: ${reason}.`))
+    // Reasons may be full sentences already; avoid a doubled full stop.
+    .then((user) =>
+      user.send(`❌ Code \`${code}\` could not be redeemed: ${reason.replace(/\.$/, '')}.`)
+    )
     .catch(() => {});
 }
 
@@ -81,6 +85,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
   const session = await resolveGameSession(discordId, credentials);
   if (!session.ok) {
     logger.error(`[AUTO REDEEMER] ${session.description} (user ${discordId})`);
+    if (credentials.dmOnFailure) sendFailureDm(discordId, code, session.description);
     return;
   }
   let server = session.server;
@@ -113,13 +118,15 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
         instanceId,
       });
     } else if (generic.status === ResponseStatus.OutdatedInstanceId) {
-      // Stale instance_id — fetch fresh user details to get current one
+      // Stale instance_id: re-resolve the session. This also follows a
+      // SwitchServer redirect, so the server may change too.
       logger.info(`[AUTO REDEEMER] Outdated instance_id for user ${discordId}, refreshing`);
       const refreshed = await resolveGameSession(discordId, { ...credentials, server });
       if (!refreshed.ok) {
         logger.error(
           `[AUTO REDEEMER] Could not refresh instance_id for user ${discordId}: ${refreshed.description}`
         );
+        if (credentials.dmOnFailure) sendFailureDm(discordId, code, refreshed.description);
         return;
       }
       server = refreshed.server;

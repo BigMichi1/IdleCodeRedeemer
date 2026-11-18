@@ -329,7 +329,8 @@ describe('autoRedeemForAllUsers – OutdatedInstanceId retry', () => {
 
   test('the instance_id refresh follows a server switch', async () => {
     // Regression: the refresh read getUserDetails directly and treated a
-    // SwitchServer redirect as "no instance_id", dropping the code.
+    // SwitchServer redirect as "no instance_id" and gave up, leaving the code
+    // unredeemed for that user.
     await addUser(USER_A);
     await codeManager.addPendingCode(CODE);
     const NEW_SERVER = 'https://moved.idlechampions.com/~idledragons/post.php';
@@ -348,6 +349,24 @@ describe('autoRedeemForAllUsers – OutdatedInstanceId retry', () => {
       instanceId: 'fresh-inst',
     });
     expect(await codeManager.isCodeRedeemedByUser(CODE, USER_A)).toBe(true);
+  });
+
+  test('the refresh starts from the server the initial session switched to', async () => {
+    await addUser(USER_A);
+    await codeManager.addPendingCode(CODE);
+    const NEW_SERVER = 'https://moved.idlechampions.com/~idledragons/post.php';
+    getUserDetailsSpy
+      .mockResolvedValueOnce(makeGenericResponse(4, NEW_SERVER) as any) // initial: moved
+      .mockResolvedValueOnce(makeUserDetails() as any) // initial on new server
+      .mockResolvedValueOnce(makeUserDetails('fresh-inst') as any); // refresh
+    submitCodeSpy
+      .mockResolvedValueOnce(makeGenericResponse(1) as any) // OutdatedInstanceId
+      .mockResolvedValueOnce(makeSubmitResponse(0) as any);
+
+    await autoRedeemForAllUsers([CODE]);
+
+    expect((getUserDetailsSpy.mock.calls[2]![0] as any).server).toBe(NEW_SERVER);
+    expect(submitCodeSpy.mock.calls[1]![0]).toMatchObject({ server: NEW_SERVER });
   });
 
   test('leaves code pending when instance_id refresh also fails', async () => {
@@ -455,6 +474,44 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
 
     expect(sendSpy).toHaveBeenCalledTimes(1);
     expect(sendSpy.mock.calls[0]![0]).toContain(CODE);
+  });
+
+  test('sends failure DM when no game session can be started', async () => {
+    // Bad credentials or a closed game are the failures a user can fix; they
+    // used to be logged only, so an opted-in user never heard about them.
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+    await codeManager.addPendingCode(CODE);
+    getUserDetailsSpy.mockResolvedValue(makeUserDetails('0') as any);
+
+    await autoRedeemForAllUsers([CODE]);
+
+    expect(submitCodeSpy).not.toHaveBeenCalled();
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    const dm = sendSpy.mock.calls[0]![0];
+    expect(dm).toContain('Open Idle Champions');
+    expect(dm).not.toContain('..');
+  });
+
+  test('sends failure DM when the instance_id refresh fails', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+    await codeManager.addPendingCode(CODE);
+    getUserDetailsSpy
+      .mockResolvedValueOnce(makeUserDetails() as any)
+      .mockResolvedValueOnce({ details: null } as any);
+    submitCodeSpy.mockResolvedValueOnce(makeGenericResponse(1) as any);
+
+    await autoRedeemForAllUsers([CODE]);
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy.mock.calls[0]![0]).toContain('Check your credentials');
   });
 
   test('does not send failure DM when dmOnFailure is false (default)', async () => {

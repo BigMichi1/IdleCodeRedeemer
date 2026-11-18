@@ -522,7 +522,7 @@ class IdleChampionsApi {
 }
 
 // Response classes for type safety
-class GenericResponse {
+export class GenericResponse {
   status: ResponseStatus;
   newServer?: string;
 
