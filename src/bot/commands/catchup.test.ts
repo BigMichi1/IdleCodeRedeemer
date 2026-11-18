@@ -3,7 +3,7 @@ import { db, initializeDatabase } from '../database/db';
 import { users, redeemedCodes, pendingCodes, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
-import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
+import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
 import { execute } from './catchup';
 
 // ---------------------------------------------------------------------------
@@ -180,5 +180,70 @@ describe('/catchup – session handling', () => {
     // This run keeps submitting to the old server; the DB already has the new one.
     expect(submitCodeSpy.mock.calls.at(-1)![0]).toMatchObject({ server: SERVER });
     expect((await userManager.getCredentials(USER))?.server).toBe(MOVED_SERVER);
+  });
+});
+
+describe('/catchup – results', () => {
+  test('asks for /setup when no credentials are stored', async () => {
+    db.delete(users).run();
+    const { interaction, editReplySpy } = makeInteraction();
+
+    await execute(interaction);
+
+    expect(getUserDetailsSpy).not.toHaveBeenCalled();
+    expect(embedOf(editReplySpy).title).toContain('No Credentials Found');
+  });
+
+  test('says so when there are no codes to redeem', async () => {
+    const { interaction, editReplySpy } = makeInteraction();
+
+    await execute(interaction);
+
+    expect(submitCodeSpy).not.toHaveBeenCalled();
+    expect(embedOf(editReplySpy).title).toContain('No Codes Available');
+  });
+
+  test('counts every outcome and persists what it learns', async () => {
+    const [ok, had, exp, bad, generic, thrown, knownExpired, alreadyMine] = CODES;
+    await codeManager.addNewPendingCodes([ok!, had!, exp!, bad!, generic!, thrown!, knownExpired!]);
+    // Known-expired (any user) and already-redeemed-by-me are skipped without a call.
+    await userManager.saveCredentials({
+      discordId: 'other-user',
+      userId: '67890',
+      userHash: 'other-user-hash',
+    });
+    await codeManager.addRedeemedCode(knownExpired!, 'other-user', 'Code Expired');
+    await codeManager.addRedeemedCode(alreadyMine!, USER, 'Success');
+
+    submitCodeSpy.mockImplementation((async (opts: any) => {
+      switch (opts.code) {
+        case ok:
+          return { codeStatus: CodeSubmitStatus.Success };
+        case had:
+          return { codeStatus: CodeSubmitStatus.AlreadyRedeemed };
+        case exp:
+          return { codeStatus: CodeSubmitStatus.Expired };
+        case bad:
+          return { codeStatus: CodeSubmitStatus.NotValidCombo };
+        case generic:
+          return { status: ResponseStatus.Failed };
+        default:
+          throw new Error('network down');
+      }
+    }) as any);
+    const { interaction, editReplySpy } = makeInteraction();
+
+    await execute(interaction);
+
+    const description: string = embedOf(editReplySpy).description;
+    expect(description).toContain('**Newly redeemed:** 1');
+    // had + alreadyMine
+    expect(description).toContain('**Already had:** 2');
+    // exp + knownExpired
+    expect(description).toContain('**Expired:** 2');
+    // bad + generic + thrown
+    expect(description).toContain('**Failed:** 3');
+    expect(submitCodeSpy).toHaveBeenCalledTimes(6);
+    expect(await codeManager.isCodeRedeemedByUser(ok!, USER)).toBe(true);
   });
 });

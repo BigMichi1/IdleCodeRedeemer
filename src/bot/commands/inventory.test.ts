@@ -115,3 +115,67 @@ describe('/inventory – session handling', () => {
     }
   });
 });
+
+describe('/inventory – embed', () => {
+  test('asks for /setup when no credentials are stored', async () => {
+    db.delete(users).run();
+    const { interaction, editReplySpy } = makeInteraction();
+
+    await execute(interaction);
+
+    expect(getUserDetailsSpy).not.toHaveBeenCalled();
+    expect(embedOf(editReplySpy).title).toContain('No Credentials Found');
+  });
+
+  test('renders gold, instances, rubies, heroes, progress and loot', async () => {
+    getUserDetailsSpy.mockResolvedValue({
+      details: {
+        gold: '50000000000',
+        red_rubies: 321,
+        heroes: [{ hero_id: 1 }, { hero_id: 2 }],
+        game_instances: [
+          { gold: '2500000', current_adventure_id: 7, current_area: 50, highest_area: 75 },
+          { gold: '1500', current_adventure_id: 8, current_area: 5, highest_area: 9 },
+          { gold: '12', current_adventure_id: 9, current_area: 1, highest_area: 1 },
+        ],
+        loot: [{ rarity: 4 }, { rarity: 4 }, { rarity: 1 }, {}],
+      },
+    } as any);
+    const { interaction, editReplySpy } = makeInteraction();
+
+    await execute(interaction);
+
+    const fields = Object.fromEntries(
+      (embedOf(editReplySpy).fields as Array<{ name: string; value: string }>).map((f) => [
+        f.name,
+        f.value,
+      ])
+    );
+    expect(fields['Total Gold (All Instances)']).toBe('5.00e+10');
+    expect(fields['Gold Per Instance']).toContain('Instance 1: 2.5M');
+    expect(fields['Gold Per Instance']).toContain('Instance 2: 1.5K');
+    expect(fields['Gold Per Instance']).toContain('Instance 3: 12');
+    expect(fields['Red Rubies']).toBe('321');
+    expect(fields['Heroes Unlocked']).toBe('2');
+    expect(fields['Adventure Progress']).toContain('Instance 1 (Adventure 7): Area 50/75');
+    expect(fields['Equipment Quality']).toBe('• Legendary: 2\n• Uncommon: 1\n• Common: 1');
+  });
+
+  test('formats smaller gold totals', async () => {
+    for (const [gold, shown] of [
+      ['3000000', '3.0M'],
+      ['4200', '4.2K'],
+      ['7', '7'],
+    ] as const) {
+      getUserDetailsSpy.mockResolvedValue({ details: { gold } } as any);
+      const { interaction, editReplySpy } = makeInteraction();
+
+      await execute(interaction);
+
+      const field = (embedOf(editReplySpy).fields as Array<{ name: string; value: string }>).find(
+        (f) => f.name === 'Total Gold (All Instances)'
+      );
+      expect(field?.value).toBe(shown);
+    }
+  });
+});
