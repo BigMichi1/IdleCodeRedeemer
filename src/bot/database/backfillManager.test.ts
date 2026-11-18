@@ -2,6 +2,7 @@ import { describe, test, expect, beforeAll, beforeEach, afterAll } from 'bun:tes
 import { db, initializeDatabase } from './db';
 import { backfillOperations } from './schema/index';
 import { backfillManager } from './backfillManager';
+import { resetDatabase } from '../../test/db';
 
 const USER_A = 'discord-backfill-a';
 const USER_B = 'discord-backfill-b';
@@ -10,26 +11,30 @@ beforeAll(() => {
   initializeDatabase();
 });
 
+/**
+ * Clears the singleton's in-memory backfill lock if a test left it set, by
+ * completing a dummy operation (updateBackfill resets backfillInProgress).
+ * Run after the file as well, so a later test file never inherits the lock.
+ */
+function releaseBackfillLock(): void {
+  if (!backfillManager.isBackfillInProgress()) return;
+  const row = db
+    .insert(backfillOperations)
+    .values({ initiatedBy: '__reset__', status: 'in_progress' })
+    .returning({ id: backfillOperations.id })
+    .get();
+  if (row) backfillManager.updateBackfill(row.id, 0, 0, 'completed');
+}
+
 beforeEach(() => {
-  db.delete(backfillOperations).run();
-  // Reset the in-memory lock by force if any test left it set.
-  // We do this by exploiting the fact that updateBackfill resets backfillInProgress.
-  // If the flag is stuck, insert a dummy row and complete it.
-  if (backfillManager.isBackfillInProgress()) {
-    const row = db
-      .insert(backfillOperations)
-      .values({ initiatedBy: '__reset__', status: 'in_progress' })
-      .returning({ id: backfillOperations.id })
-      .get();
-    if (row) {
-      backfillManager.updateBackfill(row.id, 0, 0, 'completed');
-    }
-    db.delete(backfillOperations).run();
-  }
+  resetDatabase();
+  releaseBackfillLock();
+  resetDatabase();
 });
 
 afterAll(() => {
-  db.delete(backfillOperations).run();
+  releaseBackfillLock();
+  resetDatabase();
 });
 
 // ---------------------------------------------------------------------------

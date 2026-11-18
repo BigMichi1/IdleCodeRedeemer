@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, beforeEach, spyOn } from 'bun:test';
 import { MessageFlags } from 'discord.js';
-import { db, initializeDatabase } from '../database/db';
+import { initializeDatabase } from '../database/db';
 import { userManager } from '../database/userManager';
 import { execute } from './notifications';
 import { resetDatabase } from '../../test/db';
@@ -182,13 +182,15 @@ describe('/notifications – error handling', () => {
       new Error('DB error')
     );
 
-    await execute(interaction);
+    try {
+      await execute(interaction);
 
-    expect(editReplySpy).toHaveBeenCalled();
-    const reply = editReplySpy.mock.calls[0]![0] as any;
-    expect(reply.content).toContain('error');
-
-    spy.mockRestore();
+      expect(editReplySpy).toHaveBeenCalled();
+      const reply = editReplySpy.mock.calls[0]![0] as any;
+      expect(reply.content).toContain('error');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   test('uses reply when not deferred on error', async () => {

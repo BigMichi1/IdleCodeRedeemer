@@ -18,8 +18,7 @@
 
 import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from 'bun:test';
 import { ChannelType } from 'discord.js';
-import { db, initializeDatabase } from '../database/db';
-import { users } from '../database/schema/index';
+import { initializeDatabase } from '../database/db';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
@@ -107,7 +106,6 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  // Wipe tables in FK-safe order.
   resetDatabase();
 
   // Default spy behaviour (override per test as needed).
@@ -124,7 +122,6 @@ afterAll(() => {
   getUserDetailsSpy.mockRestore();
   submitCodeSpy.mockRestore();
   getServerSpy.mockRestore();
-  resetDatabase();
 });
 
 // ---------------------------------------------------------------------------
