@@ -14,7 +14,7 @@ import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import logger from '../utils/logger';
 import IdleChampionsApi from '../api/idleChampionsApi';
-import { autoRedeemForAllUsers, setDiscordClient } from './autoRedeemer';
+import { autoRedeemForAllUsers, enqueueAutoRedeem, setDiscordClient } from './autoRedeemer';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -745,6 +745,48 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
     }
   });
 
+  test('a response with neither codeStatus nor status: logged as "no status", plain DM', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+    const errorSpy = spyOn(logger, 'error').mockImplementation((() => logger) as any);
+    try {
+      await addUser(USER_A);
+      await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+      await codeManager.addPendingCode(CODE);
+      submitCodeSpy.mockResolvedValue({ unexpected: true } as any);
+
+      await autoRedeemForAllUsers([CODE]);
+
+      expect(errorSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining(
+          'Unexpected response for code AUTOCODE1234, user user-auto-a (no status)'
+        )
+      );
+      expect(sendSpy.mock.calls[0]![0]).toContain('The game server rejected the request');
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  test('a thrown submit is logged and the next code is still tried', async () => {
+    const errorSpy = spyOn(logger, 'error').mockImplementation((() => logger) as any);
+    try {
+      await addUser(USER_A);
+      submitCodeSpy
+        .mockRejectedValueOnce(new Error('socket hang up'))
+        .mockResolvedValueOnce(makeSubmitResponse(0) as any);
+
+      await autoRedeemForAllUsers([CODE, CODE_2]);
+
+      expect(errorSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining(`Error redeeming code ${CODE} for user ${USER_A}`)
+      );
+      expect(await codeManager.isCodeRedeemedByUser(CODE_2, USER_A)).toBe(true);
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
   test('does not send failure DM when dmOnFailure is false (default)', async () => {
     const { mockClient, sendSpy } = makeMockClient();
     setDiscordClient(mockClient);
@@ -756,5 +798,40 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
     await autoRedeemForAllUsers([CODE]);
 
     expect(sendSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('enqueueAutoRedeem', () => {
+  test('runs the queued job in the background', async () => {
+    await addUser(USER_A);
+    await codeManager.addPendingCode(CODE);
+
+    enqueueAutoRedeem([CODE]);
+    // The job is chained onto a module-level promise; let it settle.
+    for (let i = 0; i < 50 && !(await codeManager.isCodeRedeemedByUser(CODE, USER_A)); i++) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+
+    expect(await codeManager.isCodeRedeemedByUser(CODE, USER_A)).toBe(true);
+  });
+
+  test('an unhandled error in a job is logged, not thrown', async () => {
+    const errorSpy = spyOn(logger, 'error').mockImplementation((() => logger) as any);
+    const usersSpy = spyOn(userManager, 'getAllUsersWithAutoRedeem').mockRejectedValue(
+      new Error('database is locked')
+    );
+    try {
+      enqueueAutoRedeem([CODE]);
+      for (let i = 0; i < 50 && errorSpy.mock.calls.length === 0; i++) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+
+      expect(errorSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining('Unhandled error during auto-redeem')
+      );
+    } finally {
+      usersSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
   });
 });
