@@ -42,7 +42,7 @@ Bun is installed and managed automatically by Mise. No manual installation requi
 ./bin/mise run install
 
 # Verify Bun works
-bun --version # Should be 1.3.14+
+bun --version # Should be 1.4.4+
 ```
 
 **Why Bun?**: 3-4x faster JavaScript runtime than Node.js. Official package manager for this project.
@@ -141,7 +141,7 @@ mise trust # Trust the .mise.toml configuration
 
 This will:
 
-1. ✅ Install Bun 1.4.0 (if not present)
+1. ✅ Install Bun 1.4.4 (if not present)
 2. ✅ Install Gitleaks 8.30.1 (secret scanning)
 3. ✅ Install all dependencies (production + development)
 4. ✅ Create `node_modules/` directory
