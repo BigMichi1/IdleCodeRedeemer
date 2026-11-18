@@ -50,7 +50,7 @@ let setTimeoutSpy: ReturnType<typeof spyOn>;
 
 beforeAll(() => {
   initializeDatabase();
-  // /catchup sleeps 150 ms between codes; run timers inline so the 12-code
+  // /catchup sleeps 150 ms after each submission; run timers inline so the 12-code
   // tests stay instant instead of creeping towards bun's 5 s timeout.
   setTimeoutSpy = spyOn(globalThis, 'setTimeout').mockImplementation(((
     fn: (...args: unknown[]) => void
@@ -150,5 +150,35 @@ describe('/catchup – session handling', () => {
     } finally {
       pendingSpy.mockRestore();
     }
+  });
+
+  test('still paces submissions at 150 ms', async () => {
+    // The timer fake makes sleeps instant; this keeps the rate-limit pause
+    // itself from being deleted unnoticed.
+    await codeManager.addNewPendingCodes([CODES[0]!]);
+    setTimeoutSpy.mockClear();
+    const { interaction } = makeInteraction();
+
+    await execute(interaction);
+
+    expect(setTimeoutSpy.mock.calls.some((c: unknown[]) => c[1] === 150)).toBe(true);
+  });
+
+  test('a redirect persisted before a failed refresh is kept for the next run', async () => {
+    await codeManager.addNewPendingCodes(CODES);
+    getUserDetailsSpy
+      .mockResolvedValueOnce({ details: { instance_id: INSTANCE } } as any) // initial
+      .mockResolvedValueOnce({
+        status: ResponseStatus.SwitchServer,
+        newServer: MOVED_SERVER,
+      } as any)
+      .mockResolvedValueOnce({ status: ResponseStatus.Failed } as any); // re-fetch fails
+    const { interaction } = makeInteraction();
+
+    await execute(interaction);
+
+    // This run keeps submitting to the old server; the DB already has the new one.
+    expect(submitCodeSpy.mock.calls.at(-1)![0]).toMatchObject({ server: SERVER });
+    expect((await userManager.getCredentials(USER))?.server).toBe(MOVED_SERVER);
   });
 });

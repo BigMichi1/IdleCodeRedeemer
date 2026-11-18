@@ -12,6 +12,7 @@ import { db, initializeDatabase } from '../database/db';
 import { users, redeemedCodes, pendingCodes, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
+import logger from '../utils/logger';
 import IdleChampionsApi from '../api/idleChampionsApi';
 import { autoRedeemForAllUsers, setDiscordClient } from './autoRedeemer';
 
@@ -494,6 +495,7 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
     expect(getUserDetailsSpy).toHaveBeenCalledTimes(1);
     expect(sendSpy).toHaveBeenCalledTimes(1);
     const dm = sendSpy.mock.calls[0]![0];
+    expect(dm).toContain('Codes ');
     expect(dm).toContain(CODE);
     expect(dm).toContain(CODE_2);
     expect(dm).toContain('Open Idle Champions');
@@ -512,7 +514,81 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
     await autoRedeemForAllUsers([CODE, CODE_2]);
 
     expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy.mock.calls[0]![0]).toContain(CODE);
     expect(sendSpy.mock.calls[0]![0]).not.toContain(CODE_2);
+  });
+
+  test('the DM leaves out codes already known to be expired', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+    await addUser(USER_B, false); // only there to own the expired row
+    await codeManager.addRedeemedCode(CODE_2, USER_B, 'Code Expired');
+    getUserDetailsSpy.mockResolvedValue(makeUserDetails('0') as any);
+
+    await autoRedeemForAllUsers([CODE, CODE_2]);
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    const dm = sendSpy.mock.calls[0]![0];
+    expect(dm).toContain(`Code \`${CODE}\``);
+    expect(dm).not.toContain(CODE_2);
+  });
+
+  test('no session-failure DM for a user who did not opt in', async () => {
+    // The DM decision lives in the per-user loop, apart from the per-code DMs
+    // the existing opt-out test covers.
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await codeManager.addPendingCode(CODE);
+    getUserDetailsSpy.mockResolvedValue(makeUserDetails('0') as any);
+
+    await autoRedeemForAllUsers([CODE, CODE_2]);
+
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+
+  test('an error while reporting a session failure still stops the user', async () => {
+    await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+    getUserDetailsSpy.mockResolvedValue(makeUserDetails('0') as any);
+    const redeemedSpy = spyOn(codeManager, 'isCodeRedeemedByUser')
+      .mockResolvedValueOnce(false) // redeemCodeForUser's own check for CODE
+      .mockRejectedValueOnce(new Error('database is locked')); // while reporting
+    // Later calls hit the real check, so a loop that kept going would reach
+    // CODE_2 and repeat the session lookup.
+    try {
+      await autoRedeemForAllUsers([CODE, CODE_2]);
+
+      expect(getUserDetailsSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      redeemedSpy.mockRestore();
+    }
+  });
+
+  test('an undelivered failure DM is logged at warn level', async () => {
+    const warnSpy = spyOn(logger, 'warn');
+    const mockClient = {
+      users: { fetch: async () => Promise.reject(new Error('Cannot send messages to this user')) },
+    } as any;
+    setDiscordClient(mockClient);
+    try {
+      await addUser(USER_A);
+      await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+      getUserDetailsSpy.mockResolvedValue(makeUserDetails('0') as any);
+
+      await autoRedeemForAllUsers([CODE]);
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(warnSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining('not delivered: Cannot send messages to this user')
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   test('no DM for a failed lookup, which may be a game outage', async () => {

@@ -231,6 +231,16 @@ describe('resolveGameSession', () => {
 describe('resolvePlayerData', () => {
   // /inventory only reads account state, so it must not be blocked by the
   // instance_id check that resolveGameSession adds for state-changing calls.
+  test('player data with a top-level status is still player data', async () => {
+    // The guard keys on `details`, so a future `status` field in the game's
+    // JSON cannot turn a valid account into a "could not reach" failure.
+    getUserDetailsSpy.mockResolvedValue({ status: 1, details: { instance_id: 'x' } } as any);
+
+    const result = await resolvePlayerData(USER, creds(CACHED_SERVER));
+
+    expect(result.ok).toBe(true);
+  });
+
   test('returns the player details without requiring an instance_id', async () => {
     const player = { details: { instance_id: '0', gold: '42' } };
     getUserDetailsSpy.mockResolvedValue(player as any);
