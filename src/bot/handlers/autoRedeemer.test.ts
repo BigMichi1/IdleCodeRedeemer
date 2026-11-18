@@ -454,6 +454,26 @@ describe('autoRedeemForAllUsers – dmOnSuccess', () => {
 
     expect(sendSpy).not.toHaveBeenCalled();
   });
+
+  test('an undelivered success DM is logged at warn level', async () => {
+    const warnSpy = spyOn(logger, 'warn');
+    setDiscordClient({
+      users: { fetch: async () => Promise.reject(new Error('Cannot send messages to this user')) },
+    } as any);
+    try {
+      await addUser(USER_A);
+      await codeManager.addPendingCode(CODE);
+
+      await autoRedeemForAllUsers([CODE]);
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(warnSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining('Success DM to')
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
 });
 
 describe('autoRedeemForAllUsers – dmOnFailure', () => {
@@ -582,7 +602,12 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
 
   test('a thrown session lookup stops the user instead of repeating per code', async () => {
     // e.g. the DB write persisting a redirect fails inside resolveGameSession.
+    // Not user-fixable, so even an opted-in user gets no DM; the error is logged.
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+    const errorSpy = spyOn(logger, 'error');
     await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
     getUserDetailsSpy.mockResolvedValue(
       makeGenericResponse(4, 'https://moved.example.com/post.php') as any
     );
@@ -594,28 +619,13 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
 
       expect(updateServerSpy).toHaveBeenCalledTimes(1);
       expect(submitCodeSpy).not.toHaveBeenCalled();
-    } finally {
-      updateServerSpy.mockRestore();
-    }
-  });
-
-  test('an undelivered success DM is logged at warn level', async () => {
-    const warnSpy = spyOn(logger, 'warn');
-    setDiscordClient({
-      users: { fetch: async () => Promise.reject(new Error('Cannot send messages to this user')) },
-    } as any);
-    try {
-      await addUser(USER_A);
-      await codeManager.addPendingCode(CODE);
-
-      await autoRedeemForAllUsers([CODE]);
-      await new Promise((resolve) => setImmediate(resolve));
-
-      expect(warnSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
-        expect.stringContaining('Success DM to')
+      expect(sendSpy).not.toHaveBeenCalled();
+      expect(errorSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining('Session lookup threw')
       );
     } finally {
-      warnSpy.mockRestore();
+      updateServerSpy.mockRestore();
+      errorSpy.mockRestore();
     }
   });
 

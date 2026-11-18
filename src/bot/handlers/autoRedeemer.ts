@@ -113,7 +113,7 @@ async function redeemCodeForUser(
     logger.error(`[AUTO REDEEMER] Session lookup threw for user ${discordId}:`, error);
     return {
       ok: false,
-      description: `Could not start a game session: ${errorMessage(error)}.`,
+      description: `Could not start a game session: ${errorMessage(error).replace(/\.$/, '')}.`,
       userFixable: false,
     };
   }

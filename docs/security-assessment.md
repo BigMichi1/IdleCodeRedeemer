@@ -145,7 +145,9 @@ The Idle Champions API server has served an expired SSL certificate. Certificate
 
 ```
 ⚠️ CRITICAL: This is a KNOWN ISSUE with the Idle Champions server infrastructure.
-The project assumes the risk and implements verification through other means.
+The risk applies only while an operator sets IDLE_CHAMPIONS_INSECURE_TLS=1; there is
+no other verification of game API responses, so leave it unset unless the host's
+certificate is actually broken.
 ```
 
 **Attack Scenarios**:
