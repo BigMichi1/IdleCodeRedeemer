@@ -7,13 +7,16 @@
 # src/bot/api/idleChampionsApi.ts).
 
 [vars]
-# Both IDs are esbuild development-server issues reaching the tree only through
-# drizzle-kit 0.31.10 (already the latest release), which pins the affected
-# copies via tsx and the deprecated @esbuild-kit/core-utils. esbuild is a
-# build-time bundler here and is not present in the runtime image.
+# GHSA-67mh-4wv8-2f99 is an esbuild development-server issue reaching the tree
+# only through drizzle-kit (already the latest release), which pins esbuild
+# 0.18.20 via the deprecated @esbuild-kit/core-utils. esbuild is a build-time
+# bundler here and is not present in the runtime image. (GHSA-g7r4-m6w7-qqqr
+# was dropped: no installed esbuild is in its range any more, and a dead
+# ignore would silently hide a future regression into it.)
 #
 # GHSA-fc5q-39xc-vjpf is a picomatch ReDoS (<=4.0.7) with no patched release:
-# 4.0.7 is the latest, so neither an upgrade nor an override can fix it. It is
+# 4.0.7 was the latest as of 2026-11, so neither an upgrade nor an override
+# could fix it. It is
 # reached only through dev tooling (lint-staged, and typescript-eslint via
 # tinyglobby/fdir), which matches the repo's own fixed glob patterns, never
 # untrusted input, and is not in the compiled binary or runtime image. Drop the
@@ -22,7 +25,7 @@
 # minimatch is not listed: eslint and typescript-eslint pin ^10, which every
 # fixed release excludes, so package.json overrides it to 11.x instead. Drop
 # that override once both accept minimatch 11.
-audit_ignores = "--ignore GHSA-67mh-4wv8-2f99 --ignore GHSA-g7r4-m6w7-qqqr --ignore GHSA-fc5q-39xc-vjpf"
+audit_ignores = "--ignore GHSA-67mh-4wv8-2f99 --ignore GHSA-fc5q-39xc-vjpf"
 
 [tools]
 # Bun runtime and package manager
