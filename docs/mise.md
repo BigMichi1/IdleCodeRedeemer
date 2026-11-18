@@ -45,7 +45,7 @@ mise install
 
 This will:
 
-- ✅ Install Bun 1.3.14
+- ✅ Install Bun 1.4.4
 - ✅ Set up the environment
 
 ### Step 2: Run Any Task
@@ -142,7 +142,7 @@ Now when you `cd` into the project, tools and environment variables load automat
 
 ```toml
 [tools]
-bun = '1.3.14'  # Pinned version for reproducibility
+bun = '1.4.4'  # Pinned version for reproducibility
 ```
 
 ## Troubleshooting
