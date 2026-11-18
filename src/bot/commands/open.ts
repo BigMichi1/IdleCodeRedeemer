@@ -7,7 +7,7 @@ import {
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
-import { resolveGameSession } from './gameSession';
+import { resolveGameSession } from '../api/gameSession';
 import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
 

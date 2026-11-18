@@ -28,7 +28,7 @@ import {
 } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
-import IdleChampionsApi from '../api/idleChampionsApi';
+import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
 import { backfillChannelHistory } from './backfillHandler';
 
 // ---------------------------------------------------------------------------
@@ -383,5 +383,34 @@ describe('backfill respects user preferences and counts honestly', () => {
 
     expect(stats.codesRedeemed).toBe(0);
     expect(stats.errors.length).toBeGreaterThan(0);
+  });
+});
+
+describe('backfill follows a play-server switch', () => {
+  // Regression: backfill read getUserDetails itself and only checked for
+  // `details`, so a SwitchServer redirect was logged as "invalid credentials
+  // or API failure" and every registered user was skipped. The game had moved
+  // both production accounts to a new play server at the same time.
+  const NEW_SERVER = 'https://pslt1.idlechampions.com/~idledragons/post.php';
+
+  test('redeems on the new server and persists it', async () => {
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: '316463',
+      userHash: 'f4e6d3dbc34173d23e7d198e4a8fc773',
+      server: MOCK_SERVER,
+    });
+    getUserDetailsSpy
+      .mockResolvedValueOnce({ status: ResponseStatus.SwitchServer, newServer: NEW_SERVER } as any)
+      .mockResolvedValue({ details: { instance_id: MOCK_INSTANCE } } as any);
+
+    const stats = await backfillChannelHistory(makeChannel([CODE_A, CODE_B]));
+
+    expect(stats.errors).toEqual([]);
+    expect(stats.codesRedeemed).toBe(2);
+    for (const call of submitCodeSpy.mock.calls) {
+      expect(call[0].server).toBe(NEW_SERVER);
+    }
+    expect((await userManager.getCredentials(USER))?.server).toBe(NEW_SERVER);
   });
 });
