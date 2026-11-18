@@ -170,9 +170,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     logger.error('[BLACKSMITH COMMAND] Error:', error);
-    await interaction.editReply({
-      content: '❌ An error occurred while using blacksmith contracts.',
-    });
+    await replyWithError(
+      interaction,
+      '❌ Error',
+      'An error occurred while using blacksmith contracts.'
+    );
   }
 }
 

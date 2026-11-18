@@ -178,9 +178,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     logger.error('[OPEN COMMAND] Error:', error);
-    await interaction.editReply({
-      content: '❌ An error occurred while opening chests.',
-    });
+    await replyWithError(interaction, '❌ Error', 'An error occurred while opening chests.');
   }
 }
 

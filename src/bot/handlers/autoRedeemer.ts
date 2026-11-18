@@ -187,8 +187,8 @@ async function redeemCodeForUser(
   }
 
   if (!(submitResponse instanceof Object && 'codeStatus' in submitResponse)) {
-    // Reached when the retry after a server switch or stale instance_id also
-    // fails; name the status so that failure reason is not lost.
+    // Mainly reached when the retry after a server switch or stale
+    // instance_id also fails; name the status so that reason is not lost.
     const status =
       submitResponse instanceof Object && 'status' in submitResponse
         ? describeResponseStatus((submitResponse as any).status)
@@ -196,7 +196,8 @@ async function redeemCodeForUser(
     logger.error(
       `[AUTO REDEEMER] Unexpected response for code ${code}, user ${discordId} (${status})`
     );
-    if (credentials.dmOnFailure) sendFailureDm(discordId, [code], 'Unexpected API Response');
+    if (credentials.dmOnFailure)
+      sendFailureDm(discordId, [code], 'The game server rejected the request');
     return;
   }
 
