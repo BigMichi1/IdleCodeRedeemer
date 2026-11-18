@@ -4,6 +4,7 @@ import { users, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
+import logger from '../utils/logger';
 import { execute } from './inventory';
 
 // ---------------------------------------------------------------------------
@@ -102,6 +103,8 @@ describe('/inventory – session handling', () => {
 
   test('an unexpected error is reported through replyWithError', async () => {
     const auditSpy = spyOn(auditManager, 'logAction').mockRejectedValue(new Error('boom'));
+    // Stubbed: keeps the expected error out of test output.
+    const errorSpy = spyOn(logger, 'error').mockImplementation((() => logger) as any);
     try {
       const { interaction, editReplySpy } = makeInteraction();
 
@@ -112,6 +115,7 @@ describe('/inventory – session handling', () => {
       expect(embed.description).toBe('An error occurred while retrieving your inventory.');
     } finally {
       auditSpy.mockRestore();
+      errorSpy.mockRestore();
     }
   });
 });

@@ -146,12 +146,21 @@ describe('/blacksmith', () => {
     expect(fields.some((f) => f.name === 'Results')).toBe(false);
   });
 
-  test('reports an unexpected error', async () => {
+  test('reports an unexpected error through replyWithError', async () => {
     useBlacksmithSpy.mockRejectedValue(new Error('boom'));
-    const { interaction, editReplySpy } = makeInteraction();
+    // Stubbed: keeps the expected error out of test output.
+    const errorSpy = spyOn(logger, 'error').mockImplementation((() => logger) as any);
+    try {
+      const { interaction, editReplySpy } = makeInteraction();
 
-    await execute(interaction);
+      await execute(interaction);
 
-    expect(lastReply(editReplySpy).content).toContain('error occurred while using blacksmith');
+      const embed = lastReply(editReplySpy).embeds[0].data;
+      expect(embed.title).toBe('❌ Error');
+      expect(embed.description).toContain('error occurred while using blacksmith');
+      expect(errorSpy).toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });
