@@ -478,6 +478,7 @@ describe('backfill session failures', () => {
     expect(getServerSpy).toHaveBeenCalledTimes(1);
     expect(submitCodeSpy).not.toHaveBeenCalled();
     expect(stats.errors).toHaveLength(1);
+    expect(stats.errors[0]).toContain('Could not determine the game server');
   });
 
   test('a thrown session error is recorded once per user, not retried per code', async () => {

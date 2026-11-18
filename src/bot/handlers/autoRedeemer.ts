@@ -4,8 +4,8 @@ import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
 import logger from '../utils/logger';
-import { sleep } from '../utils/async';
-import { resolveGameSession } from '../api/gameSession';
+import { errorMessage, sleep } from '../utils/async';
+import { resolveGameSession, type Failure } from '../api/gameSession';
 
 let discordClient: Client | null = null;
 
@@ -38,21 +38,29 @@ export function enqueueAutoRedeem(codes: string[]): void {
 }
 
 /**
- * Fire-and-forget DM to notify a user that a code could not be redeemed.
- * Called from the GenericResponse failure path, the unexpected-shape guard, and
- * the codeStatus else-branch (non-success, non-already-redeemed, non-expired statuses),
- * and when no game session can be started: bad credentials or a closed game are
- * the failures a user can actually fix, and they otherwise never learn of them.
+ * Fire-and-forget DM to notify a user that code(s) could not be redeemed.
+ * Called from the GenericResponse failure path, the unexpected-shape guard, the
+ * codeStatus else-branch (non-success, non-already-redeemed, non-expired
+ * statuses), and once per user and run when a game session cannot be started or
+ * refreshed for a reason the user can fix (the game is not running). Other
+ * session failures (server lookup, redirects, a failed getuserdetails) may be a
+ * game outage, so they are only logged: DMing every user then would be noise.
  */
-function sendFailureDm(discordId: string, code: string, reason: string): void {
+function sendFailureDm(discordId: string, codes: string[], reason: string): void {
   if (!discordClient) return;
+  const list = codes.map((c) => `\`${c}\``).join(', ');
+  const label = codes.length === 1 ? 'Code' : 'Codes';
   discordClient.users
     .fetch(discordId)
     // Reasons may be full sentences already; avoid a doubled full stop.
     .then((user) =>
-      user.send(`❌ Code \`${code}\` could not be redeemed: ${reason.replace(/\.$/, '')}.`)
+      user.send(`❌ ${label} ${list} could not be redeemed: ${reason.replace(/\.$/, '')}.`)
     )
-    .catch(() => {});
+    // Closed DMs or an unknown user must not fail the redemption run, but leave
+    // a trace: this DM is how a user learns auto-redeem is not working.
+    .catch((err) =>
+      logger.debug(`[AUTO REDEEMER] Failure DM to ${discordId} not delivered: ${errorMessage(err)}`)
+    );
 }
 
 function randomDelay(): Promise<void> {
@@ -64,8 +72,16 @@ function randomDelay(): Promise<void> {
 /**
  * Attempts to redeem a single code for a single user.
  * Skips silently if the code was already redeemed or is known-expired.
+ *
+ * Returns the session failure when no game session could be started or
+ * refreshed. That is per-user, not per-code: the caller stops this user's
+ * remaining codes instead of repeating the same failing lookup (and DM) for
+ * each of them.
  */
-async function redeemCodeForUser(code: string, credentials: UserCredentials): Promise<void> {
+async function redeemCodeForUser(
+  code: string,
+  credentials: UserCredentials
+): Promise<Failure | undefined> {
   const { discordId } = credentials;
 
   // Skip if already redeemed by this user
@@ -85,8 +101,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
   const session = await resolveGameSession(discordId, credentials);
   if (!session.ok) {
     logger.error(`[AUTO REDEEMER] ${session.description} (user ${discordId})`);
-    if (credentials.dmOnFailure) sendFailureDm(discordId, code, session.description);
-    return;
+    return session;
   }
   let server = session.server;
   let instanceId = session.instanceId;
@@ -126,8 +141,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
         logger.error(
           `[AUTO REDEEMER] Could not refresh instance_id for user ${discordId}: ${refreshed.description}`
         );
-        if (credentials.dmOnFailure) sendFailureDm(discordId, code, refreshed.description);
-        return;
+        return refreshed;
       }
       server = refreshed.server;
       instanceId = refreshed.instanceId;
@@ -143,14 +157,14 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
         `[AUTO REDEEMER] submitCode returned GenericResponse status=${generic.status} for code ${code}, user ${discordId}`
       );
       if (credentials.dmOnFailure)
-        sendFailureDm(discordId, code, `Server Error (status ${generic.status})`);
+        sendFailureDm(discordId, [code], `Server Error (status ${generic.status})`);
       return;
     }
   }
 
   if (!(submitResponse instanceof Object && 'codeStatus' in submitResponse)) {
     logger.error(`[AUTO REDEEMER] Unexpected response for code ${code}, user ${discordId}`);
-    if (credentials.dmOnFailure) sendFailureDm(discordId, code, 'Unexpected API Response');
+    if (credentials.dmOnFailure) sendFailureDm(discordId, [code], 'Unexpected API Response');
     return;
   }
 
@@ -205,7 +219,7 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
       autoPublic: shouldBePublic,
     });
   } else {
-    if (credentials.dmOnFailure) sendFailureDm(discordId, code, statusName);
+    if (credentials.dmOnFailure) sendFailureDm(discordId, [code], statusName);
     await auditManager.logAction(discordId, 'CODE_REDEEM_FAILED', {
       code,
       reason: statusName,
@@ -237,9 +251,24 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
     const user = allUsers[i]!;
     logger.info(`[AUTO REDEEMER] Processing user ${user.discordId}`);
 
-    for (const code of codes) {
+    for (const [index, code] of codes.entries()) {
       try {
-        await redeemCodeForUser(code, user);
+        const sessionFailure = await redeemCodeForUser(code, user);
+        if (sessionFailure) {
+          // Codes after this one were not checked yet; leave out any the user
+          // already has so the DM lists only what was actually missed.
+          const remaining: string[] = [];
+          for (const c of codes.slice(index)) {
+            if (!(await codeManager.isCodeRedeemedByUser(c, user.discordId))) remaining.push(c);
+          }
+          logger.warn(
+            `[AUTO REDEEMER] Skipping ${remaining.length} remaining code(s) for user ${user.discordId}`
+          );
+          if (user.dmOnFailure && sessionFailure.userFixable) {
+            sendFailureDm(user.discordId, remaining, sessionFailure.description);
+          }
+          break;
+        }
       } catch (error) {
         logger.error(
           `[AUTO REDEEMER] Error redeeming code ${code} for user ${user.discordId}:`,

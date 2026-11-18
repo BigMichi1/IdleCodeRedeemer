@@ -14,14 +14,24 @@ import IdleChampionsApi, { ResponseStatus, type GenericResponse } from './idleCh
 import { userManager, type UserCredentials } from '../database/userManager';
 import logger from '../utils/logger';
 
-type Failure = { ok: false; description: string };
+/**
+ * `userFixable` marks the failures the user can resolve themselves (the game
+ * is not running). Everything else (server lookup, redirects, a failed
+ * getuserdetails, which cannot tell an outage from bad credentials) may be the
+ * game's fault, so unattended callers must not nag the user about it.
+ */
+export type Failure = { ok: false; description: string; userFixable: boolean };
 
 export type PlayerDataResult = { ok: true; server: string; player: PlayerData } | Failure;
 
 export type GameSession = { ok: true; server: string; instanceId: string } | Failure;
 
-function failure(description: string): Failure {
-  return { ok: false, description };
+/**
+ * Descriptions are complete sentences ending in a full stop: callers show them
+ * as-is and append their own sentence after them in log lines.
+ */
+function failure(description: string, userFixable = false): Failure {
+  return { ok: false, description, userFixable };
 }
 
 /**
@@ -31,7 +41,8 @@ function failure(description: string): Failure {
  * instanceof would silently treat as player data.
  */
 function isGenericResponse(result: GenericResponse | PlayerData): result is GenericResponse {
-  return result instanceof Object && 'status' in result;
+  // `details` excludes player data even if the game ever adds a top-level status.
+  return result instanceof Object && 'status' in result && !('details' in result);
 }
 
 /**
@@ -84,11 +95,17 @@ export async function resolvePlayerData(
 
   if (!userResult || isGenericResponse(userResult) || !userResult.details) {
     // getUserDetails collapses every non-redirect failure (HTTP error, network,
-    // success:false) into one status; the raw response is in api-logs/.
-    const status = isGenericResponse(userResult) ? userResult.status : 'no details';
+    // success:false) into one status; the logged response body (or error) is
+    // in api-logs/.
+    const status = isGenericResponse(userResult)
+      ? (ResponseStatus[userResult.status] ?? userResult.status)
+      : 'no details';
     logger.warn(`[GAME SESSION] getuserdetails failed for user ${discordId} (status ${status})`);
+    // Neutral wording: this is also what a game outage looks like, and telling
+    // every user their credentials are wrong would send them to re-enter
+    // correct ones.
     return failure(
-      'Could not retrieve your account from the game server. Check your credentials with `/setup`.'
+      'Could not reach your account on the game server. It may be down; if this keeps happening, check your credentials with `/setup`.'
     );
   }
 
@@ -110,7 +127,10 @@ export async function resolveGameSession(
   // Coerce and validate in one step. '0' is the API's "no session" sentinel.
   const instanceId = String(result.player.details.instance_id ?? '').trim();
   if (!instanceId || instanceId === '0') {
-    return failure('Could not find an active game session. Open Idle Champions and try again.');
+    return failure(
+      'Could not find an active game session. Open Idle Champions and try again.',
+      true
+    );
   }
 
   return { ok: true, server: result.server, instanceId };

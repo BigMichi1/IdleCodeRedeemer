@@ -93,9 +93,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             ...credentials,
             server,
           });
-          // A failed refresh keeps the current instance_id and carries on: if
-          // that session is really gone, the following submissions are counted
-          // as failed rather than aborting the whole run.
+          // A failed refresh keeps the current server and instance_id and
+          // carries on: if that session is really gone, the following
+          // submissions are counted as failed rather than aborting the whole
+          // run. If the resolver already persisted a redirect before failing,
+          // the DB holds the new server and the next run starts from it.
           if (refreshed.ok) {
             server = refreshed.server;
             instanceId = refreshed.instanceId;

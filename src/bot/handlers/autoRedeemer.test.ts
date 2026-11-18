@@ -476,27 +476,63 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
     expect(sendSpy.mock.calls[0]![0]).toContain(CODE);
   });
 
-  test('sends failure DM when no game session can be started', async () => {
-    // Bad credentials or a closed game are the failures a user can fix; they
-    // used to be logged only, so an opted-in user never heard about them.
+  test('one DM per user, listing the codes, when the game is not running', async () => {
+    // A closed game is the session failure a user can fix; it used to be
+    // logged only. It is per-user, so one lookup and one DM, not one per code.
     const { mockClient, sendSpy } = makeMockClient();
     setDiscordClient(mockClient);
 
     await addUser(USER_A);
     await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
     await codeManager.addPendingCode(CODE);
+    await codeManager.addPendingCode(CODE_2);
     getUserDetailsSpy.mockResolvedValue(makeUserDetails('0') as any);
 
-    await autoRedeemForAllUsers([CODE]);
+    await autoRedeemForAllUsers([CODE, CODE_2]);
 
     expect(submitCodeSpy).not.toHaveBeenCalled();
+    expect(getUserDetailsSpy).toHaveBeenCalledTimes(1);
     expect(sendSpy).toHaveBeenCalledTimes(1);
     const dm = sendSpy.mock.calls[0]![0];
+    expect(dm).toContain(CODE);
+    expect(dm).toContain(CODE_2);
     expect(dm).toContain('Open Idle Champions');
     expect(dm).not.toContain('..');
   });
 
-  test('sends failure DM when the instance_id refresh fails', async () => {
+  test('the DM leaves out codes the user already has', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+    await codeManager.addRedeemedCode(CODE_2, USER_A, 'Success');
+    getUserDetailsSpy.mockResolvedValue(makeUserDetails('0') as any);
+
+    await autoRedeemForAllUsers([CODE, CODE_2]);
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy.mock.calls[0]![0]).not.toContain(CODE_2);
+  });
+
+  test('no DM for a failed lookup, which may be a game outage', async () => {
+    // getuserdetails cannot tell an outage from bad credentials; DMing every
+    // opted-in user "check your credentials" during an outage is noise.
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+
+    await addUser(USER_A);
+    await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+    await codeManager.addPendingCode(CODE);
+    getUserDetailsSpy.mockResolvedValue(makeGenericResponse(2) as any);
+
+    await autoRedeemForAllUsers([CODE, CODE_2]);
+
+    expect(getUserDetailsSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+
+  test('DMs when the instance_id refresh finds the game closed', async () => {
     const { mockClient, sendSpy } = makeMockClient();
     setDiscordClient(mockClient);
 
@@ -505,13 +541,26 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
     await codeManager.addPendingCode(CODE);
     getUserDetailsSpy
       .mockResolvedValueOnce(makeUserDetails() as any)
-      .mockResolvedValueOnce({ details: null } as any);
+      .mockResolvedValueOnce(makeUserDetails('0') as any);
     submitCodeSpy.mockResolvedValueOnce(makeGenericResponse(1) as any);
+
+    await autoRedeemForAllUsers([CODE, CODE_2]);
+
+    expect(submitCodeSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy.mock.calls[0]![0]).toContain('Open Idle Champions');
+  });
+
+  test('a session failure for one user does not stop the next user', async () => {
+    await addUser(USER_A);
+    await addUser(USER_B);
+    await codeManager.addPendingCode(CODE);
+    getUserDetailsSpy.mockImplementation((async (opts: any) =>
+      opts.user_id === `uid-${USER_A}` ? makeGenericResponse(2) : makeUserDetails()) as any);
 
     await autoRedeemForAllUsers([CODE]);
 
-    expect(sendSpy).toHaveBeenCalledTimes(1);
-    expect(sendSpy.mock.calls[0]![0]).toContain('Check your credentials');
+    expect(await codeManager.isCodeRedeemedByUser(CODE, USER_B)).toBe(true);
   });
 
   test('does not send failure DM when dmOnFailure is false (default)', async () => {
