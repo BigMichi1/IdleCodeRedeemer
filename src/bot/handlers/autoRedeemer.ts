@@ -30,10 +30,6 @@ const MAX_DELAY_MS = 5_000;
 let redeemQueue: Promise<void> = Promise.resolve();
 
 /**
- * Enqueue a set of codes for auto-redemption. Runs are serialized —
- * the new job starts only after any currently running job finishes.
- */
-/**
  * Resolves once every job enqueued so far has finished. Lets tests wait for
  * a background run to complete instead of racing its last DB writes (audit
  * row, pending-code cleanup) against the next test's database reset.
@@ -42,6 +38,10 @@ export function whenAutoRedeemIdle(): Promise<void> {
   return redeemQueue;
 }
 
+/**
+ * Enqueue a set of codes for auto-redemption. Runs are serialized —
+ * the new job starts only after any currently running job finishes.
+ */
 export function enqueueAutoRedeem(codes: string[]): void {
   redeemQueue = redeemQueue
     .then(() => autoRedeemForAllUsers(codes))
