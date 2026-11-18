@@ -24,7 +24,7 @@ A Discord bot that automatically scans for and redeems Idle Champions promo code
 
 ### Prerequisites
 
-- Mise 2024+ (or Bun 1.3.14+ if you prefer to manage tools manually)
+- Mise 2024+ (or Bun 1.4.4+ if you prefer to manage tools manually)
 - Discord bot token
 
 ### Setup (5 minutes)

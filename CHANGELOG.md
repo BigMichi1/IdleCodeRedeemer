@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- **Toolchain** - the compiled binary is built with Bun 1.4.4 (was 1.4.3); vendored mise
+  launcher 2026.8.12 → 2026.11.9; Python 3.15.0 → 3.15.2; `bun.lock` refreshed within
+  existing ranges. Docs updated to the current Bun version.
+
 ## [3.0.3] - 2026-10-19
 
 ### Security
