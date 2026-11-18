@@ -12,7 +12,6 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  // Clear in FK-safe order
   resetDatabase();
   // Seed test users required by FK on redeemed_codes.discord_id
   db.insert(users)

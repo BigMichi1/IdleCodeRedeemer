@@ -8,13 +8,17 @@ import {
   afterAll,
   spyOn,
 } from 'bun:test';
-import { db, initializeDatabase } from '../database/db';
-import { users, auditLog } from '../database/schema/index';
+import { initializeDatabase } from '../database/db';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import logger from '../utils/logger';
 import IdleChampionsApi from '../api/idleChampionsApi';
-import { autoRedeemForAllUsers, enqueueAutoRedeem, setDiscordClient } from './autoRedeemer';
+import {
+  autoRedeemForAllUsers,
+  enqueueAutoRedeem,
+  setDiscordClient,
+  whenAutoRedeemIdle,
+} from './autoRedeemer';
 import { resetDatabase } from '../../test/db';
 
 // ---------------------------------------------------------------------------
@@ -69,7 +73,6 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  // Wipe all tables in FK-safe order before each test.
   resetDatabase();
 
   // Reset spy call counts and set default happy-path implementations.
@@ -82,9 +85,6 @@ beforeEach(() => {
 afterAll(() => {
   // Restore real setTimeout so subsequent test files aren't affected.
   setTimeoutSpy.mockRestore();
-  // Ensure the DB is clean for subsequent test files (codeManager, userManager, etc.)
-  // that delete users without first deleting auditLog rows.
-  resetDatabase();
 });
 
 // ---------------------------------------------------------------------------
@@ -802,12 +802,12 @@ describe('enqueueAutoRedeem', () => {
     await codeManager.addPendingCode(CODE);
 
     enqueueAutoRedeem([CODE]);
-    // The job is chained onto a module-level promise; let it settle.
-    for (let i = 0; i < 50 && !(await codeManager.isCodeRedeemedByUser(CODE, USER_A)); i++) {
-      await new Promise((resolve) => setImmediate(resolve));
-    }
+    // Wait for the whole job, including its audit row and pending-code
+    // cleanup, so none of it lands after the next test's database reset.
+    await whenAutoRedeemIdle();
 
     expect(await codeManager.isCodeRedeemedByUser(CODE, USER_A)).toBe(true);
+    expect(await codeManager.getPendingCodes()).not.toContain(CODE);
   });
 
   test('an unhandled error in a job is logged, not thrown', async () => {
@@ -817,9 +817,9 @@ describe('enqueueAutoRedeem', () => {
     );
     try {
       enqueueAutoRedeem([CODE]);
-      for (let i = 0; i < 50 && errorSpy.mock.calls.length === 0; i++) {
-        await new Promise((resolve) => setImmediate(resolve));
-      }
+      // The queue swallows the error (that is what is under test), so this
+      // resolves rather than rejects.
+      await whenAutoRedeemIdle();
 
       expect(errorSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
         expect.stringContaining('Unhandled error during auto-redeem')

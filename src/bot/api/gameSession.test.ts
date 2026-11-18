@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from 'bun:test';
 import { resolveGameSession, resolvePlayerData } from './gameSession';
 import IdleChampionsApi from './idleChampionsApi';
-import { db, initializeDatabase } from '../database/db';
+import { initializeDatabase } from '../database/db';
 import { userManager } from '../database/userManager';
 import logger from '../utils/logger';
 import { resetDatabase } from '../../test/db';
@@ -53,7 +53,6 @@ beforeEach(async () => {
 afterAll(() => {
   getUserDetailsSpy.mockRestore();
   getServerSpy.mockRestore();
-  resetDatabase();
 });
 
 describe('resolveGameSession', () => {

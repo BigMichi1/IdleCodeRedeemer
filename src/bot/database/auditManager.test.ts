@@ -12,7 +12,6 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  // Clear in FK-safe order
   resetDatabase();
   // Seed users required by FK on audit_log.discord_id
   db.insert(users)

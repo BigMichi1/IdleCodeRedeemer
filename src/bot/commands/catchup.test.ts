@@ -78,8 +78,6 @@ beforeEach(async () => {
 });
 
 afterAll(() => {
-  // Leave nothing behind for the next test file (see src/test/db.ts).
-  resetDatabase();
   getUserDetailsSpy.mockRestore();
   submitCodeSpy.mockRestore();
   getServerSpy.mockRestore();

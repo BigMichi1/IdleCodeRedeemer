@@ -10,7 +10,6 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  // Clear in FK-safe order so the users delete never violates constraints
   resetDatabase();
 });
 

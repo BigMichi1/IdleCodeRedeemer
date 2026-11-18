@@ -1,3 +1,4 @@
+import { getTableName } from 'drizzle-orm';
 import { db } from '../bot/database/db';
 import {
   auditLog,
@@ -7,6 +8,19 @@ import {
   redeemedCodes,
   users,
 } from '../bot/database/schema/index';
+
+/** Every application table, children before `users` (the FK parent). */
+const TABLES_IN_DELETE_ORDER = [
+  auditLog,
+  pendingCodes,
+  redeemedCodes,
+  lootTotals,
+  backfillOperations,
+  users,
+] as const;
+
+/** SQL names of the tables resetDatabase() empties; checked against the schema. */
+export const RESET_TABLE_NAMES = TABLES_IN_DELETE_ORDER.map((t) => getTableName(t));
 
 /**
  * Empties every table, children before `users`.
@@ -18,10 +32,5 @@ import {
  * rows behind: it passed locally and on the PR, then failed on main.
  */
 export function resetDatabase(): void {
-  db.delete(auditLog).run();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(lootTotals).run();
-  db.delete(backfillOperations).run();
-  db.delete(users).run();
+  for (const table of TABLES_IN_DELETE_ORDER) db.delete(table).run();
 }
