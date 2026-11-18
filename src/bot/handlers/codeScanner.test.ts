@@ -1,9 +1,10 @@
 import { describe, test, expect, beforeAll, beforeEach } from 'bun:test';
 import { extractCodesFromText, scanMessageForCodes } from './codeScanner';
 import { db, initializeDatabase } from '../database/db';
-import { redeemedCodes, pendingCodes, users } from '../database/schema/index';
+import { users } from '../database/schema/index';
 import { codeManager } from '../database/codeManager';
 import type { Message } from 'discord.js';
+import { resetDatabase } from '../../test/db';
 
 describe('extractCodesFromText', () => {
   // Regression: the pattern had no word boundaries and the input is uppercased
@@ -146,9 +147,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
 });
 
 describe('scanMessageForCodes', () => {

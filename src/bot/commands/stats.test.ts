@@ -1,9 +1,10 @@
 import { describe, test, expect, beforeAll, beforeEach, spyOn } from 'bun:test';
 import { db, initializeDatabase } from '../database/db';
-import { users, redeemedCodes, pendingCodes, auditLog, lootTotals } from '../database/schema/index';
+import { users, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import { execute } from './stats';
+import { resetDatabase } from '../../test/db';
 
 // ---------------------------------------------------------------------------
 // Interaction mock helper
@@ -33,11 +34,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  db.delete(auditLog).run();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(lootTotals).run();
-  db.delete(users).run();
+  resetDatabase();
 });
 
 // ---------------------------------------------------------------------------

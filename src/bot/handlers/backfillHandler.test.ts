@@ -19,18 +19,13 @@
 import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from 'bun:test';
 import { ChannelType } from 'discord.js';
 import { db, initializeDatabase } from '../database/db';
-import {
-  users,
-  redeemedCodes,
-  pendingCodes,
-  auditLog,
-  backfillOperations,
-} from '../database/schema/index';
+import { users } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
 import { backfillChannelHistory } from './backfillHandler';
 import logger from '../utils/logger';
+import { resetDatabase } from '../../test/db';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -113,11 +108,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   // Wipe tables in FK-safe order.
-  db.delete(auditLog).run();
-  db.delete(backfillOperations).run();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
 
   // Default spy behaviour (override per test as needed).
   getUserDetailsSpy.mockReset();
@@ -133,11 +124,7 @@ afterAll(() => {
   getUserDetailsSpy.mockRestore();
   submitCodeSpy.mockRestore();
   getServerSpy.mockRestore();
-  db.delete(auditLog).run();
-  db.delete(backfillOperations).run();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
 });
 
 // ---------------------------------------------------------------------------

@@ -74,6 +74,8 @@ Tables: `users` (credentials + per-user `autoRedeem` / `dmOnCode` / `dmOnSuccess
 
 `bun test` with `src/test/setup.ts` preloaded via `bunfig.toml`. That preload forces `DB_PATH=:memory:`, points the migrator at the source migrations folder, and sets a fixed non-secret `ENCRYPTION_KEY` — so tests exercise the real schema and real encryption path against a throwaway database. Test files live next to their subject as `*.test.ts`.
 
+All test files share that one in-memory database, in an order that differs between machines. Start each test with `resetDatabase()` from `src/test/db.ts`, which empties every table in foreign-key order, rather than deleting only the tables the suite touches: a partial wipe fails with `FOREIGN KEY constraint failed` whenever an earlier file left child rows behind. `bun test --randomize` shakes out such order dependence.
+
 ## Conventions
 
 - Conventional Commits, enforced by commitlint. Scopes in use: `api`, `bot`, `database`, `commands`, `logging`, `ui`, `ci`, `docs`, `types`, `logs`.

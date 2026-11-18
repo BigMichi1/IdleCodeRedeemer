@@ -9,12 +9,13 @@ import {
   spyOn,
 } from 'bun:test';
 import { db, initializeDatabase } from '../database/db';
-import { users, redeemedCodes, pendingCodes, auditLog } from '../database/schema/index';
+import { users, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import logger from '../utils/logger';
 import IdleChampionsApi from '../api/idleChampionsApi';
 import { autoRedeemForAllUsers, enqueueAutoRedeem, setDiscordClient } from './autoRedeemer';
+import { resetDatabase } from '../../test/db';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -69,10 +70,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   // Wipe all tables in FK-safe order before each test.
-  db.delete(auditLog).run();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
 
   // Reset spy call counts and set default happy-path implementations.
   getUserDetailsSpy.mockReset();
@@ -86,10 +84,7 @@ afterAll(() => {
   setTimeoutSpy.mockRestore();
   // Ensure the DB is clean for subsequent test files (codeManager, userManager, etc.)
   // that delete users without first deleting auditLog rows.
-  db.delete(auditLog).run();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
 });
 
 // ---------------------------------------------------------------------------

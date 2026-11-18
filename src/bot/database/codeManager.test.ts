@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeAll, beforeEach, afterAll } from 'bun:test';
 import { db, initializeDatabase } from './db';
 import { codeManager, normalizeCodeStatus } from './codeManager';
-import { users, redeemedCodes, pendingCodes, lootTotals } from './schema/index';
+import { users, redeemedCodes } from './schema/index';
+import { resetDatabase } from '../../test/db';
 
 const USER_A = 'discord-user-a';
 const USER_B = 'discord-user-b';
@@ -12,10 +13,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   // Clear in FK-safe order
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(lootTotals).run();
-  db.delete(users).run();
+  resetDatabase();
   // Seed test users required by FK on redeemed_codes.discord_id
   db.insert(users)
     .values([
