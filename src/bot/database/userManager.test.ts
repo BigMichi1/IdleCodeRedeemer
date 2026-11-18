@@ -1,8 +1,9 @@
 import { describe, test, expect, beforeAll, beforeEach } from 'bun:test';
 import { db, initializeDatabase } from './db';
 import { userManager } from './userManager';
-import { users, redeemedCodes, pendingCodes } from './schema/index';
+import { users } from './schema/index';
 import { isEncrypted, encrypt } from '../utils/crypto';
+import { resetDatabase } from '../../test/db';
 
 beforeAll(() => {
   initializeDatabase();
@@ -10,9 +11,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   // Clear in FK-safe order so the users delete never violates constraints
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
 });
 
 // ---------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeAll, beforeEach, spyOn } from 'bun:test';
 import { MessageFlags } from 'discord.js';
 import { db, initializeDatabase } from '../database/db';
-import { users, redeemedCodes, pendingCodes, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
 import { execute } from './notifications';
+import { resetDatabase } from '../../test/db';
 
 // ---------------------------------------------------------------------------
 // Interaction mock helpers
@@ -39,10 +39,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  db.delete(auditLog).run();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
 });
 
 // ---------------------------------------------------------------------------

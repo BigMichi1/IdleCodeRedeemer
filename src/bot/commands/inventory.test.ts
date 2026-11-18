@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from 'bun:test';
-import { db, initializeDatabase } from '../database/db';
-import { users, auditLog } from '../database/schema/index';
+import { initializeDatabase } from '../database/db';
+import { resetDatabase } from '../../test/db';
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
@@ -46,8 +46,7 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
-  db.delete(auditLog).run();
-  db.delete(users).run();
+  resetDatabase();
   await userManager.saveCredentials({
     discordId: USER,
     userId: '12345',
@@ -62,6 +61,8 @@ beforeEach(async () => {
 });
 
 afterAll(() => {
+  // Leave nothing behind for the next test file (see src/test/db.ts).
+  resetDatabase();
   getUserDetailsSpy.mockRestore();
   getServerSpy.mockRestore();
 });
@@ -122,7 +123,7 @@ describe('/inventory – session handling', () => {
 
 describe('/inventory – embed', () => {
   test('asks for /setup when no credentials are stored', async () => {
-    db.delete(users).run();
+    resetDatabase();
     const { interaction, editReplySpy } = makeInteraction();
 
     await execute(interaction);

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from 'bun:test';
-import { db, initializeDatabase } from '../database/db';
-import { users, redeemedCodes, pendingCodes, auditLog } from '../database/schema/index';
+import { initializeDatabase } from '../database/db';
+import { resetDatabase } from '../../test/db';
 import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
@@ -61,10 +61,7 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
-  db.delete(auditLog).run();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
   await userManager.saveCredentials({
     discordId: USER,
     userId: '12345',
@@ -81,6 +78,8 @@ beforeEach(async () => {
 });
 
 afterAll(() => {
+  // Leave nothing behind for the next test file (see src/test/db.ts).
+  resetDatabase();
   getUserDetailsSpy.mockRestore();
   submitCodeSpy.mockRestore();
   getServerSpy.mockRestore();
@@ -185,7 +184,7 @@ describe('/catchup – session handling', () => {
 
 describe('/catchup – results', () => {
   test('asks for /setup when no credentials are stored', async () => {
-    db.delete(users).run();
+    resetDatabase();
     const { interaction, editReplySpy } = makeInteraction();
 
     await execute(interaction);

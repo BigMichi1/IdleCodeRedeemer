@@ -4,7 +4,7 @@ import IdleChampionsApi from './idleChampionsApi';
 import { db, initializeDatabase } from '../database/db';
 import { userManager } from '../database/userManager';
 import logger from '../utils/logger';
-import { users, redeemedCodes, pendingCodes } from '../database/schema/index';
+import { resetDatabase } from '../../test/db';
 
 // ---------------------------------------------------------------------------
 // resolvePlayerData() and resolveGameSession() are the only getuserdetails
@@ -36,9 +36,7 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
   await userManager.saveCredentials({
     discordId: USER,
     userId: '12345',
@@ -55,9 +53,7 @@ beforeEach(async () => {
 afterAll(() => {
   getUserDetailsSpy.mockRestore();
   getServerSpy.mockRestore();
-  db.delete(pendingCodes).run();
-  db.delete(redeemedCodes).run();
-  db.delete(users).run();
+  resetDatabase();
 });
 
 describe('resolveGameSession', () => {
