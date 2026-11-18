@@ -59,7 +59,9 @@ function sendFailureDm(discordId: string, codes: string[], reason: string): void
     // Closed DMs or an unknown user must not fail the redemption run, but leave
     // a trace: this DM is how a user learns auto-redeem is not working.
     .catch((err) =>
-      logger.debug(`[AUTO REDEEMER] Failure DM to ${discordId} not delivered: ${errorMessage(err)}`)
+      // warn, not debug: the default level is info, and a silent miss here is
+      // exactly what this DM exists to prevent.
+      logger.warn(`[AUTO REDEEMER] Failure DM to ${discordId} not delivered: ${errorMessage(err)}`)
     );
 }
 
@@ -229,10 +231,49 @@ async function redeemCodeForUser(
 }
 
 /**
+ * Logs a per-user session failure and, when the user opted in and can fix it,
+ * sends one DM listing the codes they missed. Never throws: the caller must be
+ * able to stop the user's loop regardless.
+ *
+ * A failed getuserdetails is not user-fixable here, because it cannot be told
+ * apart from a game outage. The trade-off: a user whose stored credentials are
+ * wrong is not DMed; the operator sees an error line per run instead.
+ */
+async function reportSessionFailure(
+  user: UserCredentials,
+  codesFromFailure: string[],
+  failure: Failure
+): Promise<void> {
+  const { discordId } = user;
+  try {
+    // This code and the ones after it: leave out any the user already has or
+    // that are known-expired, so the DM lists only what was actually missed.
+    const missed: string[] = [];
+    for (const c of codesFromFailure) {
+      if (await codeManager.isCodeRedeemedByUser(c, discordId)) continue;
+      if (await codeManager.isCodeExpired(c)) continue;
+      missed.push(c);
+    }
+    logger.warn(
+      `[AUTO REDEEMER] Skipping ${missed.length} remaining code(s) for user ${discordId}`
+    );
+    if (user.dmOnFailure && failure.userFixable && missed.length > 0) {
+      sendFailureDm(discordId, missed, failure.description);
+    }
+  } catch (error) {
+    logger.error(
+      `[AUTO REDEEMER] Could not report session failure for user ${discordId}: ${errorMessage(error)}`
+    );
+  }
+}
+
+/**
  * Redeems a list of codes for every registered user, sequentially.
  * All codes are redeemed for one user before moving to the next user,
  * with a single random delay between users. This keeps total throttle
  * delays at N-1 (users) rather than M×(N-1) (codes × users).
+ * A session failure stops that user's remaining codes; the run continues
+ * with the next user.
  */
 export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
   if (codes.length === 0) return;
@@ -252,28 +293,22 @@ export async function autoRedeemForAllUsers(codes: string[]): Promise<void> {
     logger.info(`[AUTO REDEEMER] Processing user ${user.discordId}`);
 
     for (const [index, code] of codes.entries()) {
+      let sessionFailure: Failure | undefined;
       try {
-        const sessionFailure = await redeemCodeForUser(code, user);
-        if (sessionFailure) {
-          // Codes after this one were not checked yet; leave out any the user
-          // already has so the DM lists only what was actually missed.
-          const remaining: string[] = [];
-          for (const c of codes.slice(index)) {
-            if (!(await codeManager.isCodeRedeemedByUser(c, user.discordId))) remaining.push(c);
-          }
-          logger.warn(
-            `[AUTO REDEEMER] Skipping ${remaining.length} remaining code(s) for user ${user.discordId}`
-          );
-          if (user.dmOnFailure && sessionFailure.userFixable) {
-            sendFailureDm(user.discordId, remaining, sessionFailure.description);
-          }
-          break;
-        }
+        sessionFailure = await redeemCodeForUser(code, user);
       } catch (error) {
         logger.error(
           `[AUTO REDEEMER] Error redeeming code ${code} for user ${user.discordId}:`,
           error
         );
+        continue;
+      }
+      if (sessionFailure) {
+        // Outside the per-code try: whatever happens while reporting it, a
+        // session failure must still stop this user's codes, or the failing
+        // lookup comes back once per remaining code.
+        await reportSessionFailure(user, codes.slice(index), sessionFailure);
+        break;
       }
     }
 

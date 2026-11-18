@@ -135,12 +135,13 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
 
 **Known SSL Certificate Issue**:
 
-The Idle Champions API server uses an expired SSL certificate. As a result:
+The Idle Champions API server has served an expired SSL certificate. Certificate validation stays on by default. Only when the operator sets `IDLE_CHAMPIONS_INSECURE_TLS=1` is validation skipped, and then only for game API requests (`apiFetch()`); the Discord gateway is always validated. While that escape hatch is set, game API traffic is:
 
-- Certificate validation is disabled (`NODE_TLS_REJECT_UNAUTHORIZED=0`)
 - Vulnerable to man-in-the-middle attacks
 - Not verified server identity
 - No integrity guarantee of API responses
+
+`NODE_TLS_REJECT_UNAUTHORIZED` is never set, because it would disable validation for the Discord connection too and expose `DISCORD_TOKEN`.
 
 ```
 ⚠️ CRITICAL: This is a KNOWN ISSUE with the Idle Champions server infrastructure.
@@ -665,10 +666,12 @@ The project assumes the risk and implements verification through other means.
 **Current Mitigation**:
 
 ```
-NODE_TLS_REJECT_UNAUTHORIZED=0  # Disables certificate validation
+IDLE_CHAMPIONS_INSECURE_TLS=1  # Opt-in; skips validation for game API requests only
 ```
 
-**Impact**:
+Validation is on unless this is set, and it never applies to the Discord gateway. The global `NODE_TLS_REJECT_UNAUTHORIZED=0` is deliberately not used: it would disable validation for every connection and expose `DISCORD_TOKEN`.
+
+**Impact** (only while the escape hatch is set):
 
 - Vulnerable to man-in-the-middle attacks
 - No guarantee of server identity

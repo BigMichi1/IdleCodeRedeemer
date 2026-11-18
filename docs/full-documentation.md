@@ -358,8 +358,8 @@ bun run db:studio   # Open Drizzle Studio (visual DB browser)
 
 **"CERT_HAS_EXPIRED" errors?**
 
-- This is handled automatically by Mise (no manual setup needed)
-- The environment variable `NODE_TLS_REJECT_UNAUTHORIZED=0` is set by `.mise.toml`
+- The game host has served an expired certificate. Set `IDLE_CHAMPIONS_INSECURE_TLS=1` to skip validation for game API requests only (`apiFetch()`).
+- Never set `NODE_TLS_REJECT_UNAUTHORIZED`: it disables validation for every connection, the Discord gateway included, which would expose `DISCORD_TOKEN`. `.mise.toml` deliberately does not set it.
 
 **Bot not responding?**
 
