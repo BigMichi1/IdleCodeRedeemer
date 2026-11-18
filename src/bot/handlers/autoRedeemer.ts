@@ -61,7 +61,10 @@ function sendFailureDm(discordId: string, codes: string[], reason: string): void
     .catch((err) =>
       // warn, not debug: the default level is info, and a silent miss here is
       // exactly what this DM exists to prevent.
-      logger.warn(`[AUTO REDEEMER] Failure DM to ${discordId} not delivered: ${errorMessage(err)}`)
+      // Codes and reason are logged so the operator can tell the user by hand.
+      logger.warn(
+        `[AUTO REDEEMER] Failure DM to ${discordId} not delivered (${codes.join(', ')}: ${reason}): ${errorMessage(err)}`
+      )
     );
 }
 
@@ -100,7 +103,20 @@ async function redeemCodeForUser(
     return;
   }
 
-  const session = await resolveGameSession(discordId, credentials);
+  let session: Awaited<ReturnType<typeof resolveGameSession>>;
+  try {
+    session = await resolveGameSession(discordId, credentials);
+  } catch (error) {
+    // A throw (e.g. the DB write persisting a new server) is just as per-user
+    // as a returned failure; as a Failure it stops the user's remaining codes
+    // instead of repeating the same lookup once per code.
+    logger.error(`[AUTO REDEEMER] Session lookup threw for user ${discordId}:`, error);
+    return {
+      ok: false,
+      description: `Could not start a game session: ${errorMessage(error)}.`,
+      userFixable: false,
+    };
+  }
   if (!session.ok) {
     logger.error(`[AUTO REDEEMER] ${session.description} (user ${discordId})`);
     return session;
@@ -209,9 +225,12 @@ async function redeemCodeForUser(
       discordClient.users
         .fetch(discordId)
         .then((user) => user.send(`✅ Code \`${code}\` redeemed successfully!`))
-        .catch(() => {
-          // DM delivery failure is non-critical — user may have DMs disabled
-        });
+        // Non-critical (the user may have DMs disabled), but leave a trace.
+        .catch((err) =>
+          logger.warn(
+            `[AUTO REDEEMER] Success DM to ${discordId} not delivered: ${errorMessage(err)}`
+          )
+        );
     }
 
     await auditManager.logAction(discordId, 'CODE_REDEEMED', {
@@ -261,9 +280,15 @@ async function reportSessionFailure(
       sendFailureDm(discordId, missed, failure.description);
     }
   } catch (error) {
+    // Over-report rather than go silent: the opted-in user still hears about
+    // it, with the unfiltered list.
     logger.error(
-      `[AUTO REDEEMER] Could not report session failure for user ${discordId}: ${errorMessage(error)}`
+      `[AUTO REDEEMER] Could not filter codes for session failure of user ${discordId} (${failure.description}); skipping ${codesFromFailure.length} remaining code(s):`,
+      error
     );
+    if (user.dmOnFailure && failure.userFixable) {
+      sendFailureDm(discordId, codesFromFailure, failure.description);
+    }
   }
 }
 

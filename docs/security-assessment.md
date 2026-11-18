@@ -123,15 +123,15 @@ The Idle Champions Code Redeemer Discord Bot is a Discord-integrated application
 
 **Vulnerability Details**:
 
-| Aspect              | Current State                 | Risk                             |
-| ------------------- | ----------------------------- | -------------------------------- |
-| Encryption          | HTTPS/TLS                     | LOW - Encrypted transport        |
-| Cert Validation     | DISABLED (known SSL issue)    | HIGH - No cert validation        |
-| Rate Limiting       | Implemented locally           | MEDIUM - API can still be abused |
-| Request Validation  | Input sanitization present    | LOW - Proper validation          |
-| Response Validation | JSON parsing (no validation)  | MEDIUM - Untrusted input         |
-| Error Messages      | Sanitized before user display | LOW - No info leakage            |
-| Timeout             | 30 seconds (reasonable)       | LOW - DoS resistant              |
+| Aspect              | Current State                                                   | Risk                             |
+| ------------------- | --------------------------------------------------------------- | -------------------------------- |
+| Encryption          | HTTPS/TLS                                                       | LOW - Encrypted transport        |
+| Cert Validation     | On; opt-out via `IDLE_CHAMPIONS_INSECURE_TLS=1` (game API only) | HIGH only while opted out        |
+| Rate Limiting       | Implemented locally                                             | MEDIUM - API can still be abused |
+| Request Validation  | Input sanitization present                                      | LOW - Proper validation          |
+| Response Validation | JSON parsing (no validation)                                    | MEDIUM - Untrusted input         |
+| Error Messages      | Sanitized before user display                                   | LOW - No info leakage            |
+| Timeout             | 30 seconds (reasonable)                                         | LOW - DoS resistant              |
 
 **Known SSL Certificate Issue**:
 
@@ -153,7 +153,7 @@ The project assumes the risk and implements verification through other means.
 1. **Man-in-the-Middle Attack**
    - Attacker intercepts HTTPS connection (e.g., via DNS hijacking)
    - Presents different SSL certificate
-   - Bot accepts connection (validation disabled)
+   - Bot accepts connection (only while `IDLE_CHAMPIONS_INSECURE_TLS=1` is set)
    - Attacker captures credentials in API requests
    - Attacker injects fake responses (e.g., code already redeemed)
 
@@ -661,7 +661,7 @@ The project assumes the risk and implements verification through other means.
 
 ### 1. Idle Champions API SSL Certificate (CRITICAL TO UNDERSTAND)
 
-**Issue**: The Idle Champions game API uses an expired or self-signed SSL certificate.
+**Issue**: The Idle Champions game API has served an expired or self-signed SSL certificate.
 
 **Current Mitigation**:
 
@@ -679,8 +679,8 @@ Validation is on unless this is set, and it never applies to the Discord gateway
 
 **Why It's Necessary**:
 
-- The game server infrastructure has not been updated
-- The API cannot be accessed without this workaround
+- It is needed only while the game host actually serves a broken certificate; otherwise leave it unset
+- When the certificate is broken, the API cannot be reached without it
 - This is a limitation of the external service, not the bot
 
 **Recommendation for Users**:
