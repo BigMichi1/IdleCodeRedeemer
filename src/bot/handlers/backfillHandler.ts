@@ -6,6 +6,7 @@ import { scanMessageForCodes } from './codeScanner';
 import { codeManager } from '../database/codeManager';
 import { userManager } from '../database/userManager';
 import IdleChampionsApi, { CodeSubmitStatus } from '../api/idleChampionsApi';
+import { resolveGameSession } from '../api/gameSession';
 import logger from '../utils/logger';
 import { errorMessage, sleep } from '../utils/async';
 
@@ -160,15 +161,9 @@ export async function backfillChannelHistory(
 
     for (const user of users) {
       try {
+        // Carried across this user's codes so a server switch followed on the
+        // first code is not re-discovered (and re-persisted) on every later one.
         let server = user.server;
-        if (!server) {
-          server = await IdleChampionsApi.getServer();
-          if (!server) {
-            logger.warn(`[BACKFILL] Could not determine server for user ${user.discordId}`);
-            continue;
-          }
-          await userManager.updateServer(user.discordId, server);
-        }
 
         // Try to redeem each code for this user
         for (const code of Array.from(allCodes)) {
@@ -185,34 +180,23 @@ export async function backfillChannelHistory(
           }
 
           try {
-            // Fetch fresh instance ID before redeeming
-            const userDetailsResponse = await IdleChampionsApi.getUserDetails({
-              server,
-              user_id: user.userId,
-              hash: user.userHash,
-            });
-
-            // Check if response is PlayerData (successful) — valid responses
-            // carry a `details` object with the instance_id.
-            const playerData = userDetailsResponse as any;
-            if (!playerData?.details) {
+            // Fetch a fresh instance_id before redeeming. resolveGameSession
+            // also follows the SwitchServer redirect: reading getUserDetails
+            // directly here reported a moved account as "invalid credentials"
+            // and skipped every user the game had moved to a new play server.
+            const session = await resolveGameSession(user.discordId, { ...user, server });
+            if (!session.ok) {
               // Break rather than continue: this fails per-user, not per-code.
               // Continuing retried the same dead credentials once per code and
               // left stats.errors empty, so the run was still recorded as
               // "completed" while redeeming nothing.
-              const msg = `Could not get user details for ${user.discordId} (invalid credentials or API failure) - skipping their remaining codes`;
+              const msg = `Could not start a game session for ${user.discordId} (${session.description}) - skipping their remaining codes`;
               logger.error(`[BACKFILL] ${msg}`);
               stats.errors.push(msg);
               break;
             }
-
-            const instanceId = String(playerData.details?.instance_id ?? '').trim() || '0';
-            if (instanceId === '0') {
-              logger.warn(
-                `[BACKFILL] Skipping code ${code} for user ${user.discordId}: invalid instance_id`
-              );
-              continue;
-            }
+            server = session.server;
+            const instanceId = session.instanceId;
 
             const response = await IdleChampionsApi.submitCode({
               server,

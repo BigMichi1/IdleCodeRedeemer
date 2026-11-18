@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from 'bun:test';
-import { resolveGameSession } from './gameSession';
-import IdleChampionsApi from '../api/idleChampionsApi';
+import { resolveGameSession, resolvePlayerData } from './gameSession';
+import IdleChampionsApi from './idleChampionsApi';
 import { db, initializeDatabase } from '../database/db';
 import { userManager } from '../database/userManager';
 import { users, redeemedCodes, pendingCodes } from '../database/schema/index';
@@ -171,5 +171,37 @@ describe('resolveGameSession', () => {
         expect(session.title).toBe('❌ Error');
       }
     });
+  });
+});
+
+describe('resolvePlayerData', () => {
+  // /inventory only reads account state, so it must not be blocked by the
+  // instance_id check that resolveGameSession adds for state-changing calls.
+  test('returns the player details without requiring an instance_id', async () => {
+    const player = { details: { instance_id: '0', gold: '42' } };
+    getUserDetailsSpy.mockResolvedValue(player as any);
+
+    const result = await resolvePlayerData(USER, creds(CACHED_SERVER));
+
+    expect(result).toEqual({ ok: true, server: CACHED_SERVER, player: player as any });
+  });
+
+  test('follows a server switch and persists it', async () => {
+    getUserDetailsSpy
+      .mockResolvedValueOnce({ status: 4, newServer: SWITCHED_SERVER } as any)
+      .mockResolvedValueOnce({ details: { gold: '1' } } as any);
+
+    const result = await resolvePlayerData(USER, creds(CACHED_SERVER));
+
+    expect(result).toMatchObject({ ok: true, server: SWITCHED_SERVER });
+    expect((await userManager.getCredentials(USER))?.server).toBe(SWITCHED_SERVER);
+  });
+
+  test('fails when user details come back without a details object', async () => {
+    getUserDetailsSpy.mockResolvedValue({ status: 2 } as any);
+
+    const result = await resolvePlayerData(USER, creds(CACHED_SERVER));
+
+    expect(result).toMatchObject({ ok: false, description: 'Could not retrieve user data.' });
   });
 });

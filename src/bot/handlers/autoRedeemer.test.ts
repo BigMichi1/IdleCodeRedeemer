@@ -327,6 +327,29 @@ describe('autoRedeemForAllUsers – OutdatedInstanceId retry', () => {
     expect(await codeManager.isCodeRedeemedByUser(CODE, USER_A)).toBe(true);
   });
 
+  test('the instance_id refresh follows a server switch', async () => {
+    // Regression: the refresh read getUserDetails directly and treated a
+    // SwitchServer redirect as "no instance_id", dropping the code.
+    await addUser(USER_A);
+    await codeManager.addPendingCode(CODE);
+    const NEW_SERVER = 'https://moved.idlechampions.com/~idledragons/post.php';
+    getUserDetailsSpy
+      .mockResolvedValueOnce(makeUserDetails() as any) // initial session
+      .mockResolvedValueOnce(makeGenericResponse(4, NEW_SERVER) as any) // refresh: moved
+      .mockResolvedValueOnce(makeUserDetails('fresh-inst') as any); // refresh on new server
+    submitCodeSpy
+      .mockResolvedValueOnce(makeGenericResponse(1) as any) // OutdatedInstanceId
+      .mockResolvedValueOnce(makeSubmitResponse(0) as any);
+
+    await autoRedeemForAllUsers([CODE]);
+
+    expect(submitCodeSpy.mock.calls[1]![0]).toMatchObject({
+      server: NEW_SERVER,
+      instanceId: 'fresh-inst',
+    });
+    expect(await codeManager.isCodeRedeemedByUser(CODE, USER_A)).toBe(true);
+  });
+
   test('leaves code pending when instance_id refresh also fails', async () => {
     await addUser(USER_A);
     await codeManager.addPendingCode(CODE);

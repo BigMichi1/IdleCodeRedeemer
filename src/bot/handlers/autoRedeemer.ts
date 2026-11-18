@@ -5,6 +5,7 @@ import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
 import logger from '../utils/logger';
 import { sleep } from '../utils/async';
+import { resolveGameSession } from '../api/gameSession';
 
 let discordClient: Client | null = null;
 
@@ -77,54 +78,13 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
     return;
   }
 
-  let server = credentials.server;
-  if (!server) {
-    server = await IdleChampionsApi.getServer();
-    if (!server) {
-      logger.error(`[AUTO REDEEMER] Could not determine server for user ${discordId}`);
-      return;
-    }
-    await userManager.updateServer(discordId, server);
-  }
-
-  // Fetch fresh user details to get current instance_id
-  let userResult = await IdleChampionsApi.getUserDetails({
-    server,
-    user_id: credentials.userId,
-    hash: credentials.userHash,
-  });
-
-  // Handle server switch (status 4)
-  if (
-    userResult instanceof Object &&
-    'status' in userResult &&
-    (userResult as any).status === ResponseStatus.SwitchServer
-  ) {
-    const newServer = (userResult as any).newServer;
-    if (!newServer) {
-      logger.error(`[AUTO REDEEMER] Server switch failed for user ${discordId}`);
-      return;
-    }
-    server = newServer as string;
-    await userManager.updateServer(discordId, server);
-    userResult = await IdleChampionsApi.getUserDetails({
-      server,
-      user_id: credentials.userId,
-      hash: credentials.userHash,
-    });
-  }
-
-  const userData = userResult as any;
-  if (!userData?.details) {
-    logger.error(`[AUTO REDEEMER] Could not retrieve user data for ${discordId}`);
+  const session = await resolveGameSession(discordId, credentials);
+  if (!session.ok) {
+    logger.error(`[AUTO REDEEMER] ${session.description} (user ${discordId})`);
     return;
   }
-
-  let instanceId = userData.details.instance_id || '0';
-  if (!instanceId || instanceId === '0') {
-    logger.error(`[AUTO REDEEMER] Invalid instance_id for user ${discordId}`);
-    return;
-  }
+  let server = session.server;
+  let instanceId = session.instanceId;
 
   let submitResponse = await IdleChampionsApi.submitCode({
     server,
@@ -155,18 +115,15 @@ async function redeemCodeForUser(code: string, credentials: UserCredentials): Pr
     } else if (generic.status === ResponseStatus.OutdatedInstanceId) {
       // Stale instance_id — fetch fresh user details to get current one
       logger.info(`[AUTO REDEEMER] Outdated instance_id for user ${discordId}, refreshing`);
-      const refreshResult = await IdleChampionsApi.getUserDetails({
-        server,
-        user_id: credentials.userId,
-        hash: credentials.userHash,
-      });
-      const refreshed = refreshResult as any;
-      const refreshedInstanceId = refreshed?.details?.instance_id || '0';
-      if (!refreshedInstanceId || refreshedInstanceId === '0') {
-        logger.error(`[AUTO REDEEMER] Could not refresh instance_id for user ${discordId}`);
+      const refreshed = await resolveGameSession(discordId, { ...credentials, server });
+      if (!refreshed.ok) {
+        logger.error(
+          `[AUTO REDEEMER] Could not refresh instance_id for user ${discordId}: ${refreshed.description}`
+        );
         return;
       }
-      instanceId = refreshedInstanceId;
+      server = refreshed.server;
+      instanceId = refreshed.instanceId;
       submitResponse = await IdleChampionsApi.submitCode({
         server,
         code,

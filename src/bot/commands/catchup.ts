@@ -7,7 +7,8 @@ import {
 import { userManager } from '../database/userManager';
 import { codeManager, normalizeCodeStatus } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi, { CodeSubmitStatus, ResponseStatus } from '../api/idleChampionsApi';
+import IdleChampionsApi, { CodeSubmitStatus } from '../api/idleChampionsApi';
+import { resolveGameSession } from '../api/gameSession';
 import logger from '../utils/logger';
 import { errorMessage, sleep } from '../utils/async';
 
@@ -51,79 +52,20 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    // Resolve server
-    let server = credentials.server;
-    if (!server) {
-      server = await IdleChampionsApi.getServer();
-      if (!server) {
-        const embed = new EmbedBuilder()
-          .setColor(0xff0000)
-          .setTitle('❌ Error')
-          .setDescription('Could not determine game server.');
-
-        await interaction.editReply({ embeds: [embed] });
-        return;
-      }
-      await userManager.updateServer(interaction.user.id, server);
-    }
-
-    // Fetch fresh user details once to get instance_id (refreshed per batch below)
-    let userResult = await IdleChampionsApi.getUserDetails({
-      server,
-      user_id: credentials.userId,
-      hash: credentials.userHash,
-    });
-
-    // Handle server switch
-    if (
-      userResult instanceof Object &&
-      'status' in userResult &&
-      (userResult as any).status === ResponseStatus.SwitchServer
-    ) {
-      server = (userResult as any).newServer;
-      if (!server) {
-        const embed = new EmbedBuilder()
-          .setColor(0xff0000)
-          .setTitle('❌ Error')
-          .setDescription('Server switch failed.');
-
-        await interaction.editReply({ embeds: [embed] });
-        return;
-      }
-      await userManager.updateServer(interaction.user.id, server);
-      userResult = await IdleChampionsApi.getUserDetails({
-        server,
-        user_id: credentials.userId,
-        hash: credentials.userHash,
-      });
-    }
-
-    const userData = userResult as any;
-    if (!userData?.details) {
+    const session = await resolveGameSession(interaction.user.id, credentials);
+    if (!session.ok) {
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription('Could not retrieve user data from the game server.');
+        .setTitle(session.title)
+        .setDescription(session.description);
 
       await interaction.editReply({ embeds: [embed] });
       return;
     }
-
-    let instanceId =
-      userData.details.instance_id !== null && userData.details.instance_id !== undefined
-        ? String(userData.details.instance_id).trim()
-        : '';
-    if (!instanceId || instanceId === '0') {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription(
-          'Could not determine your game instance. Please open the game and try again later.'
-        );
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
+    // instance_id is refreshed every 10 submissions below; the server can
+    // change on such a refresh if the game moves the account mid-run.
+    let server = session.server;
+    let instanceId = session.instanceId;
 
     // Attempt to redeem each code
     let redeemed = 0;
@@ -150,24 +92,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       try {
         // Refresh instance_id every 10 real API submissions to avoid stale sessions
         if (apiCallCount > 0 && apiCallCount % 10 === 0) {
-          const refreshResult = await IdleChampionsApi.getUserDetails({
-            server: server!,
-            user_id: credentials.userId,
-            hash: credentials.userHash,
+          const refreshed = await resolveGameSession(interaction.user.id, {
+            ...credentials,
+            server,
           });
-          const refreshed = refreshResult as any;
-          const refreshedInstanceId =
-            refreshed?.details?.instance_id !== null &&
-            refreshed?.details?.instance_id !== undefined
-              ? String(refreshed.details.instance_id).trim()
-              : '';
-          if (refreshedInstanceId && refreshedInstanceId !== '0') {
-            instanceId = refreshedInstanceId;
+          // A failed refresh keeps the current instance_id and carries on, as
+          // before: if that session is really gone, the following submissions
+          // are counted as failed rather than aborting the whole run.
+          if (refreshed.ok) {
+            server = refreshed.server;
+            instanceId = refreshed.instanceId;
           }
         }
 
         const response = await IdleChampionsApi.submitCode({
-          server: server!,
+          server,
           code,
           user_id: credentials.userId,
           hash: credentials.userHash,

@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { userManager } from '../database/userManager';
 import { auditManager } from '../database/auditManager';
-import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
+import { resolvePlayerData } from '../api/gameSession';
 import logger from '../utils/logger';
 
 export const data = new SlashCommandBuilder()
@@ -29,68 +29,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    // Get server
-    const server = await IdleChampionsApi.getServer();
-    if (!server) {
+    const result = await resolvePlayerData(interaction.user.id, credentials);
+    if (!result.ok) {
+      logger.error(`[INVENTORY] ${result.description}`);
       const embed = new EmbedBuilder()
         .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription('Could not connect to Idle Champions servers.');
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
-    await userManager.updateServer(interaction.user.id, server);
-
-    // Get user details
-    let result = await IdleChampionsApi.getUserDetails({
-      server,
-      user_id: credentials.userId,
-      hash: credentials.userHash,
-    });
-
-    // Handle server switch
-    if (
-      result instanceof Object &&
-      'status' in result &&
-      (result as any).status === ResponseStatus.SwitchServer
-    ) {
-      // ResponseStatus.SwitchServer
-      await userManager.updateServer(interaction.user.id, (result as any).newServer);
-
-      // Retry with new server
-      result = await IdleChampionsApi.getUserDetails({
-        server: (result as any).newServer,
-        user_id: credentials.userId,
-        hash: credentials.userHash,
-      });
-    }
-
-    // Check if it's a GenericResponse error
-    if (result instanceof Object && 'status' in result && !('game_log' in result)) {
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription(`API Error: Status ${(result as any).status}`);
+        .setTitle(result.title)
+        .setDescription(result.description);
 
       await interaction.editReply({ embeds: [embed] });
       return;
     }
 
-    const playerData = result as any;
-
-    if (!playerData || !playerData.details) {
-      logger.error('[INVENTORY] Invalid player data structure.');
-      const embed = new EmbedBuilder()
-        .setColor(0xff0000)
-        .setTitle('❌ Error')
-        .setDescription('Could not retrieve inventory data. Please check your credentials.');
-
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
-
-    const details = playerData.details;
+    const details = result.player.details;
 
     // Build inventory embed
     const embed = new EmbedBuilder()

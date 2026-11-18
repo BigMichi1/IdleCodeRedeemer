@@ -8,7 +8,7 @@ import { userManager } from '../database/userManager';
 import { codeManager, normalizeCodeStatus, CHEST_TYPE_NAMES } from '../database/codeManager';
 import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { CodeSubmitStatus } from '../api/idleChampionsApi';
-import { resolveGameSession } from './gameSession';
+import { resolveGameSession } from '../api/gameSession';
 import { replyWithError } from '../utils/interactionReply';
 import logger from '../utils/logger';
 
