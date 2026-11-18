@@ -699,6 +699,52 @@ describe('autoRedeemForAllUsers – dmOnFailure', () => {
     expect(await codeManager.isCodeRedeemedByUser(CODE, USER_B)).toBe(true);
   });
 
+  test('a GenericResponse failure: plain DM text, status name in the log', async () => {
+    const { mockClient, sendSpy } = makeMockClient();
+    setDiscordClient(mockClient);
+    const errorSpy = spyOn(logger, 'error');
+    try {
+      await addUser(USER_A);
+      await userManager.setNotificationPreferences(USER_A, { dmOnFailure: true });
+      await codeManager.addPendingCode(CODE);
+      submitCodeSpy.mockResolvedValue(makeGenericResponse(2) as any); // Failed
+
+      await autoRedeemForAllUsers([CODE]);
+
+      const dm = sendSpy.mock.calls[0]![0];
+      expect(dm).toContain('The game server rejected the request');
+      // No enum identifiers or bare numbers in a user-facing message.
+      expect(dm).not.toContain('Failed');
+      expect(dm).not.toContain('status');
+      expect(errorSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining('GenericResponse Failed for code')
+      );
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  test('a failed retry after a server switch logs the retry status', async () => {
+    const errorSpy = spyOn(logger, 'error');
+    try {
+      await addUser(USER_A);
+      await codeManager.addPendingCode(CODE);
+      submitCodeSpy
+        .mockResolvedValueOnce(makeGenericResponse(4, 'https://moved.example.com/post.php') as any)
+        .mockResolvedValueOnce(makeGenericResponse(2) as any);
+
+      await autoRedeemForAllUsers([CODE]);
+
+      expect(errorSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringContaining(
+          'Unexpected response for code AUTOCODE1234, user user-auto-a (Failed)'
+        )
+      );
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
   test('does not send failure DM when dmOnFailure is false (default)', async () => {
     const { mockClient, sendSpy } = makeMockClient();
     setDiscordClient(mockClient);

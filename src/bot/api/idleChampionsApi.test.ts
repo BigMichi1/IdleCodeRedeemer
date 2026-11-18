@@ -120,5 +120,6 @@ describe('describeResponseStatus', () => {
   test('keeps the number (or raw value) when the status is unknown', () => {
     expect(describeResponseStatus(42)).toBe('status 42');
     expect(describeResponseStatus(undefined)).toBe('status undefined');
+    expect(describeResponseStatus('4')).toBe('status 4');
   });
 });
