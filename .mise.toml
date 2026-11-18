@@ -73,7 +73,7 @@ run = "bun test"
 # --randomize shuffles file and test order on every run (CI runs this task),
 # so a suite that depends on what an earlier file left in the shared test
 # database fails here rather than only on whichever machine happens to hit the
-# bad order. Bun prints the seed; reproduce with `bun test --randomize --seed=N`.
+# bad order. Bun prints the seed; reproduce with `./bin/mise run test --randomize --seed=N`.
 description = "Run all tests in random order with LCOV coverage report (output: coverage/lcov.info)"
 run = "bun test --coverage --coverage-reporter=lcov --randomize"
 
