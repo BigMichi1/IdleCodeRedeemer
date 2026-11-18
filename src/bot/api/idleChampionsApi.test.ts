@@ -1,5 +1,10 @@
 import { describe, test, expect } from 'bun:test';
-import { classifyFailureReason, CodeSubmitStatus, ResponseStatus } from './idleChampionsApi';
+import {
+  classifyFailureReason,
+  CodeSubmitStatus,
+  ResponseStatus,
+  describeResponseStatus,
+} from './idleChampionsApi';
 
 // ---------------------------------------------------------------------------
 // classifyFailureReason()
@@ -102,5 +107,18 @@ describe('exported status enums', () => {
     expect(ResponseStatus.Failed).toBe(2);
     expect(ResponseStatus.InsuficcientCurrency).toBe(3);
     expect(ResponseStatus.SwitchServer).toBe(4);
+  });
+});
+
+describe('describeResponseStatus', () => {
+  test('names known GenericResponse statuses', () => {
+    expect(describeResponseStatus(ResponseStatus.Failed)).toBe('Failed');
+    expect(describeResponseStatus(ResponseStatus.SwitchServer)).toBe('SwitchServer');
+    expect(describeResponseStatus(ResponseStatus.OutdatedInstanceId)).toBe('OutdatedInstanceId');
+  });
+
+  test('keeps the number (or raw value) when the status is unknown', () => {
+    expect(describeResponseStatus(42)).toBe('status 42');
+    expect(describeResponseStatus(undefined)).toBe('status undefined');
   });
 });

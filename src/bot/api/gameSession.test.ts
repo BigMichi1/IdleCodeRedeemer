@@ -219,7 +219,7 @@ describe('resolveGameSession', () => {
       try {
         await resolveGameSession(USER, creds(CACHED_SERVER));
         expect(warnSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
-          expect.stringContaining('status Failed')
+          expect.stringContaining('(Failed)')
         );
       } finally {
         warnSpy.mockRestore();

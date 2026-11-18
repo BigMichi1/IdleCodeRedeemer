@@ -575,6 +575,16 @@ export enum ResponseStatus {
   SwitchServer,
 }
 
+/**
+ * Log-friendly name for a GenericResponse status. Both status enums are
+ * numeric and overlap (4 is SwitchServer here but Expired for a code), so a
+ * bare number in a log line is easy to misread. Unknown values keep the number.
+ */
+export function describeResponseStatus(status: unknown): string {
+  const name = typeof status === 'number' ? ResponseStatus[status] : undefined;
+  return name ?? `status ${String(status)}`;
+}
+
 type FailureOutcome =
   { kind: 'code'; status: CodeSubmitStatus } | { kind: 'generic'; status: ResponseStatus };
 

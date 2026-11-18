@@ -4,6 +4,7 @@ import {
   CODE_STATUS_MAP,
   SETTLED_STATUSES,
   isCodeStatus,
+  describeCodeStatus,
   type CodeStatus,
 } from './codeStatus';
 import { CodeSubmitStatus } from '../api/idleChampionsApi';
@@ -91,5 +92,21 @@ describe('isCodeStatus', () => {
     expect(isCodeStatus('sucess')).toBe(false);
     expect(isCodeStatus('success')).toBe(false); // wrong case
     expect(isCodeStatus('')).toBe(false);
+  });
+});
+
+describe('describeCodeStatus', () => {
+  // Status 4 is Expired here but SwitchServer in ResponseStatus; a bare "status
+  // 4" in the backfill log was read as a server switch.
+  test('names every known code status', () => {
+    expect(describeCodeStatus(CodeSubmitStatus.Expired)).toBe('Code Expired');
+    for (const [wire, stored] of Object.entries(CODE_STATUS_MAP)) {
+      expect(describeCodeStatus(Number(wire))).toBe(stored);
+    }
+  });
+
+  test('keeps the number for an unknown status instead of hiding it', () => {
+    expect(describeCodeStatus(99)).toBe('status 99');
+    expect(describeCodeStatus(undefined)).toBe('status undefined');
   });
 });

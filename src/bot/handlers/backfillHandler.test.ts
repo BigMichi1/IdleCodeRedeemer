@@ -30,6 +30,7 @@ import { userManager } from '../database/userManager';
 import { codeManager } from '../database/codeManager';
 import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
 import { backfillChannelHistory } from './backfillHandler';
+import logger from '../utils/logger';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -373,6 +374,41 @@ describe('backfill respects user preferences and counts honestly', () => {
 
     expect(submitCodeSpy).toHaveBeenCalled();
     expect(stats.codesRedeemed).toBe(0);
+  });
+
+  test('logs a rejected code by status name, not number', async () => {
+    // Regression: "(status 4)" was read as a server switch; 4 is Expired here.
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
+      server: MOCK_SERVER,
+    });
+    submitCodeSpy.mockResolvedValue({ codeStatus: 4 } as any); // Expired
+    const infoSpy = spyOn(logger, 'info');
+    try {
+      await backfillChannelHistory(makeChannel([CODE_A]));
+
+      const lines = infoSpy.mock.calls.map((c) => String(c[0]));
+      expect(lines).toContainEqual(expect.stringContaining(`${CODE_A} not redeemed`));
+      expect(lines).toContainEqual(expect.stringContaining('(Code Expired)'));
+    } finally {
+      infoSpy.mockRestore();
+    }
+  });
+
+  test('names the API status in a recorded infrastructure failure', async () => {
+    await userManager.saveCredentials({
+      discordId: USER,
+      userId: TEST_USER_ID,
+      userHash: TEST_USER_HASH,
+      server: MOCK_SERVER,
+    });
+    submitCodeSpy.mockResolvedValue({ status: 2 } as any); // GenericResponse(Failed)
+
+    const stats = await backfillChannelHistory(makeChannel([CODE_A]));
+
+    expect(stats.errors[0]).toContain('the API returned Failed');
   });
 
   test('records an error when the API returns an infrastructure failure', async () => {
