@@ -2,6 +2,7 @@ import { describe, test, expect, beforeAll, beforeEach, afterAll, spyOn } from '
 import { db, initializeDatabase } from '../database/db';
 import { users, auditLog } from '../database/schema/index';
 import { userManager } from '../database/userManager';
+import { auditManager } from '../database/auditManager';
 import IdleChampionsApi, { ResponseStatus } from '../api/idleChampionsApi';
 import { execute } from './inventory';
 
@@ -90,12 +91,27 @@ describe('/inventory – session handling', () => {
     expect((await userManager.getCredentials(USER))?.server).toBe(MOVED_SERVER);
   });
 
-  test('reports a failed lookup with the credentials hint', async () => {
+  test('reports a failed lookup with the /setup hint', async () => {
     getUserDetailsSpy.mockResolvedValue({ status: ResponseStatus.Failed } as any);
     const { interaction, editReplySpy } = makeInteraction();
 
     await execute(interaction);
 
     expect(embedOf(editReplySpy).description).toContain('/setup');
+  });
+
+  test('an unexpected error is reported through replyWithError', async () => {
+    const auditSpy = spyOn(auditManager, 'logAction').mockRejectedValue(new Error('boom'));
+    try {
+      const { interaction, editReplySpy } = makeInteraction();
+
+      await execute(interaction);
+
+      const embed = embedOf(editReplySpy);
+      expect(embed.title).toBe('❌ Error');
+      expect(embed.description).toBe('An error occurred while retrieving your inventory.');
+    } finally {
+      auditSpy.mockRestore();
+    }
   });
 });

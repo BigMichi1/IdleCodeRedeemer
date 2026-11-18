@@ -3,6 +3,7 @@ import { resolveGameSession, resolvePlayerData } from './gameSession';
 import IdleChampionsApi from './idleChampionsApi';
 import { db, initializeDatabase } from '../database/db';
 import { userManager } from '../database/userManager';
+import logger from '../utils/logger';
 import { users, redeemedCodes, pendingCodes } from '../database/schema/index';
 
 // ---------------------------------------------------------------------------
@@ -19,6 +20,8 @@ const CACHED_SERVER = 'https://cached.example.com/~idledragons/post.php';
 const LOOKUP_SERVER = 'https://looked-up.example.com/~idledragons/post.php';
 const SWITCHED_SERVER = 'https://switched.example.com/~idledragons/post.php';
 const INSTANCE = '556677';
+const LOOKUP_FAILED =
+  'Could not reach your account on the game server. It may be down; if this keeps happening, check your credentials with `/setup`.';
 
 const getUserDetailsSpy = spyOn(IdleChampionsApi, 'getUserDetails');
 const getServerSpy = spyOn(IdleChampionsApi, 'getServer');
@@ -131,8 +134,7 @@ describe('resolveGameSession', () => {
 
       expect(session).toMatchObject({
         ok: false,
-        description:
-          'Could not retrieve your account from the game server. Check your credentials with `/setup`.',
+        description: LOOKUP_FAILED,
       });
     });
 
@@ -143,8 +145,7 @@ describe('resolveGameSession', () => {
 
       expect(session).toMatchObject({
         ok: false,
-        description:
-          'Could not retrieve your account from the game server. Check your credentials with `/setup`.',
+        description: LOOKUP_FAILED,
       });
     });
 
@@ -175,12 +176,53 @@ describe('resolveGameSession', () => {
       expect(session).toMatchObject({ ok: true, instanceId: '998877' });
     });
 
-    test('every failure carries a description callers can show the user', async () => {
+    // Callers show descriptions as-is and append their own sentence in log
+    // lines; only the no-session case is something the user can fix, so it is
+    // the only one unattended callers may DM about.
+    const FAILURES: Array<[string, () => void, boolean]> = [
+      ['no server', () => getServerSpy.mockResolvedValue(undefined as any), false],
+      [
+        'switch without server',
+        () => getUserDetailsSpy.mockResolvedValue({ status: 4 } as any),
+        false,
+      ],
+      [
+        'second switch',
+        () => getUserDetailsSpy.mockResolvedValue({ status: 4, newServer: SWITCHED_SERVER } as any),
+        false,
+      ],
+      ['failed lookup', () => getUserDetailsSpy.mockResolvedValue({ status: 2 } as any), false],
+      [
+        'no session',
+        () => getUserDetailsSpy.mockResolvedValue({ details: { instance_id: '0' } } as any),
+        true,
+      ],
+    ];
+    for (const [name, arrange, userFixable] of FAILURES) {
+      test(`${name}: a full-sentence description, userFixable=${userFixable}`, async () => {
+        arrange();
+        const session = await resolveGameSession(
+          USER,
+          creds(name === 'no server' ? undefined : CACHED_SERVER)
+        );
+        expect(session.ok).toBe(false);
+        if (!session.ok) {
+          expect(session.description).toMatch(/^[A-Z].*\.$/);
+          expect(session.userFixable).toBe(userFixable);
+        }
+      });
+    }
+
+    test('a failed lookup logs the status by name', async () => {
       getUserDetailsSpy.mockResolvedValue({ status: 2 } as any);
-      const session = await resolveGameSession(USER, creds(CACHED_SERVER));
-      expect(session.ok).toBe(false);
-      if (!session.ok) {
-        expect(session.description).toContain('/setup');
+      const warnSpy = spyOn(logger, 'warn');
+      try {
+        await resolveGameSession(USER, creds(CACHED_SERVER));
+        expect(warnSpy.mock.calls.map((c) => String(c[0]))).toContainEqual(
+          expect.stringContaining('status Failed')
+        );
+      } finally {
+        warnSpy.mockRestore();
       }
     });
   });
@@ -215,7 +257,7 @@ describe('resolvePlayerData', () => {
     const result = await resolvePlayerData(USER, creds(CACHED_SERVER));
 
     expect(result).toMatchObject({ ok: false });
-    if (!result.ok) expect(result.description).toContain('Check your credentials');
+    if (!result.ok) expect(result.description).toBe(LOOKUP_FAILED);
   });
 
   test('does not follow a second redirect in a row, and says so', async () => {

@@ -96,10 +96,12 @@ src/test/
 
 ### SSL Certificate Issue
 
-The Idle Champions API server has an expired SSL certificate. Always start the bot with:
+The Idle Champions API host has served an expired TLS certificate. **Never set `NODE_TLS_REJECT_UNAUTHORIZED`**: it disables certificate validation for every connection, the Discord gateway included, which would expose `DISCORD_TOKEN`.
+
+If the game host's certificate really is broken, set the host-scoped escape hatch instead. It applies only to game API requests (`apiFetch()` in `src/bot/api/idleChampionsApi.ts`):
 
 ```bash
-NODE_TLS_REJECT_UNAUTHORIZED=0
+IDLE_CHAMPIONS_INSECURE_TLS=1
 ```
 
 ### Instance ID Problem

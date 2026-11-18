@@ -46,8 +46,18 @@ function embedOf(spy: ReturnType<typeof makeInteraction>['editReplySpy']) {
   return (spy.mock.calls.at(-1)![0] as any).embeds[0].data;
 }
 
+let setTimeoutSpy: ReturnType<typeof spyOn>;
+
 beforeAll(() => {
   initializeDatabase();
+  // /catchup sleeps 150 ms between codes; run timers inline so the 12-code
+  // tests stay instant instead of creeping towards bun's 5 s timeout.
+  setTimeoutSpy = spyOn(globalThis, 'setTimeout').mockImplementation(((
+    fn: (...args: unknown[]) => void
+  ) => {
+    if (typeof fn === 'function') fn();
+    return 0 as unknown as ReturnType<typeof setTimeout>;
+  }) as unknown as typeof setTimeout);
 });
 
 beforeEach(async () => {
@@ -74,6 +84,7 @@ afterAll(() => {
   getUserDetailsSpy.mockRestore();
   submitCodeSpy.mockRestore();
   getServerSpy.mockRestore();
+  setTimeoutSpy.mockRestore();
 });
 
 describe('/catchup – session handling', () => {
@@ -106,6 +117,7 @@ describe('/catchup – session handling', () => {
     expect(calls[9]).toMatchObject({ server: SERVER, instanceId: INSTANCE });
     expect(calls[10]).toMatchObject({ server: MOVED_SERVER, instanceId: 'inst-2' });
     expect(calls[11]).toMatchObject({ server: MOVED_SERVER, instanceId: 'inst-2' });
+    expect((await userManager.getCredentials(USER))?.server).toBe(MOVED_SERVER);
   });
 
   test('a failed refresh keeps the current session and finishes the run', async () => {
@@ -121,5 +133,22 @@ describe('/catchup – session handling', () => {
     expect(calls).toHaveLength(12);
     expect(calls[11]).toMatchObject({ server: SERVER, instanceId: INSTANCE });
     expect(embedOf(editReplySpy).title).toContain('Catch-up Complete');
+  });
+
+  test('an unexpected error is reported to the user without a second throw', async () => {
+    const pendingSpy = spyOn(codeManager, 'getPendingCodes').mockRejectedValue(
+      new Error('database is locked')
+    );
+    try {
+      const { interaction, editReplySpy } = makeInteraction();
+
+      await execute(interaction);
+
+      const embed = embedOf(editReplySpy);
+      expect(embed.title).toBe('❌ Error');
+      expect(embed.description).toContain('database is locked');
+    } finally {
+      pendingSpy.mockRestore();
+    }
   });
 });
