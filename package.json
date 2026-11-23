@@ -43,7 +43,7 @@
     "drizzle-kit": "0.31.11",
     "eslint": "10.15.0",
     "husky": "9.1.7",
-    "lint-staged": "17.6.0",
+    "lint-staged": "17.6.1",
     "prettier": "3.10.1",
     "prettier-plugin-sh": "0.20.2",
     "prettier-plugin-toml": "4.1.0",
