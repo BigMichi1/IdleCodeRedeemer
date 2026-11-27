@@ -33,13 +33,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Security
 
-- **Cleared new advisories** - `bun.lock` refreshed within existing ranges:
-  `undici` 6.29.1 (GHSA-2m5v-pch6-74hx, GHSA-qrxm-fqhp-jwvm, GHSA-9fm3-97px-rjf6,
-  GHSA-xjj6-f33q-929c, GHSA-4qv8-2p9j-2685) and `fast-uri` 3.1.9 (GHSA-w74x-v6f9-j3xg,
-  GHSA-xhq7-xmqj-769h, GHSA-wjr9-j795-jxcr, GHSA-333x-w4r6-6crp). `minimatch` 11.0.9
-  (GHSA-g3hv-75wg-m249): the temporary `11.0.3` override is dropped now that eslint and
-  typescript-eslint accept minimatch 11. The unfixable `picomatch` ReDoS advisory
-  (GHSA-fc5q-39xc-vjpf, dev-only tooling, never fed untrusted input) is documented as ignored.
+- **Cleared new advisories** - `bun.lock` refreshed within existing ranges: `undici` 6.29.1
+  (GHSA-2m5v-pch6-74hx, GHSA-qrxm-fqhp-jwvm, GHSA-9fm3-97px-rjf6, GHSA-xjj6-f33q-929c,
+  GHSA-4qv8-2p9j-2685) and `fast-uri` 3.1.9 (GHSA-w74x-v6f9-j3xg, GHSA-xhq7-xmqj-769h,
+  GHSA-wjr9-j795-jxcr, GHSA-333x-w4r6-6crp). `minimatch` 10.2.6 → 11.0.9
+  (GHSA-g3hv-75wg-m249), now that eslint and typescript-eslint accept minimatch 11. The
+  unfixable `picomatch` ReDoS advisory (GHSA-fc5q-39xc-vjpf, dev-only tooling, never fed
+  untrusted input) is documented as ignored.
 - **TLS guidance** - the docs (`development.md`, `full-documentation.md`,
   `security-assessment.md`) no longer suggest `NODE_TLS_REJECT_UNAUTHORIZED=0`; they point to
   the host-scoped `IDLE_CHAMPIONS_INSECURE_TLS=1`.
@@ -806,8 +806,9 @@ Security changes require special attention:
 
 | Version | Release Date | Category               | Key Changes                                                    |
 | ------- | ------------ | ---------------------- | -------------------------------------------------------------- |
+| 3.0.4   | 2026-11-27   | Patch Release          | All-letter feed codes, play-server redirect in backfill        |
 | 3.0.3   | 2026-10-19   | Patch Release          | Transitive advisory fixes and dependency updates               |
-| 3.0.2   | 2026-08-25   | Patch Release          | Publishes the major-version Docker tag the documentation promised |
+| 3.0.2   | 2026-08-25   | Patch Release          | Publishes the promised major-version Docker tag                |
 | 3.0.1   | 2026-08-25   | Patch Release          | Dependency security fixes and repaired CI and commit tooling   |
 | 3.0.0   | 2026-08-25   | Major Release          | Encrypted credentials, nine new commands, supply-chain signing |
 | 2.0.0   | 2026-05-09   | Initial Public Release | Complete rewrite as Discord bot with security hardening        |
