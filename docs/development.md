@@ -84,7 +84,7 @@ src/test/
 
 - **Mise** - Task runner and tool version manager (MANDATORY)
 - **Bun 1.4.4** - JavaScript runtime (3-4x faster than Node.js; also used as package manager)
-- **discord.js 14.26** - Discord bot framework
+- **discord.js 14.28** - Discord bot framework
 - **bun:sqlite** - Built-in SQLite module (replaces `sqlite3`)
 - **Drizzle ORM** - Type-safe query builder and schema manager
 - **Bun Fetch API** - Built-in HTTP client (replaces `node-fetch`)

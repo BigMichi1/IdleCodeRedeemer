@@ -335,7 +335,7 @@ The Docker metadata action automatically generates tags based on git tags:
 | ------- | -------- | --------------------------------------------------------- |
 | 3.0.4   | Nov 2026 | All-letter feed codes, play-server redirect in backfill   |
 | 3.0.3   | Oct 2026 | Transitive advisory fixes and dependency updates          |
-| 3.0.2   | Aug 2026 | Publishes the major-version Docker tag                     |
+| 3.0.2   | Aug 2026 | Publishes the major-version Docker tag                    |
 | 3.0.1   | Aug 2026 | Dependency security fixes, repaired CI and commit tooling |
 | 3.0.0   | Aug 2026 | Encrypted credentials, nine new commands, signed releases |
 | 2.0.0   | May 2026 | Initial public release as Discord bot                     |
