@@ -15,26 +15,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   is now accepted when it stands alone on the first line of a feed post (uppercase, with an
   `Expires` line); other all-letter words are still rejected.
 - **Backfill skipped users moved to a new play server** - the startup backfill did not follow the
-  game's `SwitchServer` redirect and logged "invalid credentials" for every moved user. Every
-  `getuserdetails` call (backfill, auto-redeemer, `/catchup`, `/inventory`) now goes through one
-  session resolver that follows the redirect and persists the new server.
+  game's `SwitchServer` redirect and logged "invalid credentials or API failure" for every moved
+  user. Every `getuserdetails` call (backfill, auto-redeemer, `/catchup`, `/inventory`) now goes
+  through one session resolver that follows the redirect and persists the new server.
+  `/inventory` uses the cached play server instead of looking it up on every call.
 - **Session failures during auto-redeem** - a failed session lookup now stops that user's
-  remaining codes instead of retrying per code, and sends at most one DM per run listing the
-  missed codes, only when the user can fix it (game not running). An unreachable API no longer
-  tells users their credentials are wrong.
-- **Readable game statuses in logs** - logs name the status ("Code Expired") instead of a bare
-  number that overlapped between enums (4 = Expired, but also SwitchServer). DMs use plain text
-  rather than internal enum names.
-- **`/open` and `/blacksmith` error replies** use `replyWithError()`, so a failed command can no
-  longer throw a second time when the interaction is already gone.
+  remaining codes instead of retrying per code. Users who turned on failure DMs get at most one DM
+  per run listing the missed codes, and only when they can fix it (game not running); before,
+  a session failure only wrote a log line. Session-failure replies now say what to do (start the
+  game, or check `/setup` if it keeps happening).
+- **Readable game statuses** - logs name the status ("Code Expired") instead of a bare number
+  that overlapped between enums (4 = Expired, but also SwitchServer). Failure DMs say "The game
+  server rejected the request" instead of a bare status number or "Unexpected API Response".
+- **Command error replies** - `/open`, `/blacksmith`, `/catchup` and `/inventory` report errors
+  with `replyWithError()`, so a failed command can no longer throw a second time when the
+  interaction is already gone.
 
 ### Security
 
-- **Cleared new advisories** - `undici` 6.29.1 and `fast-uri` 3.1.9 within existing ranges;
-  `minimatch` overridden to 11.0.3. The unfixable `picomatch` ReDoS advisory
+- **Cleared new advisories** - `bun.lock` refreshed within existing ranges:
+  `undici` 6.29.1 (GHSA-2m5v-pch6-74hx, GHSA-qrxm-fqhp-jwvm, GHSA-9fm3-97px-rjf6,
+  GHSA-xjj6-f33q-929c, GHSA-4qv8-2p9j-2685) and `fast-uri` 3.1.9 (GHSA-w74x-v6f9-j3xg,
+  GHSA-xhq7-xmqj-769h, GHSA-wjr9-j795-jxcr, GHSA-333x-w4r6-6crp). `minimatch` 11.0.9
+  (GHSA-g3hv-75wg-m249): the temporary `11.0.3` override is dropped now that eslint and
+  typescript-eslint accept minimatch 11. The unfixable `picomatch` ReDoS advisory
   (GHSA-fc5q-39xc-vjpf, dev-only tooling, never fed untrusted input) is documented as ignored.
-- **TLS guidance** - `docs/development.md` no longer suggests `NODE_TLS_REJECT_UNAUTHORIZED=0`;
-  it points to the host-scoped `IDLE_CHAMPIONS_INSECURE_TLS=1`.
+- **TLS guidance** - the docs (`development.md`, `full-documentation.md`,
+  `security-assessment.md`) no longer suggest `NODE_TLS_REJECT_UNAUTHORIZED=0`; they point to
+  the host-scoped `IDLE_CHAMPIONS_INSECURE_TLS=1`.
 
 ### Changed
 
@@ -45,8 +53,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **CI** - tests run in random order under coverage, and every test starts from an emptied
   database; pull requests fail the dependency audit only on advisories they add, while the full
   audit runs on `main`, daily.
-- Development and CI dependency updates (eslint, typescript-eslint, prettier, lint-staged,
-  `@types/bun`, `@tsconfig/bun`, GitHub Actions).
+- Development and CI dependency updates (eslint, typescript-eslint, commitlint, prettier,
+  prettier-plugin-toml, lint-staged, `@types/bun`, `@tsconfig/bun`, GitHub Actions).
 
 ## [3.0.3] - 2026-10-19
 
