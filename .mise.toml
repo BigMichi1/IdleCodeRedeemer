@@ -16,11 +16,10 @@
 #
 # GHSA-fc5q-39xc-vjpf is a picomatch ReDoS (<=4.0.7) with no patched release:
 # 4.0.7 was the latest as of 2026-11, so neither an upgrade nor an override
-# could fix it. It is
-# reached only through dev tooling (lint-staged, and typescript-eslint via
-# tinyglobby/fdir), which matches the repo's own fixed glob patterns, never
-# untrusted input, and is not in the compiled binary or runtime image. Drop the
-# ignore once picomatch ships a fix.
+# could fix it. It is reached only through dev tooling (lint-staged, and
+# typescript-eslint via tinyglobby/fdir), which matches the repo's own fixed
+# glob patterns, never untrusted input, and is not in the compiled binary or
+# runtime image. Drop the ignore once picomatch ships a fix.
 audit_ignores = "--ignore GHSA-67mh-4wv8-2f99 --ignore GHSA-fc5q-39xc-vjpf"
 
 [tools]
