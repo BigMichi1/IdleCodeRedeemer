@@ -64,15 +64,29 @@ describe('extractCodesFromText', () => {
       expect(extractCodesFromText(feed('SOSOSOUPBEATABCD'))).toEqual(['SOSOSOUPBEATABCD']);
     });
 
+    test('accepts a feed post whose Expires line carries a timestamp', () => {
+      expect(
+        extractCodesFromText(feed('SOSOSOUPBEAT').replace('Expires', 'Expires <t:1764000000:R>'))
+      ).toEqual(['SOSOSOUPBEAT']);
+    });
+
     test('rejects it when the message has no Expires line', () => {
-      expect(extractCodesFromText('SOSOSOUPBEAT\nDev Insights')).toEqual([]);
+      expect(extractCodesFromText(feed('SOSOSOUPBEAT').replace('\nExpires', ''))).toEqual([]);
+    });
+
+    test('rejects it when expires is lowercase prose', () => {
+      expect(extractCodesFromText('ANNOUNCEMENT\nThis code expires soon')).toEqual([]);
+    });
+
+    test('rejects it when a lowercase expires starts a line', () => {
+      expect(extractCodesFromText('ANNOUNCEMENT\nexpires soon')).toEqual([]);
     });
 
     test('rejects it when it is not on the first line', () => {
       expect(extractCodesFromText('Dev Insights\nSOSOSOUPBEAT\nExpires')).toEqual([]);
     });
 
-    test('rejects it when the first line is not uppercase in the original', () => {
+    test('rejects a mixed-case first line (the pipeline uppercases it later)', () => {
       expect(extractCodesFromText(feed('Accomplished'))).toEqual([]);
     });
 
@@ -80,10 +94,43 @@ describe('extractCodesFromText', () => {
       expect(extractCodesFromText('ACCOMPLISHED today\nExpires')).toEqual([]);
     });
 
-    test('still rejects all-letter words elsewhere in a feed post', () => {
+    test('rejects a first line of two uppercase 12-letter words', () => {
+      expect(extractCodesFromText('ACCOMPLISHED ANNOUNCEMENT\nExpires')).toEqual([]);
+    });
+
+    // Errs toward rejecting: a formatted head is not the plain feed shape.
+    test('rejects a markdown-wrapped head code', () => {
+      expect(extractCodesFromText('**SOSOSOUPBEAT**\nExpires')).toEqual([]);
+      expect(extractCodesFromText('`SOSOSOUPBEAT`\nExpires')).toEqual([]);
+    });
+
+    test('does not extend the exception to other 12-letter words in the post', () => {
       expect(
-        extractCodesFromText(feed('LATU-EGIS-TOCK').replace('Dev Insights', 'CONGRATULATIONS'))
-      ).toEqual(['LATUEGISTOCK']);
+        extractCodesFromText(feed('SOSOSOUPBEAT').replace('Dev Insights', 'ACCOMPLISHED'))
+      ).toEqual(['SOSOSOUPBEAT']);
+    });
+
+    test('returns the head code once even when repeated later in the post', () => {
+      expect(extractCodesFromText('SOSOSOUPBEAT\nuse sosoSoupBeat\nExpires')).toEqual([
+        'SOSOSOUPBEAT',
+      ]);
+    });
+
+    test('accepts a feed post with CRLF line endings', () => {
+      expect(extractCodesFromText('SOSOSOUPBEAT\r\nDev Insights\r\nExpires')).toEqual([
+        'SOSOSOUPBEAT',
+      ]);
+    });
+
+    test('accepts a head code with surrounding whitespace on its line', () => {
+      expect(extractCodesFromText('  SOSOSOUPBEAT  \nDev Insights\nExpires')).toEqual([
+        'SOSOSOUPBEAT',
+      ]);
+    });
+
+    test('rejects it when Expires only appears mid-line', () => {
+      expect(extractCodesFromText('SOSOSOUPBEAT\nDev Insights Expires soon')).toEqual([]);
+      expect(extractCodesFromText('ANNOUNCEMENT\nIt Expires soon')).toEqual([]);
     });
   });
 
@@ -219,6 +266,12 @@ describe('scanMessageForCodes', () => {
     await codeManager.addRedeemedCode('ABCD1234EFGH', USER, 'Success');
     const codes = await scanMessageForCodes(fakeMessage('ABCD1234EFGH WXYZ5678IJKL'));
     expect(codes).toEqual(['WXYZ5678IJKL']);
+  });
+
+  test('returns an undashed all-letter code from a feed post', async () => {
+    const post =
+      'SOSOSOUPBEAT\nDev Insights\nhttps://www.twitch.tv/cnegames\n1x <:electrumchest:804546857681551360> \nExpires';
+    expect(await scanMessageForCodes(fakeMessage(post))).toEqual(['SOSOSOUPBEAT']);
   });
 
   test('returns empty array on empty message', async () => {
