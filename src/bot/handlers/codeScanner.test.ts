@@ -50,6 +50,43 @@ describe('extractCodesFromText', () => {
     });
   });
 
+  // Regression: the #combinations feed posted "SOSOSOUPBEAT" undashed and with
+  // no digits, so looksLikeCode() rejected it and nobody got the code.
+  describe('undashed all-letter code in the feed message shape', () => {
+    const feed = (code: string) =>
+      `${code}\nDev Insights\nhttps://www.twitch.tv/cnegames\n1x <:electrumchest:804546857681551360> \nExpires`;
+
+    test('accepts a 12-letter code alone on the first line of a feed post', () => {
+      expect(extractCodesFromText(feed('SOSOSOUPBEAT'))).toEqual(['SOSOSOUPBEAT']);
+    });
+
+    test('accepts a 16-letter code alone on the first line of a feed post', () => {
+      expect(extractCodesFromText(feed('SOSOSOUPBEATABCD'))).toEqual(['SOSOSOUPBEATABCD']);
+    });
+
+    test('rejects it when the message has no Expires line', () => {
+      expect(extractCodesFromText('SOSOSOUPBEAT\nDev Insights')).toEqual([]);
+    });
+
+    test('rejects it when it is not on the first line', () => {
+      expect(extractCodesFromText('Dev Insights\nSOSOSOUPBEAT\nExpires')).toEqual([]);
+    });
+
+    test('rejects it when the first line is not uppercase in the original', () => {
+      expect(extractCodesFromText(feed('Accomplished'))).toEqual([]);
+    });
+
+    test('rejects it when the first line holds more than the code', () => {
+      expect(extractCodesFromText('ACCOMPLISHED today\nExpires')).toEqual([]);
+    });
+
+    test('still rejects all-letter words elsewhere in a feed post', () => {
+      expect(
+        extractCodesFromText(feed('LATU-EGIS-TOCK').replace('Dev Insights', 'CONGRATULATIONS'))
+      ).toEqual(['LATUEGISTOCK']);
+    });
+  });
+
   describe('12-character codes', () => {
     test('matches a plain 12-char alphanumeric code', () => {
       expect(extractCodesFromText('ABCD1234EFGH')).toEqual(['ABCD1234EFGH']);

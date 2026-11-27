@@ -30,12 +30,29 @@ function looksLikeCode(raw: string, cleaned: string): boolean {
   return raw.includes('-') || /[0-9]/.test(cleaned);
 }
 
+/**
+ * The undashed, digit-free code that heads a #combinations feed post, or null.
+ *
+ * The feed usually posts dash-grouped codes, but it has also posted plain
+ * letters ("SOSOSOUPBEAT"), which looksLikeCode() cannot tell from an English
+ * word. Such a code is accepted only in the feed's exact shape: alone on the
+ * first line, uppercase in the original text (before the pipeline uppercases
+ * it), in a message that also carries the feed's "Expires" line. Prose fails at
+ * least one of those, so the filter still errs toward rejecting.
+ */
+function feedHeadCode(text: string): string | null {
+  const firstLine = (text.split('\n', 1)[0] ?? '').trim();
+  if (!/^[A-Z]{12}(?:[A-Z]{4})?$/.test(firstLine)) return null;
+  return /^\s*Expires\b/m.test(text) ? firstLine : null;
+}
+
 /** Shared match pipeline: strip noise, uppercase, match, drop separators. */
 function matchCodes(text: string): string[] {
+  const headCode = feedHeadCode(text);
   const matches = stripUrls(stripDiscordEmojis(text)).toUpperCase().match(CODE_REGEX) || [];
   return matches
     .map((raw) => ({ raw, cleaned: raw.replaceAll('-', '') }))
-    .filter(({ raw, cleaned }) => looksLikeCode(raw, cleaned))
+    .filter(({ raw, cleaned }) => looksLikeCode(raw, cleaned) || cleaned === headCode)
     .map(({ cleaned }) => cleaned);
 }
 
