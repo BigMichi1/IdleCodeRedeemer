@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- **Undashed all-letter codes were never redeemed** - the feed posted `SOSOSOUPBEAT` without
+  dashes or digits, and the scanner rejected it as an English word. A digit-free, undashed code
+  is now accepted when it stands alone on the first line of a feed post (uppercase, with an
+  `Expires` line); other all-letter words are still rejected.
+
 ### Changed
 
 - **Toolchain** - the compiled binary is built with Bun 1.4.4 (was 1.4.3); vendored mise
