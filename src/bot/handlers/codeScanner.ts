@@ -41,8 +41,9 @@ function looksLikeCode(raw: string, cleaned: string): boolean {
  * letters ("SOSOSOUPBEAT"), which looksLikeCode() cannot tell from an English
  * word. Such a code is accepted only in the feed's exact shape: alone on the
  * first line, uppercase in the original text (before the pipeline uppercases
- * it), in a message that also has a line starting with "Expires" (case-sensitive,
- * so "Expires: ..." counts too). Prose is very unlikely to meet all three, and
+ * it), in a message that also has a line starting with "Expires" (case-sensitive;
+ * leading whitespace and trailing text such as ": <t:...>" are allowed,
+ * "ExpiresX" is not). Prose is very unlikely to meet all three, and
  * only the allowlisted feed author's messages are scanned when
  * DISCORD_CODE_AUTHOR_ID is set, so the filter still errs toward rejecting.
  */
