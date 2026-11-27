@@ -6,18 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [3.0.4] - 2026-11-27
+
 ### Fixed
 
 - **Undashed all-letter codes were never redeemed** - the feed posted `SOSOSOUPBEAT` without
   dashes or digits, and the scanner rejected it as an English word. A digit-free, undashed code
   is now accepted when it stands alone on the first line of a feed post (uppercase, with an
   `Expires` line); other all-letter words are still rejected.
+- **Backfill skipped users moved to a new play server** - the startup backfill did not follow the
+  game's `SwitchServer` redirect and logged "invalid credentials" for every moved user. Every
+  `getuserdetails` call (backfill, auto-redeemer, `/catchup`, `/inventory`) now goes through one
+  session resolver that follows the redirect and persists the new server.
+- **Session failures during auto-redeem** - a failed session lookup now stops that user's
+  remaining codes instead of retrying per code, and sends at most one DM per run listing the
+  missed codes, only when the user can fix it (game not running). An unreachable API no longer
+  tells users their credentials are wrong.
+- **Readable game statuses in logs** - logs name the status ("Code Expired") instead of a bare
+  number that overlapped between enums (4 = Expired, but also SwitchServer). DMs use plain text
+  rather than internal enum names.
+- **`/open` and `/blacksmith` error replies** use `replyWithError()`, so a failed command can no
+  longer throw a second time when the interaction is already gone.
+
+### Security
+
+- **Cleared new advisories** - `undici` 6.29.1 and `fast-uri` 3.1.9 within existing ranges;
+  `minimatch` overridden to 11.0.3. The unfixable `picomatch` ReDoS advisory
+  (GHSA-fc5q-39xc-vjpf, dev-only tooling, never fed untrusted input) is documented as ignored.
+- **TLS guidance** - `docs/development.md` no longer suggests `NODE_TLS_REJECT_UNAUTHORIZED=0`;
+  it points to the host-scoped `IDLE_CHAMPIONS_INSECURE_TLS=1`.
 
 ### Changed
 
+- **Runtime dependencies** - `discord.js` 14.27.0 → 14.28.1; Debian base image digest refreshed.
 - **Toolchain** - the compiled binary is built with Bun 1.4.4 (was 1.4.3); vendored mise
   launcher 2026.8.12 → 2026.11.9; Python 3.15.0 → 3.15.2; `bun.lock` refreshed within
   existing ranges. Docs updated to the current Bun version.
+- **CI** - tests run in random order under coverage, and every test starts from an emptied
+  database; pull requests fail the dependency audit only on advisories they add, while the full
+  audit runs on `main`, daily.
+- Development and CI dependency updates (eslint, typescript-eslint, prettier, lint-staged,
+  `@types/bun`, `@tsconfig/bun`, GitHub Actions).
 
 ## [3.0.3] - 2026-10-19
 
